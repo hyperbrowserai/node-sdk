@@ -1,0 +1,41 @@
+{
+  "name": "hyperbrowser",
+  "version": "0.1.0",
+  "description": "Javascript SDK for Hyperbrowser API",
+  "author": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "commonjs",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint src/**/*.ts",
+    "prepare": "yarn build",
+    "test": "jest",
+    "format": "prettier --write 'src/**/*.ts'"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "hyperbrowser",
+    "browser",
+    "automation"
+  ],
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.1",
+    "@types/node-fetch": "^2.6.4",
+    "@typescript-eslint/eslint-plugin": "^8.15.0",
+    "@typescript-eslint/parser": "^8.15.0",
+    "eslint": "^9.15.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.3.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}

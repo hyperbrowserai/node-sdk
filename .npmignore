@@ -1,0 +1,27 @@
+# Source
+src/
+tests/
+__tests__/
+
+node_modules
+yarn.lock
+
+# Config files
+tsconfig.json
+jest.config.js
+.eslintrc
+.prettierrc
+
+# Dev files
+*.test.ts
+*.spec.ts
+
+# IDE
+.vscode/
+.idea/
+
+# Misc
+.git
+.gitignore
+.npmignore
+README.md
