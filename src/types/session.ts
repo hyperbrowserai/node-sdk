@@ -1,5 +1,9 @@
 export type SessionStatus = "active" | "closed" | "error";
 
+export interface BasicResponse {
+  success: boolean;
+}
+
 export interface Session {
   id: string;
   teamId: string;

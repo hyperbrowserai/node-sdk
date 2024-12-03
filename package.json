@@ -1,7 +1,7 @@
 {
   "name": "@hyperbrowser/sdk",
-  "version": "0.1.0",
-  "description": "Javascript SDK for Hyperbrowser API",
+  "version": "0.2.0",
+  "description": "Node SDK for Hyperbrowser API",
   "author": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

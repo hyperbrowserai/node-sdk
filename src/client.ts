@@ -1,14 +1,20 @@
 import fetch, { RequestInit, Response } from "node-fetch";
 import { HyperbrowserConfig } from "./types/config";
-import { SessionDetail, SessionListParams, SessionListResponse } from "./types/session";
+import {
+  BasicResponse,
+  SessionDetail,
+  SessionListParams,
+  SessionListResponse,
+} from "./types/session";
 
 export class HyperbrowserError extends Error {
   constructor(
     message: string,
     public statusCode?: number,
-    public response?: Response
+    public response?: Response,
+    public originalError?: Error
   ) {
-    super(message);
+    super(`[Hyperbrowser]: ${message}`);
     this.name = "HyperbrowserError";
   }
 }
@@ -22,7 +28,7 @@ export class HyperbrowserClient {
     this.baseUrl = config.baseUrl || "https://app.hyperbrowser.ai";
 
     if (!this.apiKey) {
-      throw new Error("API key is required");
+      throw new HyperbrowserError("API key is required");
     }
   }
 
@@ -31,42 +37,65 @@ export class HyperbrowserClient {
     init?: RequestInit,
     params?: Record<string, string | number | undefined>
   ): Promise<T> {
-    const url = new URL(`${this.baseUrl}/api${path}`);
-
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) {
-          url.searchParams.append(key, value.toString());
-        }
-      });
-    }
-
-    const response = await fetch(url.toString(), {
-      ...init,
-      headers: {
-        "x-api-key": this.apiKey,
-        "Content-Type": "application/json",
-        ...init?.headers,
-      },
-    });
-
-    if (!response.ok) {
-      throw new HyperbrowserError(
-        `HTTP error! status: ${response.status}`,
-        response.status,
-        response
-      );
-    }
-
-    // Handle empty responses (like for stop session)
-    if (response.headers.get("content-length") === "0") {
-      return {} as T;
-    }
-
     try {
-      return (await response.json()) as T;
+      const url = new URL(`${this.baseUrl}/api${path}`);
+
+      if (params) {
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined) {
+            url.searchParams.append(key, value.toString());
+          }
+        });
+      }
+
+      const response = await fetch(url.toString(), {
+        ...init,
+        headers: {
+          "x-api-key": this.apiKey,
+          "Content-Type": "application/json",
+          ...init?.headers,
+        },
+      });
+
+      if (!response.ok) {
+        let errorMessage: string;
+        try {
+          const errorData = await response.json();
+          errorMessage =
+            errorData.message || errorData.error || `HTTP error! status: ${response.status}`;
+        } catch {
+          errorMessage = `HTTP error! status: ${response.status}`;
+        }
+        throw new HyperbrowserError(errorMessage, response.status, response);
+      }
+
+      if (response.headers.get("content-length") === "0") {
+        return {} as T;
+      }
+
+      try {
+        return (await response.json()) as T;
+      } catch (error) {
+        throw new HyperbrowserError(
+          "Failed to parse JSON response",
+          response.status,
+          response,
+          error instanceof Error ? error : undefined
+        );
+      }
     } catch (error) {
-      throw new HyperbrowserError("Failed to parse JSON response", response.status, response);
+      // If it's already a HyperbrowserError, rethrow it
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+
+      // Convert other errors to HyperbrowserError
+      throw new HyperbrowserError(
+        error instanceof Error ? error.message : "Unknown error occurred",
+        undefined,
+        undefined,
+        error instanceof Error ? error : undefined
+      );
     }
   }
 
@@ -74,29 +103,58 @@ export class HyperbrowserClient {
    * Create a new browser session
    */
   async createSession(): Promise<SessionDetail> {
-    return this.request<SessionDetail>("/session", { method: "POST" });
+    try {
+      return await this.request<SessionDetail>("/session", { method: "POST" });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(
+        "Failed to create session",
+        undefined,
+        undefined,
+        error instanceof Error ? error : undefined
+      );
+    }
   }
 
   /**
    * Get details of an existing session
    */
   async getSession(id: string): Promise<SessionDetail> {
-    return this.request<SessionDetail>(`/session/${id}`);
+    try {
+      return await this.request<SessionDetail>(`/session/${id}`);
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(
+        `Failed to get session ${id}`,
+        undefined,
+        undefined,
+        error instanceof Error ? error : undefined
+      );
+    }
   }
 
   /**
    * Stop a running session
-   * @returns true if the session was successfully stopped
    */
-  async stopSession(id: string): Promise<boolean> {
+  async stopSession(id: string): Promise<BasicResponse> {
     try {
-      await this.request(`/session/${id}/stop`, { method: "PUT" });
-      return true;
+      return await this.request<BasicResponse>(`/session/${id}/stop`, {
+        method: "PUT",
+      });
     } catch (error) {
-      if (error instanceof HyperbrowserError && error.statusCode && error.statusCode > 300) {
-        return false;
+      if (error instanceof HyperbrowserError) {
+        throw error;
       }
-      throw error;
+      throw new HyperbrowserError(
+        `Failed to stop session ${id}`,
+        undefined,
+        undefined,
+        error instanceof Error ? error : undefined
+      );
     }
   }
 
@@ -104,9 +162,21 @@ export class HyperbrowserClient {
    * List all sessions with optional filtering
    */
   async listSessions(params: SessionListParams = {}): Promise<SessionListResponse> {
-    return this.request<SessionListResponse>("/sessions", undefined, {
-      status: params.status,
-      page: params.page,
-    });
+    try {
+      return await this.request<SessionListResponse>("/sessions", undefined, {
+        status: params.status,
+        page: params.page,
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(
+        "Failed to list sessions",
+        undefined,
+        undefined,
+        error instanceof Error ? error : undefined
+      );
+    }
   }
 }
