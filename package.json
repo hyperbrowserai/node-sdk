@@ -1,5 +1,5 @@
 {
-  "name": "hyperbrowser",
+  "name": "@hyperbrowser/sdk",
   "version": "0.1.0",
   "description": "Javascript SDK for Hyperbrowser API",
   "author": "",
