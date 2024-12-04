@@ -2,6 +2,7 @@ import fetch, { RequestInit, Response } from "node-fetch";
 import { HyperbrowserConfig } from "./types/config";
 import {
   BasicResponse,
+  CreateSessionParams,
   SessionDetail,
   SessionListParams,
   SessionListResponse,
@@ -101,10 +102,14 @@ export class HyperbrowserClient {
 
   /**
    * Create a new browser session
+   * @param params Configuration parameters for the new session
    */
-  async createSession(): Promise<SessionDetail> {
+  async createSession(params?: CreateSessionParams): Promise<SessionDetail> {
     try {
-      return await this.request<SessionDetail>("/session", { method: "POST" });
+      return await this.request<SessionDetail>("/session", {
+        method: "POST",
+        body: params ? JSON.stringify(params) : undefined,
+      });
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
