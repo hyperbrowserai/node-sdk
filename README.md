@@ -43,5 +43,6 @@ const client = new Hyperbrowser({
   await page.close();
   await browser.close();
   console.log("Session completed!");
+  await client.stopSession(session.id);
 })().catch((error) => console.error(error.message));
 ```
