@@ -34,13 +34,13 @@ export interface SessionListResponse {
 }
 
 export interface ScreenConfig {
-  maxWidth: number;
-  maxHeight: number;
-  minWidth: number;
-  minHeight: number;
+  width: number;
+  height: number;
 }
 
 export interface CreateSessionParams {
+  useStealth?: boolean;
+  useProxy?: boolean;
   proxyServer?: string;
   proxyServerPassword?: string;
   proxyServerUsername?: string;
@@ -50,4 +50,8 @@ export interface CreateSessionParams {
   platform?: Platform[];
   locales?: ISO639_1[];
   screen?: ScreenConfig;
+  solveCaptchas?: boolean;
+  adblock?: boolean;
+  trackers?: boolean;
+  annoyances?: boolean;
 }
