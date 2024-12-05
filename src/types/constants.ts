@@ -1,3 +1,5 @@
+export type ScrapeJobStatus = "pending" | "running" | "completed" | "failed";
+
 export type Country =
   | "AD"
   | "AE"

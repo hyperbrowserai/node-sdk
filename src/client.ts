@@ -7,6 +7,7 @@ import {
   SessionListParams,
   SessionListResponse,
 } from "./types/session";
+import { ScrapeJobResponse, StartScrapeJobParams, StartScrapeJobResponse } from "./types/scrape";
 
 export class HyperbrowserError extends Error {
   constructor(
@@ -178,6 +179,41 @@ export class HyperbrowserClient {
       }
       throw new HyperbrowserError(
         "Failed to list sessions",
+        undefined,
+        undefined,
+        error instanceof Error ? error : undefined
+      );
+    }
+  }
+
+  async startScrapeJob(params: StartScrapeJobParams): Promise<StartScrapeJobResponse> {
+    try {
+      return await this.request<StartScrapeJobResponse>("/scrape", {
+        method: "POST",
+        body: JSON.stringify(params),
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(
+        "Failed to start scrape job",
+        undefined,
+        undefined,
+        error instanceof Error ? error : undefined
+      );
+    }
+  }
+
+  async getScrapeJob(id: string): Promise<ScrapeJobResponse> {
+    try {
+      return await this.request<ScrapeJobResponse>(`/scrape/${id}`);
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(
+        `Failed to get scrape job ${id}`,
         undefined,
         undefined,
         error instanceof Error ? error : undefined
