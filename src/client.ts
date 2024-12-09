@@ -8,6 +8,12 @@ import {
   SessionListResponse,
 } from "./types/session";
 import { ScrapeJobResponse, StartScrapeJobParams, StartScrapeJobResponse } from "./types/scrape";
+import {
+  CrawlJobResponse,
+  GetCrawlJobParams,
+  StartCrawlJobParams,
+  StartCrawlJobResponse,
+} from "./types/crawl";
 
 export class HyperbrowserError extends Error {
   constructor(
@@ -214,6 +220,43 @@ export class HyperbrowserClient {
       }
       throw new HyperbrowserError(
         `Failed to get scrape job ${id}`,
+        undefined,
+        undefined,
+        error instanceof Error ? error : undefined
+      );
+    }
+  }
+
+  async startCrawlJob(params: StartCrawlJobParams): Promise<StartCrawlJobResponse> {
+    try {
+      return await this.request<StartCrawlJobResponse>("/crawl", {
+        method: "POST",
+        body: JSON.stringify(params),
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(
+        "Failed to start crawl job",
+        undefined,
+        undefined,
+        error instanceof Error ? error : undefined
+      );
+    }
+  }
+
+  async getCrawlJob(id: string, params?: GetCrawlJobParams): Promise<CrawlJobResponse> {
+    try {
+      return await this.request<CrawlJobResponse>(`/crawl/${id}`, undefined, {
+        page: params?.page,
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(
+        `Failed to get crawl job ${id}`,
         undefined,
         undefined,
         error instanceof Error ? error : undefined

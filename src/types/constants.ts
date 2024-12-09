@@ -1,4 +1,5 @@
 export type ScrapeJobStatus = "pending" | "running" | "completed" | "failed";
+export type CrawlJobStatus = "pending" | "running" | "completed" | "failed";
 
 export type Country =
   | "AD"
