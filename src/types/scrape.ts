@@ -2,8 +2,8 @@ import { ScrapeJobStatus } from "./constants";
 
 export interface StartScrapeJobParams {
   url: string;
-  useProxy: boolean;
-  solveCaptchas: boolean;
+  useProxy?: boolean;
+  solveCaptchas?: boolean;
 }
 
 export interface StartScrapeJobResponse {

@@ -2,12 +2,12 @@ import { CrawlJobStatus } from "./constants";
 
 export interface StartCrawlJobParams {
   url: string;
-  maxPages: number;
-  followLinks: boolean;
-  excludePatterns: string[];
-  includePatterns: string[];
-  useProxy: boolean;
-  solveCaptchas: boolean;
+  maxPages?: number;
+  followLinks?: boolean;
+  excludePatterns?: string[];
+  includePatterns?: string[];
+  useProxy?: boolean;
+  solveCaptchas?: boolean;
 }
 
 export interface StartCrawlJobResponse {
