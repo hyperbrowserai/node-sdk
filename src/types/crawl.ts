@@ -1,13 +1,16 @@
 import { CrawlJobStatus } from "./constants";
+import { ScrapeOptions } from "./scrape";
 
 export interface StartCrawlJobParams {
   url: string;
   maxPages?: number;
   followLinks?: boolean;
+  ignoreSitemap?: boolean;
   excludePatterns?: string[];
   includePatterns?: string[];
   useProxy?: boolean;
   solveCaptchas?: boolean;
+  options?: ScrapeOptions;
 }
 
 export interface StartCrawlJobResponse {
@@ -39,6 +42,7 @@ export interface CrawledPage {
 }
 
 export interface CrawlJobResponse {
+  jobId: string;
   status: CrawlJobStatus;
   data?: CrawledPage[];
   error?: string;

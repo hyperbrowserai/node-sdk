@@ -1,9 +1,17 @@
-import { ScrapeJobStatus } from "./constants";
+import { ScrapeFormat, ScrapeJobStatus } from "./constants";
+
+export interface ScrapeOptions {
+  formats?: ScrapeFormat[];
+  includeTags?: string[];
+  excludeTags?: string[];
+  onlyMainContent?: boolean;
+}
 
 export interface StartScrapeJobParams {
   url: string;
   useProxy?: boolean;
   solveCaptchas?: boolean;
+  options?: ScrapeOptions;
 }
 
 export interface StartScrapeJobResponse {
@@ -29,6 +37,7 @@ export interface ScrapeJobData {
 }
 
 export interface ScrapeJobResponse {
+  jobId: string;
   status: ScrapeJobStatus;
   data?: ScrapeJobData;
   error?: string;

@@ -14,6 +14,7 @@ import {
   StartCrawlJobParams,
   StartCrawlJobResponse,
 } from "./types/crawl";
+import { CrawlJobStatus } from "./types/constants";
 
 export class HyperbrowserError extends Error {
   constructor(
@@ -262,5 +263,41 @@ export class HyperbrowserClient {
         error instanceof Error ? error : undefined
       );
     }
+  }
+
+  async startScrapeAndWaitUntilComplete(params: StartScrapeJobParams): Promise<ScrapeJobResponse> {
+    const job = await this.startScrapeJob(params);
+    const jobId = job.jobId;
+    if (!jobId) {
+      throw new HyperbrowserError("Failed to start scrape job, could not get job ID");
+    }
+
+    let jobResponse: ScrapeJobResponse;
+    while (true) {
+      jobResponse = await this.getScrapeJob(jobId);
+      if (jobResponse.status === "completed" || jobResponse.status === "failed") {
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+    return jobResponse;
+  }
+
+  async startCrawlAndWaitUntilComplete(params: StartCrawlJobParams): Promise<CrawlJobResponse> {
+    const job = await this.startCrawlJob(params);
+    const jobId = job.jobId;
+    if (!jobId) {
+      throw new HyperbrowserError("Failed to start crawl job, could not get job ID");
+    }
+
+    let jobResponse: CrawlJobResponse;
+    while (true) {
+      jobResponse = await this.getCrawlJob(jobId);
+      if (jobResponse.status === "completed" || jobResponse.status === "failed") {
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+    return jobResponse;
   }
 }
