@@ -1,4 +1,4 @@
-import { CrawlJobStatus } from "./constants";
+import { CrawlJobStatus, CrawlPageStatus } from "./constants";
 import { ScrapeOptions } from "./scrape";
 
 export interface StartCrawlJobParams {
@@ -22,23 +22,14 @@ export interface GetCrawlJobParams {
   batchSize?: number;
 }
 
-export interface CrawledPageMetadata {
-  title: string;
-  description: string;
-  robots: string;
-  ogTitle: string;
-  ogDescription: string;
-  ogUrl: string;
-  ogImage: string;
-  ogLocaleAlternate: string[];
-  ogSiteName: string;
-  sourceURL: string;
-}
-
 export interface CrawledPage {
   url: string;
-  metadata: CrawledPageMetadata;
-  markdown: string;
+  status: CrawlPageStatus;
+  error?: string | null;
+  metadata: Record<string, string | string[]>;
+  markdown?: string;
+  html?: string;
+  links?: string[];
 }
 
 export interface CrawlJobResponse {

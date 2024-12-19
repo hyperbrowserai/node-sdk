@@ -2,7 +2,6 @@ export { HyperbrowserConfig } from "./config";
 export {
   StartCrawlJobParams,
   StartCrawlJobResponse,
-  CrawledPageMetadata,
   CrawledPage,
   CrawlJobResponse,
   GetCrawlJobParams,
@@ -10,7 +9,6 @@ export {
 export {
   StartScrapeJobParams,
   StartScrapeJobResponse,
-  ScrapeJobMetadata,
   ScrapeJobData,
   ScrapeJobResponse,
 } from "./scrape";

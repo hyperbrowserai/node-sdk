@@ -1,6 +1,7 @@
 export type ScrapeFormat = "markdown" | "html" | "links";
 export type ScrapeJobStatus = "pending" | "running" | "completed" | "failed";
 export type CrawlJobStatus = "pending" | "running" | "completed" | "failed";
+export type CrawlPageStatus = "completed" | "failed";
 
 export type Country =
   | "AD"
