@@ -1,4 +1,5 @@
 import { ScrapeFormat, ScrapeJobStatus } from "./constants";
+import { CreateSessionParams } from "./session";
 
 export interface ScrapeOptions {
   formats?: ScrapeFormat[];
@@ -9,9 +10,8 @@ export interface ScrapeOptions {
 
 export interface StartScrapeJobParams {
   url: string;
-  useProxy?: boolean;
-  solveCaptchas?: boolean;
-  options?: ScrapeOptions;
+  sessionOptions?: CreateSessionParams;
+  scrapeOptions?: ScrapeOptions;
 }
 
 export interface StartScrapeJobResponse {

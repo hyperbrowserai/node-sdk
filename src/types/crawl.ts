@@ -1,5 +1,6 @@
 import { CrawlJobStatus, CrawlPageStatus } from "./constants";
 import { ScrapeOptions } from "./scrape";
+import { CreateSessionParams } from "./session";
 
 export interface StartCrawlJobParams {
   url: string;
@@ -8,9 +9,8 @@ export interface StartCrawlJobParams {
   ignoreSitemap?: boolean;
   excludePatterns?: string[];
   includePatterns?: string[];
-  useProxy?: boolean;
-  solveCaptchas?: boolean;
-  options?: ScrapeOptions;
+  sessionOptions?: CreateSessionParams;
+  scrapeOptions?: ScrapeOptions;
 }
 
 export interface StartCrawlJobResponse {
