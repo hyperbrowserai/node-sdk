@@ -14,7 +14,7 @@ npm install @hyperbrowser/sdk
 
 ```typescript
 import { connect } from "puppeteer-core";
-import Hyperbrowser from "hyperbrowser";
+import { Hyperbrowser } from "@hyperbrowser/sdk";
 import dotenv from "dotenv";
 
 dotenv.config();

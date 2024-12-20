@@ -286,7 +286,7 @@ export class HyperbrowserClient {
 
   async crawlAndWaitUntilComplete(
     params: StartCrawlJobParams,
-    returnAllPages: boolean = false
+    returnAllPages: boolean = true
   ): Promise<CrawlJobResponse> {
     const job = await this.startCrawlJob(params);
     const jobId = job.jobId;
