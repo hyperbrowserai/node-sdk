@@ -266,7 +266,7 @@ export class HyperbrowserClient {
     }
   }
 
-  async startScrapeAndWaitUntilComplete(params: StartScrapeJobParams): Promise<ScrapeJobResponse> {
+  async scrapeAndWaitUntilComplete(params: StartScrapeJobParams): Promise<ScrapeJobResponse> {
     const job = await this.startScrapeJob(params);
     const jobId = job.jobId;
     if (!jobId) {
@@ -284,7 +284,7 @@ export class HyperbrowserClient {
     return jobResponse;
   }
 
-  async startCrawlAndWaitUntilComplete(
+  async crawlAndWaitUntilComplete(
     params: StartCrawlJobParams,
     returnAllPages: boolean = false
   ): Promise<CrawlJobResponse> {
