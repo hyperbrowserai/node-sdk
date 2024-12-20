@@ -14,7 +14,8 @@ import {
   StartCrawlJobParams,
   StartCrawlJobResponse,
 } from "./types/crawl";
-import { CrawlJobStatus } from "./types/constants";
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export class HyperbrowserError extends Error {
   constructor(
@@ -278,12 +279,15 @@ export class HyperbrowserClient {
       if (jobResponse.status === "completed" || jobResponse.status === "failed") {
         break;
       }
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await sleep(2000);
     }
     return jobResponse;
   }
 
-  async startCrawlAndWaitUntilComplete(params: StartCrawlJobParams): Promise<CrawlJobResponse> {
+  async startCrawlAndWaitUntilComplete(
+    params: StartCrawlJobParams,
+    returnAllPages: boolean = false
+  ): Promise<CrawlJobResponse> {
     const job = await this.startCrawlJob(params);
     const jobId = job.jobId;
     if (!jobId) {
@@ -296,7 +300,25 @@ export class HyperbrowserClient {
       if (jobResponse.status === "completed" || jobResponse.status === "failed") {
         break;
       }
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await sleep(2000);
+    }
+
+    if (!returnAllPages) {
+      return jobResponse;
+    }
+
+    while (jobResponse.currentPageBatch < jobResponse.totalPageBatches) {
+      const tmpJobResponse = await this.getCrawlJob(jobId, {
+        page: jobResponse.currentPageBatch + 1,
+      });
+      if (tmpJobResponse.data) {
+        jobResponse.data?.push(...tmpJobResponse.data);
+      }
+      jobResponse.currentPageBatch = tmpJobResponse.currentPageBatch;
+      jobResponse.totalCrawledPages = tmpJobResponse.totalCrawledPages;
+      jobResponse.totalPageBatches = tmpJobResponse.totalPageBatches;
+      jobResponse.batchSize = tmpJobResponse.batchSize;
+      await sleep(500);
     }
     return jobResponse;
   }
