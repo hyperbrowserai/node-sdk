@@ -1,9 +1,15 @@
-import { HyperbrowserClient as Hyperbrowser } from "./client";
+import { HyperbrowserClient } from "./client";
 export * from "./types";
 export { HyperbrowserError } from "./client";
 
-export { Hyperbrowser };
-export default Hyperbrowser;
+// Export HyperbrowserClient as Hyperbrowser for named imports
+export const Hyperbrowser = HyperbrowserClient;
+export default HyperbrowserClient;
 
-module.exports = require("./client").HyperbrowserClient;
-module.exports.default = module.exports;
+// For CommonJS compatibility
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = HyperbrowserClient;
+  module.exports.Hyperbrowser = HyperbrowserClient;
+  module.exports.HyperbrowserClient = HyperbrowserClient;
+  module.exports.default = HyperbrowserClient;
+}
