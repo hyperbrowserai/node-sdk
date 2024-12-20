@@ -22,12 +22,7 @@ export class SessionsService extends BaseService {
       if (error instanceof HyperbrowserError) {
         throw error;
       }
-      throw new HyperbrowserError(
-        "Failed to create session",
-        undefined,
-        undefined,
-        error instanceof Error ? error : undefined
-      );
+      throw new HyperbrowserError("Failed to create session", undefined);
     }
   }
 
@@ -42,12 +37,7 @@ export class SessionsService extends BaseService {
       if (error instanceof HyperbrowserError) {
         throw error;
       }
-      throw new HyperbrowserError(
-        `Failed to get session ${id}`,
-        undefined,
-        undefined,
-        error instanceof Error ? error : undefined
-      );
+      throw new HyperbrowserError(`Failed to get session ${id}`, undefined);
     }
   }
 
@@ -64,12 +54,7 @@ export class SessionsService extends BaseService {
       if (error instanceof HyperbrowserError) {
         throw error;
       }
-      throw new HyperbrowserError(
-        `Failed to stop session ${id}`,
-        undefined,
-        undefined,
-        error instanceof Error ? error : undefined
-      );
+      throw new HyperbrowserError(`Failed to stop session ${id}`, undefined);
     }
   }
 
@@ -87,12 +72,7 @@ export class SessionsService extends BaseService {
       if (error instanceof HyperbrowserError) {
         throw error;
       }
-      throw new HyperbrowserError(
-        "Failed to list sessions",
-        undefined,
-        undefined,
-        error instanceof Error ? error : undefined
-      );
+      throw new HyperbrowserError("Failed to list sessions", undefined);
     }
   }
 }

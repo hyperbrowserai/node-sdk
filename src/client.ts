@@ -7,9 +7,7 @@ import { CrawlService } from "./services/crawl";
 export class HyperbrowserError extends Error {
   constructor(
     message: string,
-    public statusCode?: number,
-    public response?: Response,
-    public originalError?: Error
+    public statusCode?: number
   ) {
     super(`[Hyperbrowser]: ${message}`);
     this.name = "HyperbrowserError";

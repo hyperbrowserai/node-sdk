@@ -18,12 +18,7 @@ export class ScrapeService extends BaseService {
       if (error instanceof HyperbrowserError) {
         throw error;
       }
-      throw new HyperbrowserError(
-        "Failed to start scrape job",
-        undefined,
-        undefined,
-        error instanceof Error ? error : undefined
-      );
+      throw new HyperbrowserError("Failed to start scrape job", undefined);
     }
   }
 
@@ -38,12 +33,7 @@ export class ScrapeService extends BaseService {
       if (error instanceof HyperbrowserError) {
         throw error;
       }
-      throw new HyperbrowserError(
-        `Failed to get scrape job ${id}`,
-        undefined,
-        undefined,
-        error instanceof Error ? error : undefined
-      );
+      throw new HyperbrowserError(`Failed to get scrape job ${id}`, undefined);
     }
   }
 

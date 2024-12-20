@@ -41,7 +41,7 @@ export class BaseService {
         } catch {
           errorMessage = `HTTP error! status: ${response.status}`;
         }
-        throw new HyperbrowserError(errorMessage, response.status, response);
+        throw new HyperbrowserError(errorMessage, response.status);
       }
 
       if (response.headers.get("content-length") === "0") {
@@ -50,13 +50,8 @@ export class BaseService {
 
       try {
         return (await response.json()) as T;
-      } catch (error) {
-        throw new HyperbrowserError(
-          "Failed to parse JSON response",
-          response.status,
-          response,
-          error instanceof Error ? error : undefined
-        );
+      } catch {
+        throw new HyperbrowserError("Failed to parse JSON response", response.status);
       }
     } catch (error) {
       if (error instanceof HyperbrowserError) {
@@ -65,9 +60,7 @@ export class BaseService {
 
       throw new HyperbrowserError(
         error instanceof Error ? error.message : "Unknown error occurred",
-        undefined,
-        undefined,
-        error instanceof Error ? error : undefined
+        undefined
       );
     }
   }

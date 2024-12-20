@@ -23,12 +23,7 @@ export class CrawlService extends BaseService {
       if (error instanceof HyperbrowserError) {
         throw error;
       }
-      throw new HyperbrowserError(
-        "Failed to start crawl job",
-        undefined,
-        undefined,
-        error instanceof Error ? error : undefined
-      );
+      throw new HyperbrowserError("Failed to start crawl job", undefined);
     }
   }
 
@@ -46,12 +41,7 @@ export class CrawlService extends BaseService {
       if (error instanceof HyperbrowserError) {
         throw error;
       }
-      throw new HyperbrowserError(
-        `Failed to get crawl job ${id}`,
-        undefined,
-        undefined,
-        error instanceof Error ? error : undefined
-      );
+      throw new HyperbrowserError(`Failed to get crawl job ${id}`, undefined);
     }
   }
 
