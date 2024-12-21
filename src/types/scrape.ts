@@ -6,6 +6,8 @@ export interface ScrapeOptions {
   includeTags?: string[];
   excludeTags?: string[];
   onlyMainContent?: boolean;
+  waitFor?: number;
+  timeout?: number;
 }
 
 export interface StartScrapeJobParams {
