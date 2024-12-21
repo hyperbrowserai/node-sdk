@@ -24,7 +24,7 @@ const client = new Hyperbrowser({
 });
 
 (async () => {
-  const session = await client.createSession();
+  const session = await client.sessions.create();
 
   const browser = await connect({
     browserWSEndpoint: session.wsEndpoint,
@@ -43,6 +43,6 @@ const client = new Hyperbrowser({
   await page.close();
   await browser.close();
   console.log("Session completed!");
-  await client.stopSession(session.id);
+  await client.sessions.stop(session.id);
 })().catch((error) => console.error(error.message));
 ```
