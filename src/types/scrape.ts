@@ -21,7 +21,7 @@ export interface StartScrapeJobResponse {
 }
 
 export interface ScrapeJobData {
-  metadata: Record<string, string | string[]>;
+  metadata?: Record<string, string | string[]>;
   markdown?: string;
   html?: string;
   links?: string[];
