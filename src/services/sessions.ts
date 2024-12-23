@@ -4,6 +4,7 @@ import {
   SessionDetail,
   SessionListParams,
   SessionListResponse,
+  SessionRecording,
 } from "../types/session";
 import { BaseService } from "./base";
 import { HyperbrowserError } from "../client";
@@ -73,6 +74,21 @@ export class SessionsService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError("Failed to list sessions", undefined);
+    }
+  }
+
+  /**
+   * Get the recording of a session
+   * @param id The ID of the session to get the recording from
+   */
+  async getRecording(id: string): Promise<SessionRecording[]> {
+    try {
+      return await this.request<SessionRecording[]>(`/session/${id}/recording`);
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to get recording for session ${id}`, undefined);
     }
   }
 }

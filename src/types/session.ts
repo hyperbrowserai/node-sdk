@@ -55,3 +55,10 @@ export interface CreateSessionParams {
   trackers?: boolean;
   annoyances?: boolean;
 }
+
+export interface SessionRecording {
+  type: number;
+  data: unknown;
+  timestamp: number;
+  delay?: number;
+}
