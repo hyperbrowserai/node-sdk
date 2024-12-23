@@ -54,6 +54,7 @@ export interface CreateSessionParams {
   adblock?: boolean;
   trackers?: boolean;
   annoyances?: boolean;
+  enableWebRecording?: boolean;
 }
 
 export interface SessionRecording {
