@@ -15,6 +15,7 @@ export interface Session {
   createdAt: string;
   updatedAt: string;
   sessionUrl: string;
+  token: string;
 }
 
 export interface SessionDetail extends Session {
