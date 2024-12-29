@@ -39,6 +39,11 @@ export interface ScreenConfig {
   height: number;
 }
 
+export interface CreateSessionContext {
+  id?: string;
+  persist?: boolean;
+}
+
 export interface CreateSessionParams {
   useStealth?: boolean;
   useProxy?: boolean;
@@ -56,6 +61,7 @@ export interface CreateSessionParams {
   trackers?: boolean;
   annoyances?: boolean;
   enableWebRecording?: boolean;
+  context?: CreateSessionContext;
 }
 
 export interface SessionRecording {

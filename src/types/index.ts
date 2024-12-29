@@ -22,6 +22,7 @@ export {
   ScreenConfig,
   CreateSessionParams,
 } from "./session";
+export { ContextResponse, CreateContextResponse } from "./context";
 export {
   ScrapeJobStatus,
   CrawlJobStatus,
