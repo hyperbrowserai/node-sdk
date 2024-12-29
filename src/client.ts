@@ -24,14 +24,14 @@ export class HyperbrowserClient {
   constructor(config: HyperbrowserConfig) {
     const apiKey = config.apiKey;
     const baseUrl = config.baseUrl || "https://app.hyperbrowser.ai";
-
+    const timeout = config.timeout || 30000;
     if (!apiKey) {
       throw new HyperbrowserError("API key is required");
     }
 
-    this.sessions = new SessionsService(apiKey, baseUrl);
-    this.scrape = new ScrapeService(apiKey, baseUrl);
-    this.crawl = new CrawlService(apiKey, baseUrl);
-    this.contexts = new ContextsService(apiKey, baseUrl);
+    this.sessions = new SessionsService(apiKey, baseUrl, timeout);
+    this.scrape = new ScrapeService(apiKey, baseUrl, timeout);
+    this.crawl = new CrawlService(apiKey, baseUrl, timeout);
+    this.contexts = new ContextsService(apiKey, baseUrl, timeout);
   }
 }

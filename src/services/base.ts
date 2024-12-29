@@ -4,7 +4,8 @@ import { HyperbrowserError } from "../client";
 export class BaseService {
   constructor(
     protected readonly apiKey: string,
-    protected readonly baseUrl: string
+    protected readonly baseUrl: string,
+    protected readonly timeout: number = 30000
   ) {}
 
   protected async request<T>(
@@ -25,6 +26,7 @@ export class BaseService {
 
       const response = await fetch(url.toString(), {
         ...init,
+        timeout: this.timeout,
         headers: {
           "x-api-key": this.apiKey,
           "Content-Type": "application/json",
