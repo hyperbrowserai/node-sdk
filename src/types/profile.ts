@@ -1,8 +1,8 @@
-export interface CreateContextResponse {
+export interface CreateProfileResponse {
   id: string;
 }
 
-export interface ContextResponse {
+export interface ProfileResponse {
   id: string;
   teamId: string;
   createdAt: string;

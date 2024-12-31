@@ -3,7 +3,7 @@ import { HyperbrowserConfig } from "./types/config";
 import { SessionsService } from "./services/sessions";
 import { ScrapeService } from "./services/scrape";
 import { CrawlService } from "./services/crawl";
-import { ContextsService } from "./services/contexts";
+import { ProfilesService } from "./services/profiles";
 
 export class HyperbrowserError extends Error {
   constructor(
@@ -19,7 +19,7 @@ export class HyperbrowserClient {
   public readonly sessions: SessionsService;
   public readonly scrape: ScrapeService;
   public readonly crawl: CrawlService;
-  public readonly contexts: ContextsService;
+  public readonly profiles: ProfilesService;
 
   constructor(config: HyperbrowserConfig) {
     const apiKey = config.apiKey;
@@ -32,6 +32,6 @@ export class HyperbrowserClient {
     this.sessions = new SessionsService(apiKey, baseUrl, timeout);
     this.scrape = new ScrapeService(apiKey, baseUrl, timeout);
     this.crawl = new CrawlService(apiKey, baseUrl, timeout);
-    this.contexts = new ContextsService(apiKey, baseUrl, timeout);
+    this.profiles = new ProfilesService(apiKey, baseUrl, timeout);
   }
 }
