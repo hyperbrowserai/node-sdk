@@ -1,6 +1,6 @@
-# Hyperbrowser SDK
+# Hyperbrowser Node SDK
 
-A TypeScript/JavaScript SDK for interacting with the Hyperbrowser API.
+Checkout the full documentation [here](https://docs.hyperbrowser.ai/)
 
 ## Installation
 
