@@ -62,6 +62,7 @@ export interface CreateSessionParams {
   annoyances?: boolean;
   enableWebRecording?: boolean;
   profile?: CreateSessionProfile;
+  extensionIds: Array<string>;
 }
 
 export interface SessionRecording {

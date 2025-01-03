@@ -1,9 +1,9 @@
-import { Response } from "node-fetch";
 import { HyperbrowserConfig } from "./types/config";
 import { SessionsService } from "./services/sessions";
 import { ScrapeService } from "./services/scrape";
 import { CrawlService } from "./services/crawl";
 import { ProfilesService } from "./services/profiles";
+import { ExtensionService } from "./services/extensions";
 
 export class HyperbrowserError extends Error {
   constructor(
@@ -20,6 +20,7 @@ export class HyperbrowserClient {
   public readonly scrape: ScrapeService;
   public readonly crawl: CrawlService;
   public readonly profiles: ProfilesService;
+  public readonly extensions: ExtensionService;
 
   constructor(config: HyperbrowserConfig) {
     const apiKey = config.apiKey;
@@ -33,5 +34,6 @@ export class HyperbrowserClient {
     this.scrape = new ScrapeService(apiKey, baseUrl, timeout);
     this.crawl = new CrawlService(apiKey, baseUrl, timeout);
     this.profiles = new ProfilesService(apiKey, baseUrl, timeout);
+    this.extensions = new ExtensionService(apiKey, baseUrl, timeout);
   }
 }

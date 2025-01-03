@@ -1,4 +1,4 @@
-import fetch, { RequestInit } from "node-fetch";
+import fetch, { HeadersInit, RequestInit } from "node-fetch";
 import { HyperbrowserError } from "../client";
 
 export class BaseService {
@@ -24,12 +24,19 @@ export class BaseService {
         });
       }
 
+      const headerKeys = Object.keys(init?.headers || {});
+      const contentTypeKey = headerKeys.find(
+        (key) => key.toLowerCase() === "content-type"
+      ) as keyof HeadersInit;
+
       const response = await fetch(url.toString(), {
         ...init,
         timeout: this.timeout,
         headers: {
           "x-api-key": this.apiKey,
-          "Content-Type": "application/json",
+          ...(contentTypeKey && init?.headers
+            ? { "content-type": init.headers[contentTypeKey] as string }
+            : { "content-type": "application/json" }),
           ...init?.headers,
         },
       });
