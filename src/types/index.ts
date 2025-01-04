@@ -24,6 +24,11 @@ export {
 } from "./session";
 export { ProfileResponse, CreateProfileResponse } from "./profile";
 export {
+  CreateExtensionParams,
+  CreateExtensionResponse,
+  ListExtensionsResponse,
+} from "./extension";
+export {
   ScrapeJobStatus,
   CrawlJobStatus,
   Country,

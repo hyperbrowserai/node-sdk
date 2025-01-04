@@ -1,3 +1,8 @@
+export interface CreateExtensionParams {
+  filePath: string;
+  name?: string;
+}
+
 interface ExtensionResponse {
   name: string;
   id: string;

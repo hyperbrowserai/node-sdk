@@ -1,5 +1,9 @@
 import { HyperbrowserError } from "../client";
-import { CreateExtensionResponse, ListExtensionsResponse } from "../types/extension";
+import {
+  CreateExtensionParams,
+  CreateExtensionResponse,
+  ListExtensionsResponse,
+} from "../types/extension";
 import { BaseService } from "./base";
 import FormData from "form-data";
 import fs from "node:fs/promises";
@@ -23,21 +27,20 @@ async function checkFileExists(filePath: string) {
 export class ExtensionService extends BaseService {
   /**
    * Upload an extension to hyperbrowser
-   * @param {string} filePath Path to a zipped extension. Extension must be Manifest V3 compliant.
-   * @param {string} [fileName] Name to give to the extension.
+   * @param params Configuration parameters for the new extension
    */
-  async create(filePath: string, fileName?: string | undefined): Promise<CreateExtensionResponse> {
+  async create(params: CreateExtensionParams): Promise<CreateExtensionResponse> {
     try {
-      await checkFileExists(filePath);
+      await checkFileExists(params.filePath);
 
       const form = new FormData();
-      form.append("file", await fs.readFile(filePath), {
-        filename: path.basename(filePath),
+      form.append("file", await fs.readFile(params.filePath), {
+        filename: path.basename(params.filePath),
         contentType: "application/zip",
       });
 
-      if (fileName) {
-        form.append("name", fileName);
+      if (params.name) {
+        form.append("name", params.name);
       }
 
       const response = await this.request<CreateExtensionResponse>("/extensions/add", {
