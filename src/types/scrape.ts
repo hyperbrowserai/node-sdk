@@ -25,6 +25,7 @@ export interface ScrapeJobData {
   markdown?: string;
   html?: string;
   links?: string[];
+  screenshot?: string;
 }
 
 export interface ScrapeJobResponse {

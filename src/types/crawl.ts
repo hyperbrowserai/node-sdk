@@ -30,6 +30,7 @@ export interface CrawledPage {
   markdown?: string;
   html?: string;
   links?: string[];
+  screenshot?: string;
 }
 
 export interface CrawlJobResponse {
