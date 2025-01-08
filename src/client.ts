@@ -23,11 +23,13 @@ export class HyperbrowserClient {
   public readonly extensions: ExtensionService;
 
   constructor(config: HyperbrowserConfig) {
-    const apiKey = config.apiKey;
+    const apiKey = config.apiKey || process.env["HYPERBROWSER_API_KEY"];
     const baseUrl = config.baseUrl || "https://app.hyperbrowser.ai";
     const timeout = config.timeout || 30000;
     if (!apiKey) {
-      throw new HyperbrowserError("API key is required");
+      throw new HyperbrowserError(
+        "API key is required - either pass it in config or set HYPERBROWSER_API_KEY environment variable"
+      );
     }
 
     this.sessions = new SessionsService(apiKey, baseUrl, timeout);
