@@ -38,5 +38,25 @@
     "prettier": "^3.3.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/types/index.js"
+    },
+    "./tools": {
+      "types": "./dist/tools/index.d.ts",
+      "default": "./dist/tools/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "types": ["./dist/types/index.d.ts"],
+      "tools": ["./dist/tools/index.d.ts"]
+    }
   }
 }

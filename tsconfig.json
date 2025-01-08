@@ -6,10 +6,19 @@
     "moduleResolution": "node",
     "declaration": true,
     "outDir": "./dist",
+    "rootDir": "./src",
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@hyperbrowser/sdk": ["./src/index"],
+      "@hyperbrowser/sdk/types": ["./src/types/index"],
+      "@hyperbrowser/sdk/tools": ["./src/tools/index"]
+    },
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
   },
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
