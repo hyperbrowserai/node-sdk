@@ -15,6 +15,7 @@ export interface Session {
   createdAt: string;
   updatedAt: string;
   sessionUrl: string;
+  liveUrl?: string;
   token: string;
 }
 
