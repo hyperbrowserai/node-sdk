@@ -24,6 +24,8 @@ export const SCRAPE_OPTIONS = {
         "Whether to only return the main content of the page. If true, only the main content of the page will be returned, excluding any headers, navigation menus,footers, or other non-main content.",
     },
   },
+  required: ["include_tags", "exclude_tags", "only_main_content"],
+  additionalProperties: false,
 };
 
 export const SCRAPE_SCHEMA = {
@@ -35,7 +37,8 @@ export const SCRAPE_SCHEMA = {
     },
     scrape_options: SCRAPE_OPTIONS,
   },
-  required: ["url"],
+  required: ["url", "scrape_options"],
+  additionalProperties: false,
 };
 
 export const CRAWL_SCHEMA = {
@@ -47,7 +50,6 @@ export const CRAWL_SCHEMA = {
     },
     max_pages: {
       type: "number",
-      default: 10,
       description: "The maximum number of pages to crawl",
     },
     follow_links: {
@@ -76,5 +78,14 @@ export const CRAWL_SCHEMA = {
     },
     scrape_options: SCRAPE_OPTIONS,
   },
-  required: ["url"],
+  required: [
+    "url",
+    "max_pages",
+    "follow_links",
+    "ignore_sitemap",
+    "exclude_patterns",
+    "include_patterns",
+    "scrape_options",
+  ],
+  additionalProperties: false,
 };

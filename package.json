@@ -1,6 +1,6 @@
 {
   "name": "@hyperbrowser/sdk",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "description": "Node SDK for Hyperbrowser API",
   "author": "",
   "main": "dist/index.js",
@@ -22,7 +22,12 @@
   "keywords": [
     "hyperbrowser",
     "browser",
-    "automation"
+    "automation",
+    "webscraping",
+    "webcrawling",
+    "scraping",
+    "crawling",
+    "ai"
   ],
   "dependencies": {
     "form-data": "^4.0.1",

@@ -51,6 +51,7 @@ export const SCRAPE_TOOL_OPENAI: ChatCompletionTool = {
     name: "scrape_webpage",
     description: "Scrape content from a webpage and return the content in markdown format",
     parameters: SCRAPE_SCHEMA,
+    strict: true,
   },
 };
 
@@ -60,5 +61,6 @@ export const CRAWL_TOOL_OPENAI: ChatCompletionTool = {
     name: "crawl_website",
     description: "Crawl a website and return the content in markdown format",
     parameters: CRAWL_SCHEMA,
+    strict: true,
   },
 };
