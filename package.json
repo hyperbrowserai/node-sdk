@@ -1,6 +1,6 @@
 {
   "name": "@hyperbrowser/sdk",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "description": "Node SDK for Hyperbrowser API",
   "author": "",
   "main": "dist/index.js",
@@ -31,7 +31,9 @@
   ],
   "dependencies": {
     "form-data": "^4.0.1",
-    "node-fetch": "2.7.0"
+    "node-fetch": "2.7.0",
+    "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.24.1"
   },
   "devDependencies": {
     "@types/node": "^22.9.1",
@@ -60,8 +62,12 @@
   },
   "typesVersions": {
     "*": {
-      "types": ["./dist/types/index.d.ts"],
-      "tools": ["./dist/tools/index.d.ts"]
+      "types": [
+        "./dist/types/index.d.ts"
+      ],
+      "tools": [
+        "./dist/tools/index.d.ts"
+      ]
     }
   }
 }
