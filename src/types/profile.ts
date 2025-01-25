@@ -8,3 +8,14 @@ export interface ProfileResponse {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface ProfileListParams {
+  page?: number;
+}
+
+export interface ProfileListResponse {
+  profiles: ProfileResponse[];
+  totalCount: number;
+  page: number;
+  perPage: number;
+}

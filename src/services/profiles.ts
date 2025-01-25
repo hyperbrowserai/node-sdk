@@ -1,5 +1,10 @@
 import { BaseService } from "./base";
-import { ProfileResponse, CreateProfileResponse } from "../types/profile";
+import {
+  ProfileResponse,
+  CreateProfileResponse,
+  ProfileListParams,
+  ProfileListResponse,
+} from "../types/profile";
 import { HyperbrowserError } from "../client";
 import { BasicResponse } from "../types";
 
@@ -49,6 +54,23 @@ export class ProfilesService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError(`Failed to delete profile ${id}`, undefined);
+    }
+  }
+
+  /**
+   * List all profiles with optional pagination
+   * @param params Optional parameters to filter the profiles
+   */
+  async list(params: ProfileListParams = {}): Promise<ProfileListResponse> {
+    try {
+      return await this.request<ProfileListResponse>("/profiles", undefined, {
+        page: params.page,
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError("Failed to list profiles", undefined);
     }
   }
 }
