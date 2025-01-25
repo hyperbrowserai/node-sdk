@@ -22,7 +22,12 @@ export {
   ScreenConfig,
   CreateSessionParams,
 } from "./session";
-export { ProfileResponse, CreateProfileResponse } from "./profile";
+export {
+  ProfileResponse,
+  CreateProfileResponse,
+  ProfileListParams,
+  ProfileListResponse,
+} from "./profile";
 export {
   CreateExtensionParams,
   CreateExtensionResponse,

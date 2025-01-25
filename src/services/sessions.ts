@@ -68,6 +68,7 @@ export class SessionsService extends BaseService {
       return await this.request<SessionListResponse>("/sessions", undefined, {
         status: params.status,
         page: params.page,
+        limit: params.limit,
       });
     } catch (error) {
       if (error instanceof HyperbrowserError) {
