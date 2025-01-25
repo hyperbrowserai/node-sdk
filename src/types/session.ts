@@ -26,6 +26,7 @@ export interface SessionDetail extends Session {
 export interface SessionListParams {
   status?: SessionStatus;
   page?: number;
+  limit?: number;
 }
 
 export interface SessionListResponse {

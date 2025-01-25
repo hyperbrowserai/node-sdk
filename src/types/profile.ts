@@ -11,6 +11,7 @@ export interface ProfileResponse {
 
 export interface ProfileListParams {
   page?: number;
+  limit?: number;
 }
 
 export interface ProfileListResponse {
