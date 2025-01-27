@@ -40,4 +40,6 @@ export {
   ISO639_1,
   OperatingSystem,
   Platform,
+  ScrapeFormat,
+  ScrapeWaitUntil,
 } from "./constants";

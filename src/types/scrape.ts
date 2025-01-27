@@ -1,4 +1,4 @@
-import { ScrapeFormat, ScrapeJobStatus } from "./constants";
+import { ScrapeFormat, ScrapeJobStatus, ScrapeWaitUntil } from "./constants";
 import { CreateSessionParams } from "./session";
 
 export interface ScrapeOptions {
@@ -8,6 +8,7 @@ export interface ScrapeOptions {
   onlyMainContent?: boolean;
   waitFor?: number;
   timeout?: number;
+  waitUntil?: ScrapeWaitUntil;
 }
 
 export interface StartScrapeJobParams {

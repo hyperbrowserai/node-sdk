@@ -3,6 +3,7 @@ export type ScrapeJobStatus = "pending" | "running" | "completed" | "failed";
 export type ExtractJobStatus = "pending" | "running" | "completed" | "failed";
 export type CrawlJobStatus = "pending" | "running" | "completed" | "failed";
 export type CrawlPageStatus = "completed" | "failed";
+export type ScrapeWaitUntil = "load" | "domcontentloaded" | "networkidle";
 
 export type Country =
   | "AD"
