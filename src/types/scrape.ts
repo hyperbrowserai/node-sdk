@@ -1,4 +1,4 @@
-import { ScrapeFormat, ScrapeJobStatus, ScrapeWaitUntil } from "./constants";
+import { ScrapeFormat, ScrapeJobStatus, ScrapePageStatus, ScrapeWaitUntil } from "./constants";
 import { CreateSessionParams } from "./session";
 
 export interface ScrapeOptions {
@@ -34,4 +34,41 @@ export interface ScrapeJobResponse {
   status: ScrapeJobStatus;
   data?: ScrapeJobData;
   error?: string;
+}
+
+export interface StartBatchScrapeJobParams {
+  urls: string[];
+  sessionOptions?: CreateSessionParams;
+  scrapeOptions?: ScrapeOptions;
+}
+
+export interface ScrapedPage {
+  url: string;
+  status: ScrapePageStatus;
+  error?: string | null;
+  metadata?: Record<string, string | string[]>;
+  markdown?: string;
+  html?: string;
+  links?: string[];
+  screenshot?: string;
+}
+
+export interface GetBatchScrapeJobParams {
+  page?: number;
+  batchSize?: number;
+}
+
+export interface StartBatchScrapeJobResponse {
+  jobId: string;
+}
+
+export interface BatchScrapeJobResponse {
+  jobId: string;
+  status: ScrapeJobStatus;
+  data?: ScrapedPage[];
+  error?: string;
+  totalScrapedPages: number;
+  totalPageBatches: number;
+  currentPageBatch: number;
+  batchSize: number;
 }

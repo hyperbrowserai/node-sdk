@@ -11,6 +11,7 @@ export {
   StartScrapeJobResponse,
   ScrapeJobData,
   ScrapeJobResponse,
+  ScrapeOptions,
 } from "./scrape";
 export {
   BasicResponse,
@@ -42,4 +43,6 @@ export {
   Platform,
   ScrapeFormat,
   ScrapeWaitUntil,
+  ScrapePageStatus,
+  CrawlPageStatus,
 } from "./constants";
