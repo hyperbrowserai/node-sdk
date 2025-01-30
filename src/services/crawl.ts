@@ -7,6 +7,7 @@ import {
 import { BaseService } from "./base";
 import { sleep } from "../utils";
 import { HyperbrowserError } from "../client";
+import { POLLING_ATTEMPTS } from "../types/constants";
 
 export class CrawlService extends BaseService {
   /**
@@ -61,29 +62,68 @@ export class CrawlService extends BaseService {
     }
 
     let jobResponse: CrawlJobResponse;
+    let failures = 0;
     while (true) {
-      jobResponse = await this.get(jobId);
-      if (jobResponse.status === "completed" || jobResponse.status === "failed") {
-        break;
+      try {
+        jobResponse = await this.get(jobId, { batchSize: 1 });
+        if (jobResponse.status === "completed" || jobResponse.status === "failed") {
+          break;
+        }
+        failures = 0;
+      } catch (error) {
+        failures++;
+        if (failures >= POLLING_ATTEMPTS) {
+          throw new HyperbrowserError(
+            `Failed to poll crawl job ${jobId} after ${POLLING_ATTEMPTS} attempts: ${error}`
+          );
+        }
       }
       await sleep(2000);
     }
 
+    failures = 0;
     if (!returnAllPages) {
-      return jobResponse;
+      while (true) {
+        try {
+          jobResponse = await this.get(jobId);
+          return jobResponse;
+        } catch (error) {
+          failures++;
+          if (failures >= POLLING_ATTEMPTS) {
+            throw new HyperbrowserError(
+              `Failed to get crawl job ${jobId} after ${POLLING_ATTEMPTS} attempts: ${error}`
+            );
+          }
+        }
+        await sleep(500);
+      }
     }
 
+    jobResponse.currentPageBatch = 0;
+    jobResponse.data = [];
+    failures = 0;
     while (jobResponse.currentPageBatch < jobResponse.totalPageBatches) {
-      const tmpJobResponse = await this.get(jobId, {
-        page: jobResponse.currentPageBatch + 1,
-      });
-      if (tmpJobResponse.data) {
-        jobResponse.data?.push(...tmpJobResponse.data);
+      try {
+        const tmpJobResponse = await this.get(jobId, {
+          page: jobResponse.currentPageBatch + 1,
+          batchSize: 100,
+        });
+        if (tmpJobResponse.data) {
+          jobResponse.data?.push(...tmpJobResponse.data);
+        }
+        jobResponse.currentPageBatch = tmpJobResponse.currentPageBatch;
+        jobResponse.totalCrawledPages = tmpJobResponse.totalCrawledPages;
+        jobResponse.totalPageBatches = tmpJobResponse.totalPageBatches;
+        jobResponse.batchSize = tmpJobResponse.batchSize;
+        failures = 0;
+      } catch (error) {
+        failures++;
+        if (failures >= POLLING_ATTEMPTS) {
+          throw new HyperbrowserError(
+            `Failed to get crawl job ${jobId} after ${POLLING_ATTEMPTS} attempts: ${error}`
+          );
+        }
       }
-      jobResponse.currentPageBatch = tmpJobResponse.currentPageBatch;
-      jobResponse.totalCrawledPages = tmpJobResponse.totalCrawledPages;
-      jobResponse.totalPageBatches = tmpJobResponse.totalPageBatches;
-      jobResponse.batchSize = tmpJobResponse.batchSize;
       await sleep(500);
     }
     return jobResponse;

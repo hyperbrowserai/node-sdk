@@ -5,6 +5,7 @@ import { sleep } from "../utils";
 import { HyperbrowserError } from "../client";
 import { ExtractJobResponse, StartExtractJobResponse } from "../types/extract";
 import { StartExtractJobParams } from "../types/extract";
+import { POLLING_ATTEMPTS } from "../types/constants";
 
 const isZodSchema = (schema: z.ZodSchema | object): schema is z.ZodType => {
   return (
@@ -70,10 +71,21 @@ export class ExtractService extends BaseService {
     }
 
     let jobResponse: ExtractJobResponse;
+    let failures = 0;
     while (true) {
-      jobResponse = await this.get(jobId);
-      if (jobResponse.status === "completed" || jobResponse.status === "failed") {
-        break;
+      try {
+        jobResponse = await this.get(jobId);
+        if (jobResponse.status === "completed" || jobResponse.status === "failed") {
+          break;
+        }
+        failures = 0;
+      } catch (error) {
+        failures++;
+        if (failures >= POLLING_ATTEMPTS) {
+          throw new HyperbrowserError(
+            `Failed to poll extract job ${jobId} after ${POLLING_ATTEMPTS} attempts: ${error}`
+          );
+        }
       }
       await sleep(2000);
     }

@@ -10,6 +10,7 @@ import {
 import { BaseService } from "./base";
 import { sleep } from "../utils";
 import { HyperbrowserError } from "../client";
+import { POLLING_ATTEMPTS } from "../types/constants";
 
 export class BatchScrapeService extends BaseService {
   /**
@@ -67,26 +68,42 @@ export class BatchScrapeService extends BaseService {
     let failures = 0;
     while (true) {
       try {
-        jobResponse = await this.get(jobId);
+        jobResponse = await this.get(jobId, { batchSize: 1 });
         if (jobResponse.status === "completed" || jobResponse.status === "failed") {
           break;
         }
         failures = 0;
       } catch (error) {
         failures++;
-        if (failures >= 5) {
+        if (failures >= POLLING_ATTEMPTS) {
           throw new HyperbrowserError(
-            `Failed to poll batch scrape job ${jobId} after 5 attempts: ${error}`
+            `Failed to poll batch scrape job ${jobId} after ${POLLING_ATTEMPTS} attempts: ${error}`
           );
         }
       }
       await sleep(2000);
     }
 
+    failures = 0;
     if (!returnAllPages) {
-      return jobResponse;
+      while (true) {
+        try {
+          jobResponse = await this.get(jobId);
+          return jobResponse;
+        } catch (error) {
+          failures++;
+          if (failures >= POLLING_ATTEMPTS) {
+            throw new HyperbrowserError(
+              `Failed to get batch scrape job ${jobId} after ${POLLING_ATTEMPTS} attempts: ${error}`
+            );
+          }
+        }
+        await sleep(500);
+      }
     }
 
+    jobResponse.currentPageBatch = 0;
+    jobResponse.data = [];
     failures = 0;
     while (jobResponse.currentPageBatch < jobResponse.totalPageBatches) {
       try {
@@ -104,9 +121,9 @@ export class BatchScrapeService extends BaseService {
         failures = 0;
       } catch (error) {
         failures++;
-        if (failures >= 5) {
+        if (failures >= POLLING_ATTEMPTS) {
           throw new HyperbrowserError(
-            `Failed to get batch page ${jobResponse.currentPageBatch + 1} for job ${jobId} after 5 attempts: ${error}`
+            `Failed to get batch page ${jobResponse.currentPageBatch + 1} for job ${jobId} after ${POLLING_ATTEMPTS} attempts: ${error}`
           );
         }
       }
@@ -169,10 +186,21 @@ export class ScrapeService extends BaseService {
     }
 
     let jobResponse: ScrapeJobResponse;
+    let failures = 0;
     while (true) {
-      jobResponse = await this.get(jobId);
-      if (jobResponse.status === "completed" || jobResponse.status === "failed") {
-        break;
+      try {
+        jobResponse = await this.get(jobId);
+        if (jobResponse.status === "completed" || jobResponse.status === "failed") {
+          break;
+        }
+        failures = 0;
+      } catch (error) {
+        failures++;
+        if (failures >= POLLING_ATTEMPTS) {
+          throw new HyperbrowserError(
+            `Failed to poll scrape job ${jobId} after ${POLLING_ATTEMPTS} attempts: ${error}`
+          );
+        }
       }
       await sleep(2000);
     }

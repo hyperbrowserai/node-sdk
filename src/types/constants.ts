@@ -2,9 +2,10 @@ export type ScrapeFormat = "markdown" | "html" | "links" | "screenshot";
 export type ScrapeJobStatus = "pending" | "running" | "completed" | "failed";
 export type ExtractJobStatus = "pending" | "running" | "completed" | "failed";
 export type CrawlJobStatus = "pending" | "running" | "completed" | "failed";
-export type ScrapePageStatus = "completed" | "failed";
+export type ScrapePageStatus = "completed" | "failed" | "pending" | "running";
 export type CrawlPageStatus = "completed" | "failed";
 export type ScrapeWaitUntil = "load" | "domcontentloaded" | "networkidle";
+export const POLLING_ATTEMPTS = 5;
 
 export type Country =
   | "AD"
