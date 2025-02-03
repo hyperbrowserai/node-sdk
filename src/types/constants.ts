@@ -5,6 +5,7 @@ export type CrawlJobStatus = "pending" | "running" | "completed" | "failed";
 export type ScrapePageStatus = "completed" | "failed" | "pending" | "running";
 export type CrawlPageStatus = "completed" | "failed";
 export type ScrapeWaitUntil = "load" | "domcontentloaded" | "networkidle";
+export type ScrapeScreenshotFormat = "jpeg" | "png" | "webp";
 export const POLLING_ATTEMPTS = 5;
 
 export type Country =

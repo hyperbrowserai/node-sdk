@@ -1,5 +1,16 @@
-import { ScrapeFormat, ScrapeJobStatus, ScrapePageStatus, ScrapeWaitUntil } from "./constants";
+import {
+  ScrapeFormat,
+  ScrapeJobStatus,
+  ScrapePageStatus,
+  ScrapeScreenshotFormat,
+  ScrapeWaitUntil,
+} from "./constants";
 import { CreateSessionParams } from "./session";
+
+export interface ScreenshotOptions {
+  fullPage?: boolean;
+  format?: ScrapeScreenshotFormat;
+}
 
 export interface ScrapeOptions {
   formats?: ScrapeFormat[];
@@ -9,6 +20,7 @@ export interface ScrapeOptions {
   waitFor?: number;
   timeout?: number;
   waitUntil?: ScrapeWaitUntil;
+  screenshotOptions?: ScreenshotOptions;
 }
 
 export interface StartScrapeJobParams {

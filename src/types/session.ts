@@ -15,12 +15,12 @@ export interface Session {
   createdAt: string;
   updatedAt: string;
   sessionUrl: string;
-  liveUrl?: string;
-  token: string;
 }
 
 export interface SessionDetail extends Session {
   wsEndpoint?: string;
+  liveUrl?: string;
+  token: string;
 }
 
 export interface SessionListParams {
