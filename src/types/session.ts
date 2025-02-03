@@ -67,6 +67,8 @@ export interface CreateSessionParams {
   extensionIds?: Array<string>;
   staticIpId?: string;
   acceptCookies?: boolean;
+  urlBlocklist?: string[],
+  browserArgs?: string[],
 }
 
 export interface SessionRecording {
