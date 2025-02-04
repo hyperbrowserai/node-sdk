@@ -1,6 +1,7 @@
 import {
   BasicResponse,
   CreateSessionParams,
+  GetSessionRecordingUrlResponse,
   SessionDetail,
   SessionListParams,
   SessionListResponse,
@@ -90,6 +91,21 @@ export class SessionsService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError(`Failed to get recording for session ${id}`, undefined);
+    }
+  }
+
+  /**
+   * Get the recording URL of a session
+   * @param id The ID of the session to get the recording URL from
+   */
+  async getRecordingURL(id: string): Promise<GetSessionRecordingUrlResponse> {
+    try {
+      return await this.request<GetSessionRecordingUrlResponse>(`/session/${id}/recording-url`);
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to get recording url for session ${id}`, undefined);
     }
   }
 }

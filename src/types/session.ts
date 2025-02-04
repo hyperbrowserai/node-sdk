@@ -67,8 +67,8 @@ export interface CreateSessionParams {
   extensionIds?: Array<string>;
   staticIpId?: string;
   acceptCookies?: boolean;
-  urlBlocklist?: string[],
-  browserArgs?: string[],
+  urlBlocklist?: string[];
+  browserArgs?: string[];
 }
 
 export interface SessionRecording {
@@ -76,4 +76,8 @@ export interface SessionRecording {
   data: unknown;
   timestamp: number;
   delay?: number;
+}
+
+export interface GetSessionRecordingUrlResponse {
+  recordingUrl: string;
 }
