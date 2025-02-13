@@ -7,6 +7,7 @@ export interface StartExtractJobParams {
   systemPrompt?: string;
   prompt?: string;
   schema?: z.ZodSchema | object;
+  waitFor?: number;
   sessionOptions?: CreateSessionParams;
   maxLinks?: number;
 }
