@@ -38,6 +38,7 @@ export {
   ScrapeJobStatus,
   CrawlJobStatus,
   Country,
+  State,
   ISO639_1,
   OperatingSystem,
   Platform,

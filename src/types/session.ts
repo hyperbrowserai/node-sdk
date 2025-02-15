@@ -1,4 +1,4 @@
-import { Country, ISO639_1, OperatingSystem, Platform } from "./constants";
+import { Country, ISO639_1, OperatingSystem, Platform, State } from "./constants";
 
 export type SessionStatus = "active" | "closed" | "error";
 
@@ -53,6 +53,8 @@ export interface CreateSessionParams {
   proxyServerPassword?: string;
   proxyServerUsername?: string;
   proxyCountry?: Country;
+  proxyState?: State;
+  proxyCity?: string;
   operatingSystems?: OperatingSystem[];
   device?: ("desktop" | "mobile")[];
   platform?: Platform[];
