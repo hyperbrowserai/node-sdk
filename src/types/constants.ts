@@ -2,11 +2,21 @@ export type ScrapeFormat = "markdown" | "html" | "links" | "screenshot";
 export type ScrapeJobStatus = "pending" | "running" | "completed" | "failed";
 export type ExtractJobStatus = "pending" | "running" | "completed" | "failed";
 export type CrawlJobStatus = "pending" | "running" | "completed" | "failed";
+export type TaskJobStatus = "pending" | "running" | "completed" | "failed" | "stopped";
 export type ScrapePageStatus = "completed" | "failed" | "pending" | "running";
 export type CrawlPageStatus = "completed" | "failed";
 export type ScrapeWaitUntil = "load" | "domcontentloaded" | "networkidle";
 export type ScrapeScreenshotFormat = "jpeg" | "png" | "webp";
 export const POLLING_ATTEMPTS = 5;
+
+export type Llm =
+  | "gpt-4o"
+  | "gpt-4o-mini"
+  | "claude-3-7-sonnet-20250219"
+  | "claude-3-5-haiku-20241022"
+  | "gemini-2.0-flash"
+  | "gemini-2.0-flash-thinking"
+  | "gemini-2.0-pro";
 
 export type Country =
   | "AD"

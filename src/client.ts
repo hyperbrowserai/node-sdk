@@ -5,6 +5,7 @@ import { CrawlService } from "./services/crawl";
 import { ProfilesService } from "./services/profiles";
 import { ExtensionService } from "./services/extensions";
 import { ExtractService } from "./services/extract";
+import { TaskService } from "./services/task";
 
 export class HyperbrowserError extends Error {
   constructor(
@@ -23,6 +24,7 @@ export class HyperbrowserClient {
   public readonly extract: ExtractService;
   public readonly profiles: ProfilesService;
   public readonly extensions: ExtensionService;
+  public readonly tasks: TaskService;
 
   constructor(config: HyperbrowserConfig) {
     const apiKey = config.apiKey || process.env["HYPERBROWSER_API_KEY"];
@@ -40,5 +42,6 @@ export class HyperbrowserClient {
     this.extract = new ExtractService(apiKey, baseUrl, timeout);
     this.profiles = new ProfilesService(apiKey, baseUrl, timeout);
     this.extensions = new ExtensionService(apiKey, baseUrl, timeout);
+    this.tasks = new TaskService(apiKey, baseUrl, timeout);
   }
 }
