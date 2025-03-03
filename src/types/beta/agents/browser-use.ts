@@ -20,6 +20,7 @@ export interface StartBrowserUseTaskParams {
 
 export interface StartBrowserUseTaskResponse {
   jobId: string;
+  liveUrl: string | null;
 }
 
 export interface BrowserUseTaskStatusResponse {
@@ -74,7 +75,8 @@ export interface BrowserUseAgentHistory {
 }
 
 export interface BrowserUseTaskData {
-  history: BrowserUseAgentHistory[];
+  steps: BrowserUseAgentHistory[];
+  finalResult: string | null;
 }
 
 export interface BrowserUseTaskResponse {
@@ -82,4 +84,5 @@ export interface BrowserUseTaskResponse {
   status: BrowserUseTaskStatus;
   data?: BrowserUseTaskData | null;
   error?: string | null;
+  liveUrl: string | null;
 }
