@@ -2,10 +2,10 @@ import { HyperbrowserError } from "../../../client";
 import { BasicResponse } from "../../../types";
 import { POLLING_ATTEMPTS } from "../../../types/constants";
 import {
-  StartBrowserUseJobParams,
-  StartBrowserUseJobResponse,
-  BrowserUseJobResponse,
-  BrowserUseJobStatusResponse,
+  StartBrowserUseTaskParams,
+  StartBrowserUseTaskResponse,
+  BrowserUseTaskResponse,
+  BrowserUseTaskStatusResponse,
 } from "../../../types/beta/agents/browser-use";
 import { sleep } from "../../../utils";
 import { BaseService } from "../../base";
@@ -15,9 +15,9 @@ export class BrowserUseService extends BaseService {
    * Start a new browser-use task job
    * @param params The parameters for the task job
    */
-  async start(params: StartBrowserUseJobParams): Promise<StartBrowserUseJobResponse> {
+  async start(params: StartBrowserUseTaskParams): Promise<StartBrowserUseTaskResponse> {
     try {
-      return await this.request<StartBrowserUseJobResponse>("/task/browser-use", {
+      return await this.request<StartBrowserUseTaskResponse>("/task/browser-use", {
         method: "POST",
         body: JSON.stringify(params),
       });
@@ -33,9 +33,9 @@ export class BrowserUseService extends BaseService {
    * Get the status of a browser-use task job
    * @param id The ID of the task job to get
    */
-  async getStatus(id: string): Promise<BrowserUseJobStatusResponse> {
+  async getStatus(id: string): Promise<BrowserUseTaskStatusResponse> {
     try {
-      return await this.request<BrowserUseJobStatusResponse>(`/task/browser-use/${id}/status`);
+      return await this.request<BrowserUseTaskStatusResponse>(`/task/browser-use/${id}/status`);
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
@@ -48,9 +48,9 @@ export class BrowserUseService extends BaseService {
    * Get the result of a task job
    * @param id The ID of the task job to get
    */
-  async get(id: string): Promise<BrowserUseJobResponse> {
+  async get(id: string): Promise<BrowserUseTaskResponse> {
     try {
-      return await this.request<BrowserUseJobResponse>(`/task/browser-use/${id}`);
+      return await this.request<BrowserUseTaskResponse>(`/task/browser-use/${id}`);
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
@@ -78,7 +78,7 @@ export class BrowserUseService extends BaseService {
    * Start a browser-use task job and wait for it to complete
    * @param params The parameters for the task job
    */
-  async startAndWait(params: StartBrowserUseJobParams): Promise<BrowserUseJobResponse> {
+  async startAndWait(params: StartBrowserUseTaskParams): Promise<BrowserUseTaskResponse> {
     const job = await this.start(params);
     const jobId = job.jobId;
     if (!jobId) {

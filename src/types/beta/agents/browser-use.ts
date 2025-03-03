@@ -1,7 +1,7 @@
-import { BrowserUseLlm, TaskJobStatus } from "../../constants";
+import { BrowserUseLlm, BrowserUseTaskStatus } from "../../constants";
 import { CreateSessionParams } from "../../session";
 
-export interface StartBrowserUseJobParams {
+export interface StartBrowserUseTaskParams {
   task: string;
   llm?: BrowserUseLlm;
   sessionId?: string;
@@ -18,12 +18,12 @@ export interface StartBrowserUseJobParams {
   sessionOptions?: CreateSessionParams;
 }
 
-export interface StartBrowserUseJobResponse {
+export interface StartBrowserUseTaskResponse {
   jobId: string;
 }
 
-export interface BrowserUseJobStatusResponse {
-  status: TaskJobStatus;
+export interface BrowserUseTaskStatusResponse {
+  status: BrowserUseTaskStatus;
 }
 
 export interface BrowserUseAgentBrain {
@@ -73,13 +73,13 @@ export interface AgentHistory {
   metadata?: BrowserUseStepMetadata | null;
 }
 
-export interface BrowserUseJobData {
+export interface BrowserUseTaskData {
   history: AgentHistory[];
 }
 
-export interface BrowserUseJobResponse {
+export interface BrowserUseTaskResponse {
   jobId: string;
-  status: TaskJobStatus;
-  data?: BrowserUseJobData | null;
+  status: BrowserUseTaskStatus;
+  data?: BrowserUseTaskData | null;
   error?: string | null;
 }
