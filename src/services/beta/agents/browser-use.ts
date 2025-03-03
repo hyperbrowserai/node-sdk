@@ -12,12 +12,12 @@ import { BaseService } from "../../base";
 
 export class BrowserUseService extends BaseService {
   /**
-   * Start a new task job
+   * Start a new browser-use task job
    * @param params The parameters for the task job
    */
   async start(params: StartBrowserUseJobParams): Promise<StartBrowserUseJobResponse> {
     try {
-      return await this.request<StartBrowserUseJobResponse>("/task", {
+      return await this.request<StartBrowserUseJobResponse>("/task/browser-use", {
         method: "POST",
         body: JSON.stringify(params),
       });
@@ -25,22 +25,22 @@ export class BrowserUseService extends BaseService {
       if (error instanceof HyperbrowserError) {
         throw error;
       }
-      throw new HyperbrowserError("Failed to start task job", undefined);
+      throw new HyperbrowserError("Failed to start browser-use task job", undefined);
     }
   }
 
   /**
-   * Get the status of a task job
+   * Get the status of a browser-use task job
    * @param id The ID of the task job to get
    */
   async getStatus(id: string): Promise<BrowserUseJobStatusResponse> {
     try {
-      return await this.request<BrowserUseJobStatusResponse>(`/task/${id}/status`);
+      return await this.request<BrowserUseJobStatusResponse>(`/task/browser-use/${id}/status`);
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
       }
-      throw new HyperbrowserError(`Failed to get task job ${id} status`, undefined);
+      throw new HyperbrowserError(`Failed to get browser-use task job ${id} status`, undefined);
     }
   }
 
@@ -50,12 +50,12 @@ export class BrowserUseService extends BaseService {
    */
   async get(id: string): Promise<BrowserUseJobResponse> {
     try {
-      return await this.request<BrowserUseJobResponse>(`/task/${id}`);
+      return await this.request<BrowserUseJobResponse>(`/task/browser-use/${id}`);
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
       }
-      throw new HyperbrowserError(`Failed to get task job ${id}`, undefined);
+      throw new HyperbrowserError(`Failed to get browser-use task job ${id}`, undefined);
     }
   }
 
@@ -65,24 +65,24 @@ export class BrowserUseService extends BaseService {
    */
   async stop(id: string): Promise<BasicResponse> {
     try {
-      return await this.request<BasicResponse>(`/task/${id}/stop`, { method: "PUT" });
+      return await this.request<BasicResponse>(`/task/browser-use/${id}/stop`, { method: "PUT" });
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
       }
-      throw new HyperbrowserError(`Failed to stop task job ${id}`, undefined);
+      throw new HyperbrowserError(`Failed to stop browser-use task job ${id}`, undefined);
     }
   }
 
   /**
-   * Start a task job and wait for it to complete
+   * Start a browser-use task job and wait for it to complete
    * @param params The parameters for the task job
    */
   async startAndWait(params: StartBrowserUseJobParams): Promise<BrowserUseJobResponse> {
     const job = await this.start(params);
     const jobId = job.jobId;
     if (!jobId) {
-      throw new HyperbrowserError("Failed to start task job, could not get job ID");
+      throw new HyperbrowserError("Failed to start browser-use task job, could not get job ID");
     }
 
     let failures = 0;
@@ -97,7 +97,7 @@ export class BrowserUseService extends BaseService {
         failures++;
         if (failures >= POLLING_ATTEMPTS) {
           throw new HyperbrowserError(
-            `Failed to poll task job ${jobId} after ${POLLING_ATTEMPTS} attempts: ${error}`
+            `Failed to poll browser-use task job ${jobId} after ${POLLING_ATTEMPTS} attempts: ${error}`
           );
         }
       }

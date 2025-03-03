@@ -9,7 +9,7 @@ export type ScrapeWaitUntil = "load" | "domcontentloaded" | "networkidle";
 export type ScrapeScreenshotFormat = "jpeg" | "png" | "webp";
 export const POLLING_ATTEMPTS = 5;
 
-export type Llm =
+export type BrowserUseLlm =
   | "gpt-4o"
   | "gpt-4o-mini"
   | "claude-3-7-sonnet-20250219"

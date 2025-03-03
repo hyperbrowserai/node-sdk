@@ -5,7 +5,7 @@ import { CrawlService } from "./services/crawl";
 import { ProfilesService } from "./services/profiles";
 import { ExtensionService } from "./services/extensions";
 import { ExtractService } from "./services/extract";
-import { TaskService } from "./services/task";
+import { BrowserUseService } from "./services/beta/agents/browser-use";
 
 export class HyperbrowserError extends Error {
   constructor(
@@ -26,7 +26,7 @@ export class HyperbrowserClient {
   public readonly extensions: ExtensionService;
   public readonly beta: {
     agents: {
-      browserUse: TaskService;
+      browserUse: BrowserUseService;
     };
   };
 
@@ -49,7 +49,7 @@ export class HyperbrowserClient {
 
     this.beta = {
       agents: {
-        browserUse: new TaskService(apiKey, baseUrl, timeout),
+        browserUse: new BrowserUseService(apiKey, baseUrl, timeout),
       },
     };
   }
