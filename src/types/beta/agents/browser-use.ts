@@ -66,7 +66,7 @@ export interface BrowserUseBrowserStateHistory {
   screenshot?: string | null;
 }
 
-export interface AgentHistory {
+export interface BrowserUseAgentHistory {
   model_output: BrowserUseAgentOutput | null;
   result: BrowserUseActionResult[];
   state: BrowserUseBrowserStateHistory;
@@ -74,7 +74,7 @@ export interface AgentHistory {
 }
 
 export interface BrowserUseTaskData {
-  history: AgentHistory[];
+  history: BrowserUseAgentHistory[];
 }
 
 export interface BrowserUseTaskResponse {
