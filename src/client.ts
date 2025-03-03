@@ -27,7 +27,6 @@ export class HyperbrowserClient {
   public readonly beta: {
     agents: {
       browserUse: TaskService;
-      claudeComputerUse: TaskService;
     };
   };
 
@@ -51,7 +50,6 @@ export class HyperbrowserClient {
     this.beta = {
       agents: {
         browserUse: new TaskService(apiKey, baseUrl, timeout),
-        claudeComputerUse: new TaskService(apiKey, baseUrl, timeout),
       },
     };
   }
