@@ -13,6 +13,14 @@ export {
   ScrapeJobResponse,
   ScrapeOptions,
 } from "./scrape";
+export { StartExtractJobParams, StartExtractJobResponse, ExtractJobResponse } from "./extract";
+export {
+  StartBrowserUseTaskParams,
+  StartBrowserUseTaskResponse,
+  BrowserUseTaskStatusResponse,
+  BrowserUseTaskResponse,
+  BrowserUseTaskData,
+} from "./beta/agents/browser-use";
 export {
   BasicResponse,
   SessionStatus,
@@ -35,6 +43,10 @@ export {
   ListExtensionsResponse,
 } from "./extension";
 export {
+  ExtractJobStatus,
+  BrowserUseTaskStatus,
+  BrowserUseLlm,
+  ScrapeScreenshotFormat,
   ScrapeJobStatus,
   CrawlJobStatus,
   Country,

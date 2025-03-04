@@ -1,7 +1,8 @@
-import { SCRAPE_TOOL_OPENAI, CRAWL_TOOL_OPENAI } from "./openai";
-import { SCRAPE_TOOL_ANTHROPIC, CRAWL_TOOL_ANTHROPIC } from "./anthropic";
+import { SCRAPE_TOOL_OPENAI, CRAWL_TOOL_OPENAI, EXTRACT_TOOL_OPENAI } from "./openai";
+import { SCRAPE_TOOL_ANTHROPIC, CRAWL_TOOL_ANTHROPIC, EXTRACT_TOOL_ANTHROPIC } from "./anthropic";
 import { HyperbrowserClient } from "../client";
 import { StartScrapeJobParams, StartCrawlJobParams } from "../types";
+import { StartExtractJobParams } from "../types/extract";
 
 export class WebsiteScrapeTool {
   static openaiToolDefinition = SCRAPE_TOOL_OPENAI;
@@ -29,5 +30,18 @@ export class WebsiteCrawlTool {
       }
     }
     return markdown;
+  }
+}
+
+export class WebsiteExtractTool {
+  static openaiToolDefinition = EXTRACT_TOOL_OPENAI;
+  static anthropicToolDefinition = EXTRACT_TOOL_ANTHROPIC;
+
+  static async runnable(hb: HyperbrowserClient, params: StartExtractJobParams): Promise<string> {
+    if (params.schema && typeof params.schema === "string") {
+      params.schema = JSON.parse(params.schema);
+    }
+    const resp = await hb.extract.startAndWait(params);
+    return resp.data ? JSON.stringify(resp.data) : "";
   }
 }
