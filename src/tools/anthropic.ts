@@ -1,4 +1,4 @@
-import { CRAWL_SCHEMA, EXTRACT_SCHEMA, SCRAPE_SCHEMA } from "./schema";
+import { BROWSER_USE_SCHEMA, CRAWL_SCHEMA, EXTRACT_SCHEMA, SCRAPE_SCHEMA } from "./schema";
 
 export interface CacheControlEphemeral {
   type: "ephemeral";
@@ -57,4 +57,10 @@ export const EXTRACT_TOOL_ANTHROPIC: Tool = {
   name: "extract_data",
   description:
     "Extract data in a structured format from multiple URLs in a single function call. IMPORTANT: When information must be gathered from multiple sources (such as comparing items, researching topics across sites, or answering questions that span multiple webpages), ALWAYS include all relevant URLs in ONE function call. This enables comprehensive answers with cross-referenced information. Returns data as a json string.",
+};
+
+export const BROWSER_USE_TOOL_ANTHROPIC: Tool = {
+  input_schema: BROWSER_USE_SCHEMA,
+  name: "browser_use",
+  description: "Have an AI agent use a browser to perform a task on the web.",
 };

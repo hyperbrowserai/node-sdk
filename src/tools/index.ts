@@ -1,7 +1,17 @@
-import { SCRAPE_TOOL_OPENAI, CRAWL_TOOL_OPENAI, EXTRACT_TOOL_OPENAI } from "./openai";
-import { SCRAPE_TOOL_ANTHROPIC, CRAWL_TOOL_ANTHROPIC, EXTRACT_TOOL_ANTHROPIC } from "./anthropic";
+import {
+  SCRAPE_TOOL_OPENAI,
+  CRAWL_TOOL_OPENAI,
+  EXTRACT_TOOL_OPENAI,
+  BROWSER_USE_TOOL_OPENAI,
+} from "./openai";
+import {
+  SCRAPE_TOOL_ANTHROPIC,
+  CRAWL_TOOL_ANTHROPIC,
+  EXTRACT_TOOL_ANTHROPIC,
+  BROWSER_USE_TOOL_ANTHROPIC,
+} from "./anthropic";
 import { HyperbrowserClient } from "../client";
-import { StartScrapeJobParams, StartCrawlJobParams } from "../types";
+import { StartScrapeJobParams, StartCrawlJobParams, StartBrowserUseTaskParams } from "../types";
 import { StartExtractJobParams } from "../types/extract";
 
 export class WebsiteScrapeTool {
@@ -43,5 +53,18 @@ export class WebsiteExtractTool {
     }
     const resp = await hb.extract.startAndWait(params);
     return resp.data ? JSON.stringify(resp.data) : "";
+  }
+}
+
+export class BrowserUseTool {
+  static openaiToolDefinition = BROWSER_USE_TOOL_OPENAI;
+  static anthropicToolDefinition = BROWSER_USE_TOOL_ANTHROPIC;
+
+  static async runnable(
+    hb: HyperbrowserClient,
+    params: StartBrowserUseTaskParams
+  ): Promise<string> {
+    const resp = await hb.beta.agents.browserUse.startAndWait(params);
+    return resp.data?.finalResult || "";
   }
 }

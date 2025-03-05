@@ -120,3 +120,47 @@ export const EXTRACT_SCHEMA = {
   required: ["urls", "prompt", "schema", "maxLinks"],
   additionalProperties: false,
 };
+
+const BROWSER_USE_LLM_SCHEMA = {
+  type: "string",
+  enum: [
+    "gpt-4o",
+    "gpt-4o-mini",
+    "claude-3-7-sonnet-20250219",
+    "claude-3-5-sonnet-20241022",
+    "claude-3-5-haiku-20241022",
+    "gemini-2.0-flash",
+  ],
+  default: "gemini-2.0-flash",
+};
+
+export const BROWSER_USE_SCHEMA = {
+  type: "object" as const,
+  properties: {
+    task: {
+      type: "string",
+      description: "The text description of the task to be performed by the agent.",
+    },
+    llm: {
+      ...BROWSER_USE_LLM_SCHEMA,
+      description:
+        "The language model (LLM) instance to use for generating actions. Default to gemini-2.0-flash.",
+    },
+    plannerLlm: {
+      ...BROWSER_USE_LLM_SCHEMA,
+      description:
+        "The language model to use specifically for planning future actions, can differ from the main LLM. Default to gemini-2.0-flash.",
+    },
+    pageExtractionLlm: {
+      ...BROWSER_USE_LLM_SCHEMA,
+      description:
+        "The language model to use for extracting structured data from webpages. Default to gemini-2.0-flash.",
+    },
+    keepBrowserOpen: {
+      type: "boolean",
+      description: "When enabled, keeps the browser session open after task completion.",
+    },
+  },
+  required: ["task", "llm", "plannerLlm", "pageExtractionLlm", "keepBrowserOpen"],
+  additionalProperties: false,
+};
