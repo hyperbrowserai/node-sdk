@@ -1,14 +1,14 @@
-import { HyperbrowserError } from "../../../client";
-import { BasicResponse } from "../../../types";
-import { POLLING_ATTEMPTS } from "../../../types/constants";
+import { HyperbrowserError } from "../../client";
+import { BasicResponse } from "../../types";
+import { POLLING_ATTEMPTS } from "../../types/constants";
 import {
   StartBrowserUseTaskParams,
   StartBrowserUseTaskResponse,
   BrowserUseTaskResponse,
   BrowserUseTaskStatusResponse,
-} from "../../../types/beta/agents/browser-use";
-import { sleep } from "../../../utils";
-import { BaseService } from "../../base";
+} from "../../types/beta/agents/browser-use";
+import { sleep } from "../../utils";
+import { BaseService } from "../base";
 
 export class BrowserUseService extends BaseService {
   /**

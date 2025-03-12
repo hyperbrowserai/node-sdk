@@ -5,7 +5,7 @@ import { CrawlService } from "./services/crawl";
 import { ProfilesService } from "./services/profiles";
 import { ExtensionService } from "./services/extensions";
 import { ExtractService } from "./services/extract";
-import { BrowserUseService } from "./services/beta/agents/browser-use";
+import { BrowserUseService } from "./services/agents/browser-use";
 
 export class HyperbrowserError extends Error {
   constructor(
@@ -24,10 +24,8 @@ export class HyperbrowserClient {
   public readonly extract: ExtractService;
   public readonly profiles: ProfilesService;
   public readonly extensions: ExtensionService;
-  public readonly beta: {
-    agents: {
-      browserUse: BrowserUseService;
-    };
+  public readonly agents: {
+    browserUse: BrowserUseService;
   };
 
   constructor(config: HyperbrowserConfig) {
@@ -47,10 +45,8 @@ export class HyperbrowserClient {
     this.profiles = new ProfilesService(apiKey, baseUrl, timeout);
     this.extensions = new ExtensionService(apiKey, baseUrl, timeout);
 
-    this.beta = {
-      agents: {
-        browserUse: new BrowserUseService(apiKey, baseUrl, timeout),
-      },
+    this.agents = {
+      browserUse: new BrowserUseService(apiKey, baseUrl, timeout),
     };
   }
 }

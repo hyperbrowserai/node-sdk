@@ -64,7 +64,7 @@ export class BrowserUseTool {
     hb: HyperbrowserClient,
     params: StartBrowserUseTaskParams
   ): Promise<string> {
-    const resp = await hb.beta.agents.browserUse.startAndWait(params);
+    const resp = await hb.agents.browserUse.startAndWait(params);
     return resp.data?.finalResult || "";
   }
 }
