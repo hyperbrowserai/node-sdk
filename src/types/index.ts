@@ -5,6 +5,7 @@ export {
   CrawledPage,
   CrawlJobResponse,
   GetCrawlJobParams,
+  CrawlJobStatusResponse,
 } from "./crawl";
 export {
   StartScrapeJobParams,
@@ -12,15 +13,22 @@ export {
   ScrapeJobData,
   ScrapeJobResponse,
   ScrapeOptions,
+  ScrapeJobStatusResponse,
+  BatchScrapeJobStatusResponse,
 } from "./scrape";
-export { StartExtractJobParams, StartExtractJobResponse, ExtractJobResponse } from "./extract";
+export {
+  StartExtractJobParams,
+  StartExtractJobResponse,
+  ExtractJobResponse,
+  ExtractJobStatusResponse,
+} from "./extract";
 export {
   StartBrowserUseTaskParams,
   StartBrowserUseTaskResponse,
   BrowserUseTaskStatusResponse,
   BrowserUseTaskResponse,
   BrowserUseTaskData,
-} from "./beta/agents/browser-use";
+} from "./agents/browser-use";
 export {
   BasicResponse,
   SessionStatus,

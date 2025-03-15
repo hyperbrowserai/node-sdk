@@ -6,7 +6,7 @@ import {
   StartBrowserUseTaskResponse,
   BrowserUseTaskResponse,
   BrowserUseTaskStatusResponse,
-} from "../../types/beta/agents/browser-use";
+} from "../../types/agents/browser-use";
 import { sleep } from "../../utils";
 import { BaseService } from "../base";
 

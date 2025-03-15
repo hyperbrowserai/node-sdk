@@ -16,6 +16,10 @@ export interface StartExtractJobResponse {
   jobId: string;
 }
 
+export interface ExtractJobStatusResponse {
+  status: ExtractJobStatus;
+}
+
 export interface ExtractJobResponse {
   jobId: string;
   status: ExtractJobStatus;

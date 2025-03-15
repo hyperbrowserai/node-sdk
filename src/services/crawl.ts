@@ -1,5 +1,6 @@
 import {
   CrawlJobResponse,
+  CrawlJobStatusResponse,
   GetCrawlJobParams,
   StartCrawlJobParams,
   StartCrawlJobResponse,
@@ -7,7 +8,7 @@ import {
 import { BaseService } from "./base";
 import { sleep } from "../utils";
 import { HyperbrowserError } from "../client";
-import { POLLING_ATTEMPTS } from "../types/constants";
+import { CrawlJobStatus, POLLING_ATTEMPTS } from "../types/constants";
 
 export class CrawlService extends BaseService {
   /**
@@ -31,12 +32,28 @@ export class CrawlService extends BaseService {
   /**
    * Get the status of a crawl job
    * @param id The ID of the crawl job to get
+   */
+  async getStatus(id: string): Promise<CrawlJobStatusResponse> {
+    try {
+      return await this.request<CrawlJobStatusResponse>(`/crawl/${id}/status`);
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to get crawl job status ${id}`, undefined);
+    }
+  }
+
+  /**
+   * Get the status of a crawl job
+   * @param id The ID of the crawl job to get
    * @param params Optional parameters to filter the crawl job
    */
   async get(id: string, params?: GetCrawlJobParams): Promise<CrawlJobResponse> {
     try {
       return await this.request<CrawlJobResponse>(`/crawl/${id}`, undefined, {
         page: params?.page,
+        batchSize: params?.batchSize,
       });
     } catch (error) {
       if (error instanceof HyperbrowserError) {
@@ -61,12 +78,13 @@ export class CrawlService extends BaseService {
       throw new HyperbrowserError("Failed to start crawl job, could not get job ID");
     }
 
-    let jobResponse: CrawlJobResponse;
     let failures = 0;
+    let jobStatus: CrawlJobStatus = "pending";
     while (true) {
       try {
-        jobResponse = await this.get(jobId, { batchSize: 1 });
-        if (jobResponse.status === "completed" || jobResponse.status === "failed") {
+        const { status } = await this.getStatus(jobId);
+        if (status === "completed" || status === "failed") {
+          jobStatus = status;
           break;
         }
         failures = 0;
@@ -85,8 +103,7 @@ export class CrawlService extends BaseService {
     if (!returnAllPages) {
       while (true) {
         try {
-          jobResponse = await this.get(jobId);
-          return jobResponse;
+          return await this.get(jobId);
         } catch (error) {
           failures++;
           if (failures >= POLLING_ATTEMPTS) {
@@ -99,10 +116,20 @@ export class CrawlService extends BaseService {
       }
     }
 
-    jobResponse.currentPageBatch = 0;
-    jobResponse.data = [];
     failures = 0;
-    while (jobResponse.currentPageBatch < jobResponse.totalPageBatches) {
+
+    const jobResponse: CrawlJobResponse = {
+      jobId,
+      status: jobStatus,
+      data: [],
+      currentPageBatch: 0,
+      totalPageBatches: 0,
+      totalCrawledPages: 0,
+      batchSize: 100,
+    };
+    let firstCheck = true;
+
+    while (firstCheck || jobResponse.currentPageBatch < jobResponse.totalPageBatches) {
       try {
         const tmpJobResponse = await this.get(jobId, {
           page: jobResponse.currentPageBatch + 1,
@@ -116,6 +143,7 @@ export class CrawlService extends BaseService {
         jobResponse.totalPageBatches = tmpJobResponse.totalPageBatches;
         jobResponse.batchSize = tmpJobResponse.batchSize;
         failures = 0;
+        firstCheck = false;
       } catch (error) {
         failures++;
         if (failures >= POLLING_ATTEMPTS) {

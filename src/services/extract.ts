@@ -3,7 +3,11 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import { BaseService } from "./base";
 import { sleep } from "../utils";
 import { HyperbrowserError } from "../client";
-import { ExtractJobResponse, StartExtractJobResponse } from "../types/extract";
+import {
+  ExtractJobResponse,
+  ExtractJobStatusResponse,
+  StartExtractJobResponse,
+} from "../types/extract";
 import { StartExtractJobParams } from "../types/extract";
 import { POLLING_ATTEMPTS } from "../types/constants";
 
@@ -48,6 +52,21 @@ export class ExtractService extends BaseService {
    * Get the status of an extract job
    * @param id The ID of the extract job to get
    */
+  async getStatus(id: string): Promise<ExtractJobStatusResponse> {
+    try {
+      return await this.request<ExtractJobStatusResponse>(`/extract/${id}/status`);
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to get extract job status ${id}`, undefined);
+    }
+  }
+
+  /**
+   * Get the details of an extract job
+   * @param id The ID of the extract job to get
+   */
   async get(id: string): Promise<ExtractJobResponse> {
     try {
       return await this.request<ExtractJobResponse>(`/extract/${id}`);
@@ -70,13 +89,12 @@ export class ExtractService extends BaseService {
       throw new HyperbrowserError("Failed to start extract job, could not get job ID");
     }
 
-    let jobResponse: ExtractJobResponse;
     let failures = 0;
     while (true) {
       try {
-        jobResponse = await this.get(jobId);
-        if (jobResponse.status === "completed" || jobResponse.status === "failed") {
-          break;
+        const { status } = await this.getStatus(jobId);
+        if (status === "completed" || status === "failed") {
+          return await this.get(jobId);
         }
         failures = 0;
       } catch (error) {
@@ -89,6 +107,5 @@ export class ExtractService extends BaseService {
       }
       await sleep(2000);
     }
-    return jobResponse;
   }
 }
