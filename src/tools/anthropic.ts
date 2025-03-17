@@ -1,4 +1,10 @@
-import { BROWSER_USE_SCHEMA, CRAWL_SCHEMA, EXTRACT_SCHEMA, SCRAPE_SCHEMA } from "./schema";
+import {
+  BROWSER_USE_SCHEMA,
+  CRAWL_SCHEMA,
+  EXTRACT_SCHEMA,
+  SCRAPE_SCHEMA,
+  SCREENSHOT_SCHEMA,
+} from "./schema";
 
 export interface CacheControlEphemeral {
   type: "ephemeral";
@@ -44,6 +50,13 @@ export const SCRAPE_TOOL_ANTHROPIC: Tool = {
   input_schema: SCRAPE_SCHEMA,
   name: "scrape_webpage",
   description: "Scrape content from a webpage and return the content in markdown format",
+};
+
+export const SCREENSHOT_TOOL_ANTHROPIC: Tool = {
+  name: "screenshot_webpage",
+  description:
+    "Take a screenshot of a webpage and return the screenshot in screenshot format as a url",
+  input_schema: SCREENSHOT_SCHEMA,
 };
 
 export const CRAWL_TOOL_ANTHROPIC: Tool = {
