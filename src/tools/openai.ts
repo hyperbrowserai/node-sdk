@@ -1,4 +1,10 @@
-import { BROWSER_USE_SCHEMA, CRAWL_SCHEMA, EXTRACT_SCHEMA, SCRAPE_SCHEMA, SCREENSHOT_SCHEMA } from "./schema";
+import {
+  BROWSER_USE_SCHEMA,
+  CRAWL_SCHEMA,
+  EXTRACT_SCHEMA,
+  SCRAPE_SCHEMA,
+  SCREENSHOT_SCHEMA,
+} from "./schema";
 
 export type FunctionParameters = Record<string, unknown>;
 
@@ -59,7 +65,8 @@ export const SCREENSHOT_TOOL_OPENAI: ChatCompletionTool = {
   type: "function",
   function: {
     name: "screenshot_webpage",
-    description: "Take a screenshot of a webpage and return the screenshot in screenshot format as a url",
+    description:
+      "Take a screenshot of a webpage and return the screenshot in screenshot format as a url",
     parameters: SCREENSHOT_SCHEMA,
     strict: true,
   },

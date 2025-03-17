@@ -30,6 +30,14 @@ export {
   BrowserUseTaskData,
 } from "./agents/browser-use";
 export {
+  StartCuaTaskParams,
+  StartCuaTaskResponse,
+  CuaTaskStatusResponse,
+  CuaTaskResponse,
+  CuaTaskData,
+  CuaStepResponse,
+} from "./agents/cua";
+export {
   BasicResponse,
   SessionStatus,
   Session,
