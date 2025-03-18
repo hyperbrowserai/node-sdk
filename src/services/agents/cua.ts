@@ -1,23 +1,23 @@
 import { HyperbrowserError } from "../../client";
 import { BasicResponse } from "../../types";
 import { POLLING_ATTEMPTS } from "../../types/constants";
-import {
-  StartBrowserUseTaskParams,
-  StartBrowserUseTaskResponse,
-  BrowserUseTaskResponse,
-  BrowserUseTaskStatusResponse,
-} from "../../types/agents/browser-use";
 import { sleep } from "../../utils";
 import { BaseService } from "../base";
+import {
+  CuaTaskResponse,
+  CuaTaskStatusResponse,
+  StartCuaTaskParams,
+  StartCuaTaskResponse,
+} from "../../types/agents/cua";
 
-export class BrowserUseService extends BaseService {
+export class CuaService extends BaseService {
   /**
-   * Start a new browser-use task job
+   * Start a new CUA task job
    * @param params The parameters for the task job
    */
-  async start(params: StartBrowserUseTaskParams): Promise<StartBrowserUseTaskResponse> {
+  async start(params: StartCuaTaskParams): Promise<StartCuaTaskResponse> {
     try {
-      return await this.request<StartBrowserUseTaskResponse>("/task/browser-use", {
+      return await this.request<StartCuaTaskResponse>("/task/cua", {
         method: "POST",
         body: JSON.stringify(params),
       });
@@ -25,64 +25,64 @@ export class BrowserUseService extends BaseService {
       if (error instanceof HyperbrowserError) {
         throw error;
       }
-      throw new HyperbrowserError("Failed to start browser-use task job", undefined);
+      throw new HyperbrowserError("Failed to start CUA task job", undefined);
     }
   }
 
   /**
-   * Get the status of a browser-use task job
+   * Get the status of a CUA task job
    * @param id The ID of the task job to get
    */
-  async getStatus(id: string): Promise<BrowserUseTaskStatusResponse> {
+  async getStatus(id: string): Promise<CuaTaskStatusResponse> {
     try {
-      return await this.request<BrowserUseTaskStatusResponse>(`/task/browser-use/${id}/status`);
+      return await this.request<CuaTaskStatusResponse>(`/task/cua/${id}/status`);
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
       }
-      throw new HyperbrowserError(`Failed to get browser-use task job ${id} status`, undefined);
+      throw new HyperbrowserError(`Failed to get CUA task job ${id} status`, undefined);
     }
   }
 
   /**
-   * Get the result of a task job
+   * Get the result of a CUA task job
    * @param id The ID of the task job to get
    */
-  async get(id: string): Promise<BrowserUseTaskResponse> {
+  async get(id: string): Promise<CuaTaskResponse> {
     try {
-      return await this.request<BrowserUseTaskResponse>(`/task/browser-use/${id}`);
+      return await this.request<CuaTaskResponse>(`/task/cua/${id}`);
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
       }
-      throw new HyperbrowserError(`Failed to get browser-use task job ${id}`, undefined);
+      throw new HyperbrowserError(`Failed to get CUA task job ${id}`, undefined);
     }
   }
 
   /**
-   * Stop a task job
+   * Stop a CUA task job
    * @param id The ID of the task job to stop
    */
   async stop(id: string): Promise<BasicResponse> {
     try {
-      return await this.request<BasicResponse>(`/task/browser-use/${id}/stop`, { method: "PUT" });
+      return await this.request<BasicResponse>(`/task/cua/${id}/stop`, { method: "PUT" });
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
       }
-      throw new HyperbrowserError(`Failed to stop browser-use task job ${id}`, undefined);
+      throw new HyperbrowserError(`Failed to stop CUA task job ${id}`, undefined);
     }
   }
 
   /**
-   * Start a browser-use task job and wait for it to complete
+   * Start a CUA task job and wait for it to complete
    * @param params The parameters for the task job
    */
-  async startAndWait(params: StartBrowserUseTaskParams): Promise<BrowserUseTaskResponse> {
+  async startAndWait(params: StartCuaTaskParams): Promise<CuaTaskResponse> {
     const job = await this.start(params);
     const jobId = job.jobId;
     if (!jobId) {
-      throw new HyperbrowserError("Failed to start browser-use task job, could not get job ID");
+      throw new HyperbrowserError("Failed to start CUA task job, could not get job ID");
     }
 
     let failures = 0;
@@ -97,7 +97,7 @@ export class BrowserUseService extends BaseService {
         failures++;
         if (failures >= POLLING_ATTEMPTS) {
           throw new HyperbrowserError(
-            `Failed to poll browser-use task job ${jobId} after ${POLLING_ATTEMPTS} attempts: ${error}`
+            `Failed to poll CUA task job ${jobId} after ${POLLING_ATTEMPTS} attempts: ${error}`
           );
         }
       }

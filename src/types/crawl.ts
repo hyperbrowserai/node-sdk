@@ -33,6 +33,10 @@ export interface CrawledPage {
   screenshot?: string;
 }
 
+export interface CrawlJobStatusResponse {
+  status: CrawlJobStatus;
+}
+
 export interface CrawlJobResponse {
   jobId: string;
   status: CrawlJobStatus;

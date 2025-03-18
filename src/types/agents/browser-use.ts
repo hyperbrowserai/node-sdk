@@ -1,5 +1,5 @@
-import { BrowserUseLlm, BrowserUseTaskStatus } from "../../constants";
-import { CreateSessionParams } from "../../session";
+import { BrowserUseLlm, BrowserUseTaskStatus } from "../constants";
+import { CreateSessionParams } from "../session";
 
 export interface StartBrowserUseTaskParams {
   task: string;

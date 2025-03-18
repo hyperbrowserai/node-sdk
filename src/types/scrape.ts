@@ -33,6 +33,10 @@ export interface StartScrapeJobResponse {
   jobId: string;
 }
 
+export interface ScrapeJobStatusResponse {
+  status: ScrapeJobStatus;
+}
+
 export interface ScrapeJobData {
   metadata?: Record<string, string | string[]>;
   markdown?: string;
@@ -72,6 +76,10 @@ export interface GetBatchScrapeJobParams {
 
 export interface StartBatchScrapeJobResponse {
   jobId: string;
+}
+
+export interface BatchScrapeJobStatusResponse {
+  status: ScrapeJobStatus;
 }
 
 export interface BatchScrapeJobResponse {

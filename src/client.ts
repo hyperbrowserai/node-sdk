@@ -6,6 +6,7 @@ import { ProfilesService } from "./services/profiles";
 import { ExtensionService } from "./services/extensions";
 import { ExtractService } from "./services/extract";
 import { BrowserUseService } from "./services/agents/browser-use";
+import { CuaService } from "./services/agents/cua";
 
 export class HyperbrowserError extends Error {
   constructor(
@@ -26,6 +27,7 @@ export class HyperbrowserClient {
   public readonly extensions: ExtensionService;
   public readonly agents: {
     browserUse: BrowserUseService;
+    cua: CuaService;
   };
 
   constructor(config: HyperbrowserConfig = {}) {
@@ -47,6 +49,7 @@ export class HyperbrowserClient {
 
     this.agents = {
       browserUse: new BrowserUseService(apiKey, baseUrl, timeout),
+      cua: new CuaService(apiKey, baseUrl, timeout),
     };
   }
 }

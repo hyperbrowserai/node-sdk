@@ -3,12 +3,14 @@ import {
   CRAWL_TOOL_OPENAI,
   EXTRACT_TOOL_OPENAI,
   BROWSER_USE_TOOL_OPENAI,
+  SCREENSHOT_TOOL_OPENAI,
 } from "./openai";
 import {
   SCRAPE_TOOL_ANTHROPIC,
   CRAWL_TOOL_ANTHROPIC,
   EXTRACT_TOOL_ANTHROPIC,
   BROWSER_USE_TOOL_ANTHROPIC,
+  SCREENSHOT_TOOL_ANTHROPIC,
 } from "./anthropic";
 import { HyperbrowserClient } from "../client";
 import { StartScrapeJobParams, StartCrawlJobParams, StartBrowserUseTaskParams } from "../types";
@@ -21,6 +23,16 @@ export class WebsiteScrapeTool {
   static async runnable(hb: HyperbrowserClient, params: StartScrapeJobParams): Promise<string> {
     const resp = await hb.scrape.startAndWait(params);
     return resp.data?.markdown || "";
+  }
+}
+
+export class WebsiteScreenshotTool {
+  static openaiToolDefinition = SCREENSHOT_TOOL_OPENAI;
+  static anthropicToolDefinition = SCREENSHOT_TOOL_ANTHROPIC;
+
+  static async runnable(hb: HyperbrowserClient, params: StartScrapeJobParams): Promise<string> {
+    const resp = await hb.scrape.startAndWait(params);
+    return resp.data?.screenshot || "";
   }
 }
 

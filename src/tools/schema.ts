@@ -1,32 +1,42 @@
-export const SCRAPE_OPTIONS = {
-  type: "object",
-  description: "The options for the scrape",
-  properties: {
-    includeTags: {
-      type: "array",
-      items: {
-        type: "string",
+function getScrapeOptions(formats: Array<"markdown" | "screenshot"> = ["markdown"]) {
+  return {
+    type: "object",
+    description: "The options for the scrape",
+    properties: {
+      formats: {
+        type: "array",
+        description: "The format of the content to scrape",
+        items: {
+          type: "string",
+          enum: formats,
+        },
       },
-      description:
-        "An array of HTML tags, classes, or IDs to include in the scraped content. Only elements matching these selectors will be returned.",
-    },
-    excludeTags: {
-      type: "array",
-      items: {
-        type: "string",
+      includeTags: {
+        type: "array",
+        items: {
+          type: "string",
+        },
+        description:
+          "An array of HTML tags, classes, or IDs to include in the scraped content. Only elements matching these selectors will be returned.",
       },
-      description:
-        "An array of HTML tags, classes, or IDs to exclude from the scraped content. Elements matching these selectors will be omitted from the response.",
+      excludeTags: {
+        type: "array",
+        items: {
+          type: "string",
+        },
+        description:
+          "An array of HTML tags, classes, or IDs to exclude from the scraped content. Elements matching these selectors will be omitted from the response.",
+      },
+      onlyMainContent: {
+        type: "boolean",
+        description:
+          "Whether to only return the main content of the page. If true, only the main content of the page will be returned, excluding any headers, navigation menus,footers, or other non-main content.",
+      },
     },
-    onlyMainContent: {
-      type: "boolean",
-      description:
-        "Whether to only return the main content of the page. If true, only the main content of the page will be returned, excluding any headers, navigation menus,footers, or other non-main content.",
-    },
-  },
-  required: ["includeTags", "excludeTags", "onlyMainContent"],
-  additionalProperties: false,
-};
+    required: ["includeTags", "excludeTags", "onlyMainContent", "formats"],
+    additionalProperties: false,
+  };
+}
 
 export const SCRAPE_SCHEMA = {
   type: "object" as const,
@@ -35,7 +45,20 @@ export const SCRAPE_SCHEMA = {
       type: "string",
       description: "The URL of the website to scrape",
     },
-    scrapeOptions: SCRAPE_OPTIONS,
+    scrapeOptions: getScrapeOptions(),
+  },
+  required: ["url", "scrapeOptions"],
+  additionalProperties: false,
+};
+
+export const SCREENSHOT_SCHEMA = {
+  type: "object" as const,
+  properties: {
+    url: {
+      type: "string",
+      description: "The URL of the website to scrape",
+    },
+    scrapeOptions: getScrapeOptions(["screenshot"]),
   },
   required: ["url", "scrapeOptions"],
   additionalProperties: false,
@@ -76,7 +99,7 @@ export const CRAWL_SCHEMA = {
       description:
         "An array of regular expressions or wildcard patterns specifying which URLs should be included in the crawl. Only pages whose URLs' path match one of these path patterns will be visited. Example: ['/admin', '/careers/*']",
     },
-    scrapeOptions: SCRAPE_OPTIONS,
+    scrapeOptions: getScrapeOptions(),
   },
   required: [
     "url",

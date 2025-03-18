@@ -1,7 +1,9 @@
 import {
   BatchScrapeJobResponse,
+  BatchScrapeJobStatusResponse,
   GetBatchScrapeJobParams,
   ScrapeJobResponse,
+  ScrapeJobStatusResponse,
   StartBatchScrapeJobParams,
   StartBatchScrapeJobResponse,
   StartScrapeJobParams,
@@ -10,7 +12,7 @@ import {
 import { BaseService } from "./base";
 import { sleep } from "../utils";
 import { HyperbrowserError } from "../client";
-import { POLLING_ATTEMPTS } from "../types/constants";
+import { POLLING_ATTEMPTS, ScrapeJobStatus } from "../types/constants";
 
 export class BatchScrapeService extends BaseService {
   /**
@@ -34,12 +36,28 @@ export class BatchScrapeService extends BaseService {
   /**
    * Get the status of a batch scrape job
    * @param id The ID of the batch scrape job to get
+   */
+  async getStatus(id: string): Promise<BatchScrapeJobStatusResponse> {
+    try {
+      return await this.request<BatchScrapeJobStatusResponse>(`/scrape/batch/${id}/status`);
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to get batch scrape job ${id} status`, undefined);
+    }
+  }
+
+  /**
+   * Get the details of a batch scrape job
+   * @param id The ID of the batch scrape job to get
    * @param params Optional parameters to filter the batch scrape job
    */
   async get(id: string, params?: GetBatchScrapeJobParams): Promise<BatchScrapeJobResponse> {
     try {
       return await this.request<BatchScrapeJobResponse>(`/scrape/batch/${id}`, undefined, {
         page: params?.page,
+        batchSize: params?.batchSize,
       });
     } catch (error) {
       if (error instanceof HyperbrowserError) {
@@ -64,12 +82,13 @@ export class BatchScrapeService extends BaseService {
       throw new HyperbrowserError("Failed to start batch scrape job, could not get job ID");
     }
 
-    let jobResponse: BatchScrapeJobResponse;
     let failures = 0;
+    let jobStatus: ScrapeJobStatus = "pending";
     while (true) {
       try {
-        jobResponse = await this.get(jobId, { batchSize: 1 });
-        if (jobResponse.status === "completed" || jobResponse.status === "failed") {
+        const { status } = await this.getStatus(jobId);
+        if (status === "completed" || status === "failed") {
+          jobStatus = status;
           break;
         }
         failures = 0;
@@ -88,8 +107,7 @@ export class BatchScrapeService extends BaseService {
     if (!returnAllPages) {
       while (true) {
         try {
-          jobResponse = await this.get(jobId);
-          return jobResponse;
+          return await this.get(jobId);
         } catch (error) {
           failures++;
           if (failures >= POLLING_ATTEMPTS) {
@@ -102,10 +120,20 @@ export class BatchScrapeService extends BaseService {
       }
     }
 
-    jobResponse.currentPageBatch = 0;
-    jobResponse.data = [];
     failures = 0;
-    while (jobResponse.currentPageBatch < jobResponse.totalPageBatches) {
+
+    const jobResponse: BatchScrapeJobResponse = {
+      jobId,
+      status: jobStatus,
+      data: [],
+      currentPageBatch: 0,
+      totalPageBatches: 0,
+      totalScrapedPages: 0,
+      batchSize: 100,
+    };
+    let firstCheck = true;
+
+    while (firstCheck || jobResponse.currentPageBatch < jobResponse.totalPageBatches) {
       try {
         const tmpJobResponse = await this.get(jobId, {
           page: jobResponse.currentPageBatch + 1,
@@ -119,6 +147,7 @@ export class BatchScrapeService extends BaseService {
         jobResponse.totalPageBatches = tmpJobResponse.totalPageBatches;
         jobResponse.batchSize = tmpJobResponse.batchSize;
         failures = 0;
+        firstCheck = false;
       } catch (error) {
         failures++;
         if (failures >= POLLING_ATTEMPTS) {
@@ -163,6 +192,21 @@ export class ScrapeService extends BaseService {
    * Get the status of a scrape job
    * @param id The ID of the scrape job to get
    */
+  async getStatus(id: string): Promise<ScrapeJobStatusResponse> {
+    try {
+      return await this.request<ScrapeJobStatusResponse>(`/scrape/${id}/status`);
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to get scrape job status ${id}`, undefined);
+    }
+  }
+
+  /**
+   * Get the details of a scrape job
+   * @param id The ID of the scrape job to get
+   */
   async get(id: string): Promise<ScrapeJobResponse> {
     try {
       return await this.request<ScrapeJobResponse>(`/scrape/${id}`);
@@ -185,13 +229,12 @@ export class ScrapeService extends BaseService {
       throw new HyperbrowserError("Failed to start scrape job, could not get job ID");
     }
 
-    let jobResponse: ScrapeJobResponse;
     let failures = 0;
     while (true) {
       try {
-        jobResponse = await this.get(jobId);
-        if (jobResponse.status === "completed" || jobResponse.status === "failed") {
-          break;
+        const { status } = await this.getStatus(jobId);
+        if (status === "completed" || status === "failed") {
+          return await this.get(jobId);
         }
         failures = 0;
       } catch (error) {
@@ -204,6 +247,5 @@ export class ScrapeService extends BaseService {
       }
       await sleep(2000);
     }
-    return jobResponse;
   }
 }
