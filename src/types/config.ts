@@ -1,5 +1,5 @@
 export interface HyperbrowserConfig {
-  apiKey: string;
+  apiKey?: string;
   baseUrl?: string;
   timeout?: number;
 }
