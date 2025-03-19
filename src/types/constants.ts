@@ -4,6 +4,12 @@ export type ExtractJobStatus = "pending" | "running" | "completed" | "failed";
 export type CrawlJobStatus = "pending" | "running" | "completed" | "failed";
 export type BrowserUseTaskStatus = "pending" | "running" | "completed" | "failed" | "stopped";
 export type CuaTaskStatus = "pending" | "running" | "completed" | "failed" | "stopped";
+export type ClaudeComputerUseTaskStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "failed"
+  | "stopped";
 export type ScrapePageStatus = "completed" | "failed" | "pending" | "running";
 export type CrawlPageStatus = "completed" | "failed";
 export type ScrapeWaitUntil = "load" | "domcontentloaded" | "networkidle";

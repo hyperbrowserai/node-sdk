@@ -30,6 +30,14 @@ export {
   BrowserUseTaskData,
 } from "./agents/browser-use";
 export {
+  StartClaudeComputerUseTaskParams,
+  StartClaudeComputerUseTaskResponse,
+  ClaudeComputerUseTaskStatusResponse,
+  ClaudeComputerUseTaskResponse,
+  ClaudeComputerUseTaskData,
+  ClaudeComputerUseStepResponse,
+} from "./agents/claude-computer-use";
+export {
   StartCuaTaskParams,
   StartCuaTaskResponse,
   CuaTaskStatusResponse,
