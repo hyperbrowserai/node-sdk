@@ -1,6 +1,7 @@
 import {
   BasicResponse,
   CreateSessionParams,
+  GetSessionDownloadsUrlResponse,
   GetSessionRecordingUrlResponse,
   SessionDetail,
   SessionListParams,
@@ -106,6 +107,21 @@ export class SessionsService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError(`Failed to get recording url for session ${id}`, undefined);
+    }
+  }
+
+  /**
+   * Get the downloads URL of a session
+   * @param id The ID of the session to get the downloads URL from
+   */
+  async getDownloadsURL(id: string): Promise<GetSessionDownloadsUrlResponse> {
+    try {
+      return await this.request<GetSessionDownloadsUrlResponse>(`/session/${id}/downloads-url`);
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to get downloads url for session ${id}`, undefined);
     }
   }
 }

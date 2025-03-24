@@ -54,6 +54,8 @@ export {
   SessionListResponse,
   ScreenConfig,
   CreateSessionParams,
+  GetSessionDownloadsUrlResponse,
+  GetSessionRecordingUrlResponse,
 } from "./session";
 export {
   ProfileResponse,
@@ -82,4 +84,6 @@ export {
   ScrapeWaitUntil,
   ScrapePageStatus,
   CrawlPageStatus,
+  RecordingStatus,
+  DownloadsStatus,
 } from "./constants";

@@ -1,4 +1,12 @@
-import { Country, ISO639_1, OperatingSystem, Platform, State } from "./constants";
+import {
+  Country,
+  DownloadsStatus,
+  ISO639_1,
+  OperatingSystem,
+  Platform,
+  RecordingStatus,
+  State,
+} from "./constants";
 
 export type SessionStatus = "active" | "closed" | "error";
 
@@ -71,6 +79,7 @@ export interface CreateSessionParams {
   acceptCookies?: boolean;
   urlBlocklist?: string[];
   browserArgs?: string[];
+  saveDownloads?: boolean;
 }
 
 export interface SessionRecording {
@@ -81,5 +90,13 @@ export interface SessionRecording {
 }
 
 export interface GetSessionRecordingUrlResponse {
-  recordingUrl: string;
+  status: RecordingStatus;
+  recordingUrl?: string | null;
+  error?: string | null;
+}
+
+export interface GetSessionDownloadsUrlResponse {
+  status: DownloadsStatus;
+  downloadsUrl?: string | null;
+  error?: string | null;
 }
