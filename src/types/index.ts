@@ -56,6 +56,7 @@ export {
   CreateSessionParams,
   GetSessionDownloadsUrlResponse,
   GetSessionRecordingUrlResponse,
+  ImageCaptchaParam,
 } from "./session";
 export {
   ProfileResponse,

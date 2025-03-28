@@ -54,6 +54,11 @@ export interface CreateSessionProfile {
   persistChanges?: boolean;
 }
 
+export interface ImageCaptchaParam {
+  imageSelector: string;
+  inputSelector: string;
+}
+
 export interface CreateSessionParams {
   useStealth?: boolean;
   useProxy?: boolean;
@@ -80,6 +85,7 @@ export interface CreateSessionParams {
   urlBlocklist?: string[];
   browserArgs?: string[];
   saveDownloads?: boolean;
+  imageCaptchaParams?: Array<ImageCaptchaParam>;
 }
 
 export interface SessionRecording {
