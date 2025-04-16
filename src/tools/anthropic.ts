@@ -1,7 +1,9 @@
 import {
   BROWSER_USE_SCHEMA,
+  CLAUDE_COMPUTER_USE_SCHEMA,
   CRAWL_SCHEMA,
   EXTRACT_SCHEMA,
+  OPENAI_CUA_SCHEMA,
   SCRAPE_SCHEMA,
   SCREENSHOT_SCHEMA,
 } from "./schema";
@@ -76,4 +78,16 @@ export const BROWSER_USE_TOOL_ANTHROPIC: Tool = {
   input_schema: BROWSER_USE_SCHEMA,
   name: "browser_use",
   description: "Have an AI agent use a browser to perform a task on the web.",
+};
+
+export const CLAUDE_COMPUTER_USE_TOOL_ANTHROPIC: Tool = {
+  input_schema: CLAUDE_COMPUTER_USE_SCHEMA,
+  name: "claude_computer_use",
+  description: "Have an AI agent built by Anthropic use a browser to perform a task on the web.",
+};
+
+export const OPENAI_CUA_TOOL_ANTHROPIC: Tool = {
+  input_schema: OPENAI_CUA_SCHEMA,
+  name: "openai_cua",
+  description: "Have an AI agent built by OpenAI use a web browser to perform a task on the web.",
 };

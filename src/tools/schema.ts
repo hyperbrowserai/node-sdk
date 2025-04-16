@@ -187,3 +187,37 @@ export const BROWSER_USE_SCHEMA = {
   required: ["task", "llm", "plannerLlm", "pageExtractionLlm", "keepBrowserOpen"],
   additionalProperties: false,
 };
+
+export const CLAUDE_COMPUTER_USE_SCHEMA = {
+  type: "object" as const,
+  properties: {
+    task: {
+      type: "string",
+      description: "The text description of the task to be performed by the agent.",
+    },
+    useProxy: {
+      type: "boolean",
+      description:
+        "Whether to use residential proxies to access the internet. Enabling this helps avoid getting detected as a bot.",
+    },
+  },
+  required: ["task", "useProxy"],
+  additionalProperties: false,
+};
+
+export const OPENAI_CUA_SCHEMA = {
+  type: "object" as const,
+  properties: {
+    task: {
+      type: "string",
+      description: "The text description of the task to be performed by the agent.",
+    },
+    useProxy: {
+      type: "boolean",
+      description:
+        "Whether to use residential proxies to access the internet. Enabling this helps avoid getting detected as a bot.",
+    },
+  },
+  required: ["task", "useProxy"],
+  additionalProperties: false,
+};
