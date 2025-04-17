@@ -87,7 +87,7 @@ export class BrowserUseTool {
     params: StartBrowserUseTaskParams
   ): Promise<string> {
     const resp = await hb.agents.browserUse.startAndWait(params);
-    return resp.data?.finalResult || "";
+    return resp.data?.finalResult || resp.error || "";
   }
 }
 
@@ -100,7 +100,7 @@ export class ClaudeComputerUseTool {
     params: StartClaudeComputerUseTaskParams
   ): Promise<string> {
     const resp = await hb.agents.claudeComputerUse.startAndWait(params);
-    return resp.data?.finalResult || "";
+    return resp.data?.finalResult || resp.error || "";
   }
 }
 
@@ -110,6 +110,6 @@ export class OpenAICuaTool {
 
   static async runnable(hb: HyperbrowserClient, params: StartCuaTaskParams): Promise<string> {
     const resp = await hb.agents.cua.startAndWait(params);
-    return resp.data?.finalResult || "";
+    return resp.data?.finalResult || resp.error || "";
   }
 }
