@@ -1,7 +1,11 @@
 import {
   BROWSER_USE_SCHEMA,
+  CLAUDE_COMPUTER_USE_DESCRIPTION,
+  CLAUDE_COMPUTER_USE_SCHEMA,
   CRAWL_SCHEMA,
   EXTRACT_SCHEMA,
+  OPENAI_CUA_DESCRIPTION,
+  OPENAI_CUA_SCHEMA,
   SCRAPE_SCHEMA,
   SCREENSHOT_SCHEMA,
 } from "./schema";
@@ -99,6 +103,26 @@ export const BROWSER_USE_TOOL_OPENAI: ChatCompletionTool = {
     name: "browser_use",
     description: "Have an AI agent use a browser to perform a task on the web.",
     parameters: BROWSER_USE_SCHEMA,
+    strict: true,
+  },
+};
+
+export const CLAUDE_COMPUTER_USE_TOOL_OPENAI: ChatCompletionTool = {
+  type: "function",
+  function: {
+    name: "claude_computer_use",
+    description: CLAUDE_COMPUTER_USE_DESCRIPTION,
+    parameters: CLAUDE_COMPUTER_USE_SCHEMA,
+    strict: true,
+  },
+};
+
+export const OPENAI_CUA_TOOL_OPENAI: ChatCompletionTool = {
+  type: "function",
+  function: {
+    name: "openai_cua",
+    description: OPENAI_CUA_DESCRIPTION,
+    parameters: OPENAI_CUA_SCHEMA,
     strict: true,
   },
 };
