@@ -9,6 +9,10 @@ Hyperbrowser can be installed via npm by running:
 ```bash
 npm install @hyperbrowser/sdk
 ```
+or
+```bash
+yarn add @hyperbrowser/sdk
+```
 
 ## Usage
 
