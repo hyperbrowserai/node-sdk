@@ -1,3 +1,34 @@
+export const OPENAI_CUA_DESCRIPTION = `This tool utilizes OpenAI's model to autonomously execute general-purpose browser-based tasks with balanced performance and reliability using a cloud browser. It handles complex interactions effectively with practical reasoning and clear execution.
+
+Optimal for tasks requiring:
+- Reliable, general-purpose browser automation
+- Clear, structured interactions with moderate complexity
+- Efficient handling of common web tasks and workflows
+
+Best suited use cases include:
+- Standard multi-step registration or form submissions
+- Navigating typical web applications requiring multiple interactions
+- Conducting structured web research tasks
+- Extracting data through interactive web processes
+
+Provide a clear step-by-step description, necessary context, and expected outcomes. Returns the completed result or an error message if issues arise.`;
+
+export const CLAUDE_COMPUTER_USE_DESCRIPTION = `
+This tool leverages Anthropic's Claude model to autonomously execute complex browser tasks with sophisticated reasoning capabilities using a cloud browser. It specializes in handling intricate, nuanced, or highly context-sensitive web interactions.
+
+Optimal for tasks requiring:
+- Complex reasoning over multiple web pages
+- Nuanced interpretation and flexible decision-making
+- Human-like interaction with detailed context awareness
+
+Best suited use cases include:
+- Multi-step processes requiring reasoning (e.g., detailed registrations or onboarding)
+- Interacting intelligently with advanced web apps
+- Conducting in-depth research with complex conditions
+- Extracting information from dynamic or interactive websites
+
+Provide detailed task instructions, relevant context, and clearly specify the desired outcome for best results. Returns the completed result or an error message if issues arise.`;
+
 function getScrapeOptions(formats: Array<"markdown" | "screenshot"> = ["markdown"]) {
   return {
     type: "object",
@@ -37,6 +68,20 @@ function getScrapeOptions(formats: Array<"markdown" | "screenshot"> = ["markdown
     additionalProperties: false,
   };
 }
+
+const SESSION_OPTIONS = {
+  type: "object",
+  description: "The options for the browser session that will be used.",
+  properties: {
+    useProxy: {
+      type: "boolean",
+      description:
+        "Recommended false. Avoid setting this if not explicitly mentioned. Whether to use residential proxies to access the internet. Enabling this helps avoid getting detected as a bot.",
+    },
+  },
+  required: ["useProxy"],
+  additionalProperties: false,
+};
 
 export const SCRAPE_SCHEMA = {
   type: "object" as const,
@@ -195,13 +240,9 @@ export const CLAUDE_COMPUTER_USE_SCHEMA = {
       type: "string",
       description: "The text description of the task to be performed by the agent.",
     },
-    useProxy: {
-      type: "boolean",
-      description:
-        "Whether to use residential proxies to access the internet. Enabling this helps avoid getting detected as a bot.",
-    },
+    sessionOptions: SESSION_OPTIONS,
   },
-  required: ["task", "useProxy"],
+  required: ["task", "sessionOptions"],
   additionalProperties: false,
 };
 
@@ -212,12 +253,8 @@ export const OPENAI_CUA_SCHEMA = {
       type: "string",
       description: "The text description of the task to be performed by the agent.",
     },
-    useProxy: {
-      type: "boolean",
-      description:
-        "Whether to use residential proxies to access the internet. Enabling this helps avoid getting detected as a bot.",
-    },
+    sessionOptions: SESSION_OPTIONS,
   },
-  required: ["task", "useProxy"],
+  required: ["task", "sessionOptions"],
   additionalProperties: false,
 };

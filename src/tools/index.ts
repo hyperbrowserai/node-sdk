@@ -104,7 +104,7 @@ export class ClaudeComputerUseTool {
   }
 }
 
-export class CuaTool {
+export class OpenAICuaTool {
   static openaiToolDefinition = OPENAI_CUA_TOOL_OPENAI;
   static anthropicToolDefinition = OPENAI_CUA_TOOL_ANTHROPIC;
 
