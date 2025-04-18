@@ -69,6 +69,7 @@ export class ProfilesService extends BaseService {
       return await this.request<ProfileListResponse>("/profiles", undefined, {
         page: params.page,
         limit: params.limit,
+        name: params.name,
       });
     } catch (error) {
       if (error instanceof HyperbrowserError) {
