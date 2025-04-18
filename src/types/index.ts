@@ -59,6 +59,7 @@ export {
   ImageCaptchaParam,
 } from "./session";
 export {
+  CreateProfileParams,
   ProfileResponse,
   CreateProfileResponse,
   ProfileListParams,

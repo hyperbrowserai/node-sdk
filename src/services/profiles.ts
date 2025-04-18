@@ -1,5 +1,6 @@
 import { BaseService } from "./base";
 import {
+  CreateProfileParams,
   ProfileResponse,
   CreateProfileResponse,
   ProfileListParams,
@@ -11,11 +12,13 @@ import { BasicResponse } from "../types";
 export class ProfilesService extends BaseService {
   /**
    * Create a new profile
+   * @param params Configuration parameters for the new profile
    */
-  async create(): Promise<CreateProfileResponse> {
+  async create(params?: CreateProfileParams): Promise<CreateProfileResponse> {
     try {
       return await this.request<CreateProfileResponse>("/profile", {
         method: "POST",
+        body: params ? JSON.stringify(params) : undefined,
       });
     } catch (error) {
       if (error instanceof HyperbrowserError) {

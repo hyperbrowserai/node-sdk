@@ -1,3 +1,7 @@
+export interface CreateProfileParams {
+  name?: string;
+}
+
 export interface CreateProfileResponse {
   id: string;
 }
@@ -10,6 +14,7 @@ export interface ProfileResponse {
 }
 
 export interface ProfileListParams {
+  name?: string;
   page?: number;
   limit?: number;
 }
