@@ -4,10 +4,12 @@ export interface CreateProfileParams {
 
 export interface CreateProfileResponse {
   id: string;
+  name: string | null;
 }
 
 export interface ProfileResponse {
   id: string;
+  name: string | null;
   teamId: string;
   createdAt: string;
   updatedAt: string;
