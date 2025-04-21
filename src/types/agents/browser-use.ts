@@ -14,6 +14,8 @@ export interface StartBrowserUseTaskParams {
   pageExtractionLlm?: BrowserUseLlm;
   plannerInterval?: number;
   maxSteps?: number;
+  maxFailures?: number;
+  initialActions?: Array<Record<string, Record<string, any>>>;
   keepBrowserOpen?: boolean;
   sessionOptions?: CreateSessionParams;
 }

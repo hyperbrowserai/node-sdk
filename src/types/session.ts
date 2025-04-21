@@ -86,6 +86,7 @@ export interface CreateSessionParams {
   browserArgs?: string[];
   saveDownloads?: boolean;
   imageCaptchaParams?: Array<ImageCaptchaParam>;
+  timeoutMinutes?: number;
 }
 
 export interface SessionRecording {
