@@ -46,6 +46,16 @@ export {
   CuaStepResponse,
 } from "./agents/cua";
 export {
+  StartHyperAgentTaskParams,
+  StartHyperAgentTaskResponse,
+  HyperAgentTaskStatusResponse,
+  HyperAgentTaskResponse,
+  HyperAgentTaskData,
+  HyperAgentStep,
+  HyperAgentOutput,
+  HyperAgentActionOutput,
+} from "./agents/hyper-agent";
+export {
   BasicResponse,
   SessionStatus,
   Session,
@@ -88,4 +98,8 @@ export {
   CrawlPageStatus,
   RecordingStatus,
   DownloadsStatus,
+  HyperAgentLlm,
+  HyperAgentTaskStatus,
+  ClaudeComputerUseTaskStatus,
+  CuaTaskStatus,
 } from "./constants";

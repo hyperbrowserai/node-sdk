@@ -4,6 +4,7 @@ export type ExtractJobStatus = "pending" | "running" | "completed" | "failed";
 export type CrawlJobStatus = "pending" | "running" | "completed" | "failed";
 export type BrowserUseTaskStatus = "pending" | "running" | "completed" | "failed" | "stopped";
 export type CuaTaskStatus = "pending" | "running" | "completed" | "failed" | "stopped";
+export type HyperAgentTaskStatus = "pending" | "running" | "completed" | "failed" | "stopped";
 export type ClaudeComputerUseTaskStatus =
   | "pending"
   | "running"
@@ -25,6 +26,8 @@ export type BrowserUseLlm =
   | "claude-3-5-sonnet-20241022"
   | "claude-3-5-haiku-20241022"
   | "gemini-2.0-flash";
+
+export type HyperAgentLlm = "gpt-4o" | "gpt-4o-mini" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano";
 
 export type Country =
   | "AD"
