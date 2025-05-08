@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { BrowserUseLlm, BrowserUseTaskStatus } from "../constants";
 import { CreateSessionParams } from "../session";
 
@@ -16,6 +17,9 @@ export interface StartBrowserUseTaskParams {
   maxSteps?: number;
   maxFailures?: number;
   initialActions?: Array<Record<string, Record<string, any>>>;
+  sensitiveData?: Record<string, string>;
+  messageContext?: string;
+  outputModelSchema?: z.ZodSchema | object;
   keepBrowserOpen?: boolean;
   sessionOptions?: CreateSessionParams;
 }

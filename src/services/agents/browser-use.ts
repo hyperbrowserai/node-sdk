@@ -1,3 +1,4 @@
+import zodToJsonSchema from "zod-to-json-schema";
 import { HyperbrowserError } from "../../client";
 import { BasicResponse } from "../../types";
 import { POLLING_ATTEMPTS } from "../../types/constants";
@@ -7,7 +8,7 @@ import {
   BrowserUseTaskResponse,
   BrowserUseTaskStatusResponse,
 } from "../../types/agents/browser-use";
-import { sleep } from "../../utils";
+import { isZodSchema, sleep } from "../../utils";
 import { BaseService } from "../base";
 
 export class BrowserUseService extends BaseService {
@@ -17,6 +18,11 @@ export class BrowserUseService extends BaseService {
    */
   async start(params: StartBrowserUseTaskParams): Promise<StartBrowserUseTaskResponse> {
     try {
+      if (params.outputModelSchema) {
+        if (isZodSchema(params.outputModelSchema)) {
+          params.outputModelSchema = zodToJsonSchema(params.outputModelSchema);
+        }
+      }
       return await this.request<StartBrowserUseTaskResponse>("/task/browser-use", {
         method: "POST",
         body: JSON.stringify(params),

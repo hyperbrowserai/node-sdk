@@ -1,7 +1,6 @@
-import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { BaseService } from "./base";
-import { sleep } from "../utils";
+import { isZodSchema, sleep } from "../utils";
 import { HyperbrowserError } from "../client";
 import {
   ExtractJobResponse,
@@ -10,16 +9,6 @@ import {
 } from "../types/extract";
 import { StartExtractJobParams } from "../types/extract";
 import { POLLING_ATTEMPTS } from "../types/constants";
-
-const isZodSchema = (schema: z.ZodSchema | object): schema is z.ZodType => {
-  return (
-    schema &&
-    typeof schema === "object" &&
-    "_def" in schema &&
-    "parse" in schema &&
-    typeof schema.parse === "function"
-  );
-};
 
 export class ExtractService extends BaseService {
   /**
