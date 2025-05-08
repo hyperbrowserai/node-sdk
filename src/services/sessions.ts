@@ -3,6 +3,7 @@ import {
   CreateSessionParams,
   GetSessionDownloadsUrlResponse,
   GetSessionRecordingUrlResponse,
+  GetSessionVideoRecordingUrlResponse,
   SessionDetail,
   SessionListParams,
   SessionListResponse,
@@ -107,6 +108,23 @@ export class SessionsService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError(`Failed to get recording url for session ${id}`, undefined);
+    }
+  }
+
+  /**
+   * Get the video recording URL of a session
+   * @param id The ID of the session to get the video recording URL from
+   */
+  async getVideoRecordingURL(id: string): Promise<GetSessionVideoRecordingUrlResponse> {
+    try {
+      return await this.request<GetSessionVideoRecordingUrlResponse>(
+        `/session/${id}/video-recording-url`
+      );
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to get video recording url for session ${id}`, undefined);
     }
   }
 

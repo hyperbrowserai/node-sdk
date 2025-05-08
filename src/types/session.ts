@@ -78,6 +78,7 @@ export interface CreateSessionParams {
   trackers?: boolean;
   annoyances?: boolean;
   enableWebRecording?: boolean;
+  enableVideoWebRecording?: boolean;
   profile?: CreateSessionProfile;
   extensionIds?: Array<string>;
   staticIpId?: string;
@@ -97,6 +98,12 @@ export interface SessionRecording {
 }
 
 export interface GetSessionRecordingUrlResponse {
+  status: RecordingStatus;
+  recordingUrl?: string | null;
+  error?: string | null;
+}
+
+export interface GetSessionVideoRecordingUrlResponse {
   status: RecordingStatus;
   recordingUrl?: string | null;
   error?: string | null;

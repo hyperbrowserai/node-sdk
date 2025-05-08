@@ -65,6 +65,7 @@ export {
   ScreenConfig,
   CreateSessionParams,
   GetSessionDownloadsUrlResponse,
+  GetSessionVideoRecordingUrlResponse,
   GetSessionRecordingUrlResponse,
   ImageCaptchaParam,
 } from "./session";
