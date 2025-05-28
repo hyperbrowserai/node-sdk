@@ -36,7 +36,7 @@ export class HyperbrowserClient {
 
   constructor(config: HyperbrowserConfig = {}) {
     const apiKey = config.apiKey || process.env["HYPERBROWSER_API_KEY"];
-    const baseUrl = config.baseUrl || "https://app.hyperbrowser.ai";
+    const baseUrl = config.baseUrl || "https://api.hyperbrowser.ai";
     const timeout = config.timeout || 30000;
     if (!apiKey) {
       throw new HyperbrowserError(
