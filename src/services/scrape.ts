@@ -142,6 +142,9 @@ export class BatchScrapeService extends BaseService {
         if (tmpJobResponse.data) {
           jobResponse.data?.push(...tmpJobResponse.data);
         }
+        if (tmpJobResponse.error) {
+          jobResponse.error = tmpJobResponse.error;
+        }
         jobResponse.currentPageBatch = tmpJobResponse.currentPageBatch;
         jobResponse.totalScrapedPages = tmpJobResponse.totalScrapedPages;
         jobResponse.totalPageBatches = tmpJobResponse.totalPageBatches;

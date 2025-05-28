@@ -138,6 +138,9 @@ export class CrawlService extends BaseService {
         if (tmpJobResponse.data) {
           jobResponse.data?.push(...tmpJobResponse.data);
         }
+        if (tmpJobResponse.error) {
+          jobResponse.error = tmpJobResponse.error;
+        }
         jobResponse.currentPageBatch = tmpJobResponse.currentPageBatch;
         jobResponse.totalCrawledPages = tmpJobResponse.totalCrawledPages;
         jobResponse.totalPageBatches = tmpJobResponse.totalPageBatches;
