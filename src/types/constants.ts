@@ -22,10 +22,15 @@ export const POLLING_ATTEMPTS = 5;
 export type BrowserUseLlm =
   | "gpt-4o"
   | "gpt-4o-mini"
+  | "gpt-4.1"
+  | "gpt-4.1-mini"
+  | "claude-sonnet-4-20250514"
   | "claude-3-7-sonnet-20250219"
   | "claude-3-5-sonnet-20241022"
   | "claude-3-5-haiku-20241022"
   | "gemini-2.0-flash";
+
+export type ClaudeComputerUseLlm = "claude-3-7-sonnet-20250219" | "claude-sonnet-4-20250514";
 
 export type HyperAgentLlm = "gpt-4o" | "gpt-4o-mini" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano";
 

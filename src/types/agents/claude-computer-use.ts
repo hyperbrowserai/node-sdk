@@ -1,8 +1,9 @@
-import { ClaudeComputerUseTaskStatus } from "../constants";
+import { ClaudeComputerUseLlm, ClaudeComputerUseTaskStatus } from "../constants";
 import { CreateSessionParams } from "../session";
 
 export interface StartClaudeComputerUseTaskParams {
   task: string;
+  llm?: ClaudeComputerUseLlm;
   sessionId?: string;
   maxFailures?: number;
   maxSteps?: number;

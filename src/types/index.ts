@@ -68,6 +68,8 @@ export {
   GetSessionVideoRecordingUrlResponse,
   GetSessionRecordingUrlResponse,
   ImageCaptchaParam,
+  UploadFileResponse,
+  UploadFileOptions,
 } from "./session";
 export {
   CreateProfileParams,
@@ -85,6 +87,7 @@ export {
   ExtractJobStatus,
   BrowserUseTaskStatus,
   BrowserUseLlm,
+  ClaudeComputerUseLlm,
   ScrapeScreenshotFormat,
   ScrapeJobStatus,
   CrawlJobStatus,
