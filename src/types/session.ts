@@ -1,3 +1,4 @@
+import fs from "fs";
 import {
   Country,
   DownloadsStatus,
@@ -113,4 +114,13 @@ export interface GetSessionDownloadsUrlResponse {
   status: DownloadsStatus;
   downloadsUrl?: string | null;
   error?: string | null;
+}
+
+export interface UploadFileResponse {
+  message: string;
+}
+
+export interface UploadFileOptions {
+  fileInput: string | fs.ReadStream | Buffer;
+  fileName?: string;
 }
