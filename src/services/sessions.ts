@@ -5,6 +5,7 @@ import { RequestInit } from "node-fetch";
 import {
   BasicResponse,
   CreateSessionParams,
+  GetActiveSessionsCountResponse,
   GetSessionDownloadsUrlResponse,
   GetSessionRecordingUrlResponse,
   GetSessionVideoRecordingUrlResponse,
@@ -267,5 +268,19 @@ export class SessionsService extends BaseService {
       typeof obj.on === "function" &&
       obj.readable !== false
     );
+  }
+
+  /**
+   * Get the number of active sessions
+   */
+  async getActiveSessionsCount(): Promise<GetActiveSessionsCountResponse> {
+    try {
+      return await this.request<GetActiveSessionsCountResponse>("/sessions/active-count");
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError("Failed to get active sessions count", undefined);
+    }
   }
 }

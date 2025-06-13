@@ -70,6 +70,7 @@ export {
   ImageCaptchaParam,
   UploadFileResponse,
   UploadFileOptions,
+  GetActiveSessionsCountResponse,
 } from "./session";
 export {
   CreateProfileParams,

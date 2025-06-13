@@ -124,3 +124,7 @@ export interface UploadFileOptions {
   fileInput: string | fs.ReadStream | Buffer;
   fileName?: string;
 }
+
+export interface GetActiveSessionsCountResponse {
+  activeSessionsCount: number;
+}
