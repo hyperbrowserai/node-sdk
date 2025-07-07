@@ -9,6 +9,7 @@ import { BrowserUseService } from "./services/agents/browser-use";
 import { CuaService } from "./services/agents/cua";
 import { ClaudeComputerUseService } from "./services/agents/claude-computer-use";
 import { HyperAgentService } from "./services/agents/hyper-agent";
+import { TeamService } from "./services/team";
 
 export class HyperbrowserError extends Error {
   constructor(
@@ -33,6 +34,7 @@ export class HyperbrowserClient {
     cua: CuaService;
     hyperAgent: HyperAgentService;
   };
+  public readonly team: TeamService;
 
   constructor(config: HyperbrowserConfig = {}) {
     const apiKey = config.apiKey || process.env["HYPERBROWSER_API_KEY"];
@@ -50,6 +52,7 @@ export class HyperbrowserClient {
     this.extract = new ExtractService(apiKey, baseUrl, timeout);
     this.profiles = new ProfilesService(apiKey, baseUrl, timeout);
     this.extensions = new ExtensionService(apiKey, baseUrl, timeout);
+    this.team = new TeamService(apiKey, baseUrl, timeout);
 
     this.agents = {
       browserUse: new BrowserUseService(apiKey, baseUrl, timeout),

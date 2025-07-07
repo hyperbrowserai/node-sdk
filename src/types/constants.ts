@@ -28,7 +28,8 @@ export type BrowserUseLlm =
   | "claude-3-7-sonnet-20250219"
   | "claude-3-5-sonnet-20241022"
   | "claude-3-5-haiku-20241022"
-  | "gemini-2.0-flash";
+  | "gemini-2.0-flash"
+  | "gemini-2.5-flash";
 
 export type ClaudeComputerUseLlm = "claude-3-7-sonnet-20250219" | "claude-sonnet-4-20250514";
 
