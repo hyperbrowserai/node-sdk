@@ -2,6 +2,12 @@ import { z } from "zod";
 import { BrowserUseLlm, BrowserUseTaskStatus } from "../constants";
 import { CreateSessionParams } from "../session";
 
+export interface BrowserUseApiKeys {
+  openai?: string;
+  anthropic?: string;
+  google?: string;
+}
+
 export interface StartBrowserUseTaskParams {
   task: string;
   llm?: BrowserUseLlm;
@@ -22,6 +28,8 @@ export interface StartBrowserUseTaskParams {
   outputModelSchema?: z.ZodSchema | object;
   keepBrowserOpen?: boolean;
   sessionOptions?: CreateSessionParams;
+  useCustomApiKeys?: boolean;
+  apiKeys?: BrowserUseApiKeys;
 }
 
 export interface StartBrowserUseTaskResponse {

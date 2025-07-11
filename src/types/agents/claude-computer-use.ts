@@ -1,6 +1,10 @@
 import { ClaudeComputerUseLlm, ClaudeComputerUseTaskStatus } from "../constants";
 import { CreateSessionParams } from "../session";
 
+export interface ClaudeComputerUseApiKeys {
+  anthropic?: string;
+}
+
 export interface StartClaudeComputerUseTaskParams {
   task: string;
   llm?: ClaudeComputerUseLlm;
@@ -9,6 +13,8 @@ export interface StartClaudeComputerUseTaskParams {
   maxSteps?: number;
   keepBrowserOpen?: boolean;
   sessionOptions?: CreateSessionParams;
+  useCustomApiKeys?: boolean;
+  apiKeys?: ClaudeComputerUseApiKeys;
 }
 
 export interface StartClaudeComputerUseTaskResponse {

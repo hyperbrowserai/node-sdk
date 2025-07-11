@@ -1,6 +1,10 @@
 import { CuaTaskStatus } from "../constants";
 import { CreateSessionParams } from "../session";
 
+export interface CuaApiKeys {
+  openai?: string;
+}
+
 export interface StartCuaTaskParams {
   task: string;
   sessionId?: string;
@@ -8,6 +12,8 @@ export interface StartCuaTaskParams {
   maxSteps?: number;
   keepBrowserOpen?: boolean;
   sessionOptions?: CreateSessionParams;
+  useCustomApiKeys?: boolean;
+  apiKeys?: CuaApiKeys;
 }
 
 export interface StartCuaTaskResponse {
