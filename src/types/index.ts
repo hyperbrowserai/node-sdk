@@ -28,6 +28,7 @@ export {
   BrowserUseTaskStatusResponse,
   BrowserUseTaskResponse,
   BrowserUseTaskData,
+  BrowserUseApiKeys,
 } from "./agents/browser-use";
 export {
   StartClaudeComputerUseTaskParams,
@@ -36,6 +37,7 @@ export {
   ClaudeComputerUseTaskResponse,
   ClaudeComputerUseTaskData,
   ClaudeComputerUseStepResponse,
+  ClaudeComputerUseApiKeys,
 } from "./agents/claude-computer-use";
 export {
   StartCuaTaskParams,
@@ -44,6 +46,7 @@ export {
   CuaTaskResponse,
   CuaTaskData,
   CuaStepResponse,
+  CuaApiKeys,
 } from "./agents/cua";
 export {
   StartHyperAgentTaskParams,
@@ -54,6 +57,7 @@ export {
   HyperAgentStep,
   HyperAgentOutput,
   HyperAgentActionOutput,
+  HyperAgentApiKeys,
 } from "./agents/hyper-agent";
 export {
   BasicResponse,

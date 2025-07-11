@@ -1,6 +1,12 @@
 import { HyperAgentLlm, HyperAgentTaskStatus } from "../constants";
 import { CreateSessionParams } from "../session";
 
+export interface HyperAgentApiKeys {
+  openai?: string;
+  anthropic?: string;
+  google?: string;
+}
+
 export interface StartHyperAgentTaskParams {
   task: string;
   llm?: HyperAgentLlm;
@@ -8,6 +14,8 @@ export interface StartHyperAgentTaskParams {
   maxSteps?: number;
   keepBrowserOpen?: boolean;
   sessionOptions?: CreateSessionParams;
+  useCustomApiKeys?: boolean;
+  apiKeys?: HyperAgentApiKeys;
 }
 
 export interface StartHyperAgentTaskResponse {
