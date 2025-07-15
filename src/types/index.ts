@@ -113,3 +113,16 @@ export {
   CuaTaskStatus,
 } from "./constants";
 export { TeamCreditInfo } from "./team";
+export {
+  ComputerAction,
+  Coordinate,
+  ClickActionParams,
+  DragActionParams,
+  PressKeysActionParams,
+  MoveMouseActionParams,
+  ScreenshotActionParams,
+  ScrollActionParams,
+  TypeTextActionParams,
+  ComputerActionParams,
+  ComputerActionResponse,
+} from "./computer-action";

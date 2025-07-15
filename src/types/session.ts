@@ -28,6 +28,7 @@ export interface Session {
 
 export interface SessionDetail extends Session {
   wsEndpoint: string;
+  computerActionEndpoint?: string;
   liveUrl?: string;
   token: string;
 }
