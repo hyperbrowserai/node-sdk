@@ -11,10 +11,11 @@ export class BaseService {
   protected async request<T>(
     path: string,
     init?: RequestInit,
-    params?: Record<string, string | number | undefined>
+    params?: Record<string, string | number | undefined>,
+    fullUrl: boolean = false
   ): Promise<T> {
     try {
-      const url = new URL(`${this.baseUrl}/api${path}`);
+      const url = new URL(fullUrl ? path : `${this.baseUrl}/api${path}`);
 
       if (params) {
         Object.entries(params).forEach(([key, value]) => {
