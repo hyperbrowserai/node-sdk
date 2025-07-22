@@ -81,6 +81,7 @@ export interface CreateSessionParams {
   annoyances?: boolean;
   enableWebRecording?: boolean;
   enableVideoWebRecording?: boolean;
+  enableLogCapture?: boolean;
   profile?: CreateSessionProfile;
   extensionIds?: Array<string>;
   staticIpId?: string;
