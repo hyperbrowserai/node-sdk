@@ -14,6 +14,7 @@ export interface StartCuaTaskParams {
   sessionOptions?: CreateSessionParams;
   useCustomApiKeys?: boolean;
   apiKeys?: CuaApiKeys;
+  useComputerAction?: boolean;
 }
 
 export interface StartCuaTaskResponse {

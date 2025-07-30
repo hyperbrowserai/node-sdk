@@ -15,6 +15,7 @@ export interface StartClaudeComputerUseTaskParams {
   sessionOptions?: CreateSessionParams;
   useCustomApiKeys?: boolean;
   apiKeys?: ClaudeComputerUseApiKeys;
+  useComputerAction?: boolean;
 }
 
 export interface StartClaudeComputerUseTaskResponse {
