@@ -6,6 +6,7 @@ import {
   OperatingSystem,
   Platform,
   RecordingStatus,
+  SessionEventLogType,
   State,
 } from "./constants";
 
@@ -91,6 +92,7 @@ export interface CreateSessionParams {
   saveDownloads?: boolean;
   imageCaptchaParams?: Array<ImageCaptchaParam>;
   timeoutMinutes?: number;
+  enableWebglFingerprinting?: boolean;
 }
 
 export interface SessionRecording {
@@ -129,4 +131,31 @@ export interface UploadFileOptions {
 
 export interface GetActiveSessionsCountResponse {
   activeSessionsCount: number;
+}
+
+export interface SessionEventLog {
+  id: string;
+  sessionId: string;
+  targetId: string;
+  pageUrl: string;
+  teamId: string;
+  type: SessionEventLogType;
+  metadata: Record<string, unknown>;
+  timestamp: number;
+}
+
+export interface SessionEventLogListParams {
+  page?: number;
+  limit?: number;
+  startTimestamp?: number;
+  endTimestamp?: number;
+  targetId?: string;
+  types?: SessionEventLogType[];
+}
+
+export interface SessionEventLogListResponse {
+  data: SessionEventLog[];
+  totalCount: number;
+  page: number;
+  perPage: number;
 }

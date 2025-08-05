@@ -75,6 +75,9 @@ export {
   UploadFileResponse,
   UploadFileOptions,
   GetActiveSessionsCountResponse,
+  SessionEventLogListParams,
+  SessionEventLogListResponse,
+  SessionEventLog,
 } from "./session";
 export {
   CreateProfileParams,
@@ -111,6 +114,7 @@ export {
   HyperAgentTaskStatus,
   ClaudeComputerUseTaskStatus,
   CuaTaskStatus,
+  SessionEventLogType,
 } from "./constants";
 export { TeamCreditInfo } from "./team";
 export {

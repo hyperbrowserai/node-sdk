@@ -15,11 +15,51 @@ import {
   SessionRecording,
   UploadFileOptions,
   UploadFileResponse,
+  SessionEventLogListParams,
+  SessionEventLogListResponse,
 } from "../types/session";
 import { BaseService } from "./base";
 import { HyperbrowserError } from "../client";
 
+/**
+ * Service for managing session event logs
+ */
+class SessionEventLogsService extends BaseService {
+  /**
+   * List event logs for a session
+   * @param sessionId The ID of the session
+   * @param params Optional parameters to filter the event logs
+   */
+  async list(
+    sessionId: string,
+    params: SessionEventLogListParams = {}
+  ): Promise<SessionEventLogListResponse> {
+    try {
+      return await this.request<SessionEventLogListResponse>(
+        `/session/${sessionId}/event-logs`,
+        undefined,
+        {
+          ...params,
+          types: params.types,
+        }
+      );
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to list event logs for session ${sessionId}`, undefined);
+    }
+  }
+}
+
 export class SessionsService extends BaseService {
+  public readonly eventLogs: SessionEventLogsService;
+
+  constructor(apiKey: string, baseUrl: string, timeout: number) {
+    super(apiKey, baseUrl, timeout);
+    this.eventLogs = new SessionEventLogsService(apiKey, baseUrl, timeout);
+  }
+
   /**
    * Create a new browser session
    * @param params Configuration parameters for the new session

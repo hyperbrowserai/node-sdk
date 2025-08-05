@@ -1,3 +1,4 @@
+export type SessionEventLogType = "captcha_detected" | "captcha_solved" | "captcha_error";
 export type ScrapeFormat = "markdown" | "html" | "links" | "screenshot";
 export type ScrapeJobStatus = "pending" | "running" | "completed" | "failed";
 export type ExtractJobStatus = "pending" | "running" | "completed" | "failed";
