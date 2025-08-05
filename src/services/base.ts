@@ -11,7 +11,7 @@ export class BaseService {
   protected async request<T>(
     path: string,
     init?: RequestInit,
-    params?: Record<string, string | number | undefined>,
+    params?: Record<string, string | number | string[] | undefined>,
     fullUrl: boolean = false
   ): Promise<T> {
     try {
@@ -20,7 +20,13 @@ export class BaseService {
       if (params) {
         Object.entries(params).forEach(([key, value]) => {
           if (value !== undefined) {
-            url.searchParams.append(key, value.toString());
+            if (Array.isArray(value)) {
+              value.forEach((item) => {
+                url.searchParams.append(key, item.toString());
+              });
+            } else {
+              url.searchParams.append(key, value.toString());
+            }
           }
         });
       }
