@@ -93,6 +93,8 @@ export interface CreateSessionParams {
   imageCaptchaParams?: Array<ImageCaptchaParam>;
   timeoutMinutes?: number;
   enableWebglFingerprinting?: boolean;
+  enableWindowManager?: boolean;
+  enableWindowManagerTaskbar?: boolean;
 }
 
 export interface SessionRecording {
