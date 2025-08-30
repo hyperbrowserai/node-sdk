@@ -36,6 +36,8 @@ export type ClaudeComputerUseLlm = "claude-3-7-sonnet-20250219" | "claude-sonnet
 
 export type HyperAgentLlm = "gpt-4o" | "gpt-4o-mini" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano";
 
+export type SessionRegion = "us-central" | "asia-south";
+
 export type Country =
   | "AD"
   | "AE"

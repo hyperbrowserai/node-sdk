@@ -7,6 +7,7 @@ import {
   Platform,
   RecordingStatus,
   SessionEventLogType,
+  SessionRegion,
   State,
 } from "./constants";
 
@@ -95,6 +96,7 @@ export interface CreateSessionParams {
   enableWebglFingerprinting?: boolean;
   enableWindowManager?: boolean;
   enableWindowManagerTaskbar?: boolean;
+  region?: SessionRegion;
 }
 
 export interface SessionRecording {
