@@ -97,6 +97,7 @@ export interface CreateSessionParams {
   enableWindowManager?: boolean;
   enableWindowManagerTaskbar?: boolean;
   region?: SessionRegion;
+  viewOnlyLiveView?: boolean;
 }
 
 export interface SessionRecording {
