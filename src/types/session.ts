@@ -64,6 +64,7 @@ export interface ImageCaptchaParam {
 }
 
 export interface CreateSessionParams {
+  useUltraStealth?: boolean;
   useStealth?: boolean;
   useProxy?: boolean;
   proxyServer?: string;
