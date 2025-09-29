@@ -142,8 +142,8 @@ export interface GetActiveSessionsCountResponse {
 export interface SessionEventLog {
   id: string;
   sessionId: string;
-  targetId: string;
-  pageUrl: string;
+  targetId: string | null;
+  pageUrl: string | null;
   teamId: string;
   type: SessionEventLogType;
   metadata: Record<string, unknown>;
