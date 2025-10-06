@@ -17,6 +17,33 @@ export interface BasicResponse {
   success: boolean;
 }
 
+export interface SessionProfile {
+  id: string;
+  persistChanges?: boolean;
+}
+
+export interface SessionLaunchState {
+  useUltraStealth?: boolean;
+  useStealth?: boolean;
+  useProxy?: boolean;
+  solveCaptchas?: boolean;
+  adblock?: boolean;
+  trackers?: boolean;
+  annoyances?: boolean;
+  screen?: ScreenConfig;
+  enableWebRecording?: boolean;
+  enableVideoWebRecording?: boolean;
+  enableLogCapture?: boolean;
+  acceptCookies?: boolean;
+  profile?: SessionProfile;
+  staticIpId?: string;
+  saveDownloads?: boolean;
+  enableWindowManager?: boolean;
+  enableWindowManagerTaskbar?: boolean;
+  viewOnlyLiveView?: boolean;
+  disablePasswordManager?: boolean;
+}
+
 export interface Session {
   id: string;
   teamId: string;
@@ -26,6 +53,7 @@ export interface Session {
   createdAt: string;
   updatedAt: string;
   sessionUrl: string;
+  launchState?: SessionLaunchState | null;
 }
 
 export interface SessionDetail extends Session {
