@@ -78,6 +78,8 @@ export {
   SessionEventLogListParams,
   SessionEventLogListResponse,
   SessionEventLog,
+  SessionProfile,
+  SessionLaunchState,
 } from "./session";
 export {
   CreateProfileParams,
