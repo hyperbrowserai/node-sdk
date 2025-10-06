@@ -26,6 +26,7 @@ export interface Session {
   createdAt: string;
   updatedAt: string;
   sessionUrl: string;
+  profile?: CreateSessionProfile;
 }
 
 export interface SessionDetail extends Session {
