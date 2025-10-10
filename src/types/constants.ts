@@ -16,6 +16,12 @@ export type ClaudeComputerUseTaskStatus =
   | "completed"
   | "failed"
   | "stopped";
+export type GeminiComputerUseTaskStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "failed"
+  | "stopped";
 export type ScrapePageStatus = "completed" | "failed" | "pending" | "running";
 export type CrawlPageStatus = "completed" | "failed";
 export type ScrapeWaitUntil = "load" | "domcontentloaded" | "networkidle";
@@ -45,6 +51,8 @@ export type ClaudeComputerUseLlm =
   | "claude-3-7-sonnet-20250219";
 
 export type HyperAgentLlm = "gpt-4o" | "gpt-4o-mini" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano";
+
+export type GeminiComputerUseLlm = "gemini-2.5-computer-use-preview-10-2025";
 
 export type SessionRegion = "us-central" | "asia-south" | "us-dev";
 

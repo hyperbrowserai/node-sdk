@@ -60,6 +60,15 @@ export {
   HyperAgentApiKeys,
 } from "./agents/hyper-agent";
 export {
+  StartGeminiComputerUseTaskParams,
+  StartGeminiComputerUseTaskResponse,
+  GeminiComputerUseTaskStatusResponse,
+  GeminiComputerUseTaskResponse,
+  GeminiComputerUseTaskData,
+  GeminiComputerUseStepResponse,
+  GeminiComputerUseApiKeys,
+} from "./agents/gemini-computer-use";
+export {
   BasicResponse,
   SessionStatus,
   Session,
@@ -98,6 +107,7 @@ export {
   BrowserUseTaskStatus,
   BrowserUseLlm,
   ClaudeComputerUseLlm,
+  GeminiComputerUseLlm,
   ScrapeScreenshotFormat,
   ScrapeJobStatus,
   CrawlJobStatus,
@@ -116,7 +126,9 @@ export {
   HyperAgentTaskStatus,
   ClaudeComputerUseTaskStatus,
   CuaTaskStatus,
+  GeminiComputerUseTaskStatus,
   SessionEventLogType,
+  SessionRegion,
 } from "./constants";
 export { TeamCreditInfo } from "./team";
 export {
