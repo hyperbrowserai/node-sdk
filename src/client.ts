@@ -11,6 +11,7 @@ import { ClaudeComputerUseService } from "./services/agents/claude-computer-use"
 import { HyperAgentService } from "./services/agents/hyper-agent";
 import { TeamService } from "./services/team";
 import { ComputerActionService } from "./services/computer-action";
+import { GeminiComputerUseService } from "./services/agents/gemini-computer-use";
 
 export class HyperbrowserError extends Error {
   constructor(
@@ -34,6 +35,7 @@ export class HyperbrowserClient {
     claudeComputerUse: ClaudeComputerUseService;
     cua: CuaService;
     hyperAgent: HyperAgentService;
+    geminiComputerUse: GeminiComputerUseService;
   };
   public readonly team: TeamService;
   public readonly computerAction: ComputerActionService;
@@ -62,6 +64,7 @@ export class HyperbrowserClient {
       claudeComputerUse: new ClaudeComputerUseService(apiKey, baseUrl, timeout),
       cua: new CuaService(apiKey, baseUrl, timeout),
       hyperAgent: new HyperAgentService(apiKey, baseUrl, timeout),
+      geminiComputerUse: new GeminiComputerUseService(apiKey, baseUrl, timeout),
     };
   }
 }
