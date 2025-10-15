@@ -54,7 +54,13 @@ export type HyperAgentLlm = "gpt-4o" | "gpt-4o-mini" | "gpt-4.1" | "gpt-4.1-mini
 
 export type GeminiComputerUseLlm = "gemini-2.5-computer-use-preview-10-2025";
 
-export type SessionRegion = "us-central" | "asia-south" | "us-dev";
+export type SessionRegion =
+  | "us-central"
+  | "asia-south"
+  | "us-dev"
+  | "europe-west"
+  | "us-west"
+  | "us-east";
 
 export type Country =
   | "AD"
