@@ -15,6 +15,7 @@ export interface StartGeminiComputerUseTaskParams {
   sessionOptions?: CreateSessionParams;
   useCustomApiKeys?: boolean;
   apiKeys?: GeminiComputerUseApiKeys;
+  useComputerAction?: boolean;
 }
 
 export interface StartGeminiComputerUseTaskResponse {
