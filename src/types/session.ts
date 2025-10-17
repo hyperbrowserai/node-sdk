@@ -42,6 +42,7 @@ export interface SessionLaunchState {
   enableWindowManagerTaskbar?: boolean;
   viewOnlyLiveView?: boolean;
   disablePasswordManager?: boolean;
+  enableAlwaysOpenPdfExternally?: boolean;
 }
 
 export interface Session {
@@ -129,6 +130,7 @@ export interface CreateSessionParams {
   region?: SessionRegion;
   viewOnlyLiveView?: boolean;
   disablePasswordManager?: boolean;
+  enableAlwaysOpenPdfExternally?: boolean;
 }
 
 export interface SessionRecording {
