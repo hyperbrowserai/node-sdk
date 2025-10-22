@@ -142,11 +142,11 @@ export type ComputerActionParams =
   | MouseUpActionParams
   | GetClipboardTextActionParams;
 
-export interface ComputerActionResponseClipboardTextData {
+export interface ComputerActionResponseDataClipboardText {
   clipboardText?: string;
 }
 
-export type ComputerActionResponseData = ComputerActionResponseClipboardTextData;
+export type ComputerActionResponseData = ComputerActionResponseDataClipboardText;
 
 /**
  * Response from computer action API

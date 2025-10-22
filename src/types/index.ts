@@ -149,5 +149,5 @@ export {
   MouseDownActionParams,
   MouseUpActionParams,
   GetClipboardTextActionParams,
-  ComputerActionResponseClipboardTextData,
+  ComputerActionResponseDataClipboardText,
 } from "./computer-action";
