@@ -143,4 +143,11 @@ export {
   TypeTextActionParams,
   ComputerActionParams,
   ComputerActionResponse,
+  ComputerActionMouseButton,
+  ComputerActionResponseData,
+  HoldKeyActionParams,
+  MouseDownActionParams,
+  MouseUpActionParams,
+  GetClipboardTextActionParams,
+  ComputerActionResponseDataClipboardText,
 } from "./computer-action";

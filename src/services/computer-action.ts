@@ -4,6 +4,7 @@ import {
   ComputerActionParams,
   ComputerActionResponse,
   Coordinate,
+  ComputerActionMouseButton,
 } from "../types/computer-action";
 import { BaseService } from "./base";
 import { HyperbrowserError } from "../client";
@@ -50,7 +51,7 @@ export class ComputerActionService extends BaseService {
     session: SessionDetail | string,
     x: number,
     y: number,
-    button: "left" | "right" | "middle" | "back" | "forward" | "wheel" = "left",
+    button: ComputerActionMouseButton = "left",
     numClicks: number = 1,
     returnScreenshot: boolean = false
   ): Promise<ComputerActionResponse> {
@@ -134,6 +135,54 @@ export class ComputerActionService extends BaseService {
       y,
       scrollX,
       scrollY,
+      returnScreenshot,
+    });
+  }
+
+  async holdKey(
+    session: SessionDetail | string,
+    key: string,
+    duration: number,
+    returnScreenshot: boolean = false
+  ): Promise<ComputerActionResponse> {
+    return this.executeRequest(session, {
+      action: ComputerAction.HOLD_KEY,
+      key,
+      duration,
+      returnScreenshot,
+    });
+  }
+
+  async mouseDown(
+    session: SessionDetail | string,
+    button: ComputerActionMouseButton = "left",
+    returnScreenshot: boolean = false
+  ): Promise<ComputerActionResponse> {
+    return this.executeRequest(session, {
+      action: ComputerAction.MOUSE_DOWN,
+      button,
+      returnScreenshot,
+    });
+  }
+
+  async mouseUp(
+    session: SessionDetail | string,
+    button: ComputerActionMouseButton = "left",
+    returnScreenshot: boolean = false
+  ): Promise<ComputerActionResponse> {
+    return this.executeRequest(session, {
+      action: ComputerAction.MOUSE_UP,
+      button,
+      returnScreenshot,
+    });
+  }
+
+  async getClipboardText(
+    session: SessionDetail | string,
+    returnScreenshot: boolean = false
+  ): Promise<ComputerActionResponse> {
+    return this.executeRequest(session, {
+      action: ComputerAction.GET_CLIPBOARD_TEXT,
       returnScreenshot,
     });
   }
