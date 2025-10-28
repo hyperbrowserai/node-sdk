@@ -37,9 +37,16 @@ export interface GeminiComputerUseTaskData {
   finalResult: string | null;
 }
 
+export interface GeminiComputerUseTaskMetadata {
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+  numTaskStepsCompleted?: number | null;
+}
+
 export interface GeminiComputerUseTaskResponse {
   jobId: string;
   status: GeminiComputerUseTaskStatus;
+  metadata?: GeminiComputerUseTaskMetadata | null;
   data?: GeminiComputerUseTaskData | null;
   error?: string | null;
   liveUrl: string | null;

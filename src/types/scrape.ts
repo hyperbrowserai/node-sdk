@@ -12,6 +12,11 @@ export interface ScreenshotOptions {
   format?: ScrapeScreenshotFormat;
 }
 
+export interface StorageStateOptions {
+  localStorage?: Record<string, string>;
+  sessionStorage?: Record<string, string>;
+}
+
 export interface ScrapeOptions {
   formats?: ScrapeFormat[];
   includeTags?: string[];
@@ -21,6 +26,7 @@ export interface ScrapeOptions {
   timeout?: number;
   waitUntil?: ScrapeWaitUntil;
   screenshotOptions?: ScreenshotOptions;
+  storageState?: StorageStateOptions;
 }
 
 export interface StartScrapeJobParams {

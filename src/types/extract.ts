@@ -20,9 +20,16 @@ export interface ExtractJobStatusResponse {
   status: ExtractJobStatus;
 }
 
+export interface ExtractJobMetadata {
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+  numPagesScraped?: number | null;
+}
+
 export interface ExtractJobResponse {
   jobId: string;
   status: ExtractJobStatus;
+  metadata?: ExtractJobMetadata | null;
   data?: object;
   error?: string;
 }

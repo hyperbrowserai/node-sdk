@@ -56,9 +56,16 @@ export interface CuaTaskData {
   finalResult: string | null;
 }
 
+export interface CuaTaskMetadata {
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+  numTaskStepsCompleted?: number | null;
+}
+
 export interface CuaTaskResponse {
   jobId: string;
   status: CuaTaskStatus;
+  metadata?: CuaTaskMetadata | null;
   data?: CuaTaskData | null;
   error?: string | null;
   liveUrl: string | null;
