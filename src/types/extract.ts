@@ -30,6 +30,6 @@ export interface ExtractJobResponse {
   jobId: string;
   status: ExtractJobStatus;
   metadata?: ExtractJobMetadata | null;
-  data?: object | null;
+  data?: object;
   error?: string;
 }
