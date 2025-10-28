@@ -41,9 +41,16 @@ export interface ClaudeComputerUseTaskData {
   finalResult: string | null;
 }
 
+export interface ClaudeComputerUseTaskMetadata {
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+  numTaskStepsCompleted?: number | null;
+}
+
 export interface ClaudeComputerUseTaskResponse {
   jobId: string;
   status: ClaudeComputerUseTaskStatus;
+  metadata?: ClaudeComputerUseTaskMetadata | null;
   data?: ClaudeComputerUseTaskData | null;
   error?: string | null;
   liveUrl: string | null;

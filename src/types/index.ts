@@ -15,12 +15,14 @@ export {
   ScrapeOptions,
   ScrapeJobStatusResponse,
   BatchScrapeJobStatusResponse,
+  StorageStateOptions,
 } from "./scrape";
 export {
   StartExtractJobParams,
   StartExtractJobResponse,
   ExtractJobResponse,
   ExtractJobStatusResponse,
+  ExtractJobMetadata,
 } from "./extract";
 export {
   StartBrowserUseTaskParams,
@@ -29,6 +31,21 @@ export {
   BrowserUseTaskResponse,
   BrowserUseTaskData,
   BrowserUseApiKeys,
+  BrowserUseTaskMetadata,
+  BrowserUseStep,
+  BrowserUseAgentBrain,
+  BrowserUseAgentOutput,
+  BrowserUseActionResult,
+  BrowserUseStepMetadata,
+  BrowserUseTabInfo,
+  BrowserUseBrowserStateHistory,
+  BrowserUseAgentHistory,
+  BrowserUseAgentOutputV0710,
+  BrowserUseActionResultV0710,
+  BrowserUseBrowserStateHistoryV0710,
+  BrowserUseStepMetadataV0710,
+  BrowserUseAgentHistoryV0710,
+  BrowserUseAgentHistoryLatest,
 } from "./agents/browser-use";
 export {
   StartClaudeComputerUseTaskParams,
@@ -38,6 +55,7 @@ export {
   ClaudeComputerUseTaskData,
   ClaudeComputerUseStepResponse,
   ClaudeComputerUseApiKeys,
+  ClaudeComputerUseTaskMetadata,
 } from "./agents/claude-computer-use";
 export {
   StartCuaTaskParams,
@@ -47,6 +65,7 @@ export {
   CuaTaskData,
   CuaStepResponse,
   CuaApiKeys,
+  CuaTaskMetadata,
 } from "./agents/cua";
 export {
   StartHyperAgentTaskParams,
@@ -58,6 +77,7 @@ export {
   HyperAgentOutput,
   HyperAgentActionOutput,
   HyperAgentApiKeys,
+  HyperAgentTaskMetadata,
 } from "./agents/hyper-agent";
 export {
   StartGeminiComputerUseTaskParams,
@@ -67,6 +87,7 @@ export {
   GeminiComputerUseTaskData,
   GeminiComputerUseStepResponse,
   GeminiComputerUseApiKeys,
+  GeminiComputerUseTaskMetadata,
 } from "./agents/gemini-computer-use";
 export {
   BasicResponse,
@@ -129,6 +150,7 @@ export {
   GeminiComputerUseTaskStatus,
   SessionEventLogType,
   SessionRegion,
+  BrowserUseVersion,
 } from "./constants";
 export { TeamCreditInfo } from "./team";
 export {

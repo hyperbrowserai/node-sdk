@@ -30,6 +30,8 @@ export type RecordingStatus = "not_enabled" | "pending" | "in_progress" | "compl
 export type DownloadsStatus = "not_enabled" | "pending" | "in_progress" | "completed" | "failed";
 export const POLLING_ATTEMPTS = 5;
 
+export type BrowserUseVersion = "0.1.40" | "0.7.10" | "latest";
+
 export type BrowserUseLlm =
   | "gpt-4o"
   | "gpt-4o-mini"

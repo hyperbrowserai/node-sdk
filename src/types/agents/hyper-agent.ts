@@ -53,9 +53,14 @@ export interface HyperAgentTaskData {
   finalResult: string | null;
 }
 
+export interface HyperAgentTaskMetadata {
+  numTaskStepsCompleted?: number | null;
+}
+
 export interface HyperAgentTaskResponse {
   jobId: string;
   status: HyperAgentTaskStatus;
+  metadata?: HyperAgentTaskMetadata | null;
   data?: HyperAgentTaskData | null;
   error?: string | null;
   liveUrl: string | null;

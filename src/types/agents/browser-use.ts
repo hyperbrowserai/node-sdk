@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BrowserUseLlm, BrowserUseTaskStatus } from "../constants";
+import { BrowserUseLlm, BrowserUseTaskStatus, BrowserUseVersion } from "../constants";
 import { CreateSessionParams } from "../session";
 
 export interface BrowserUseApiKeys {
@@ -10,6 +10,7 @@ export interface BrowserUseApiKeys {
 
 export interface StartBrowserUseTaskParams {
   task: string;
+  version?: BrowserUseVersion;
   llm?: BrowserUseLlm;
   sessionId?: string;
   validateOutput?: boolean;
@@ -88,14 +89,72 @@ export interface BrowserUseAgentHistory {
   metadata?: BrowserUseStepMetadata | null;
 }
 
+// ===== 0.7.10-specific response models =====
+
+export interface BrowserUseAgentOutputV0710 {
+  thinking?: string | null;
+  evaluation_previous_goal?: string | null;
+  memory?: string | null;
+  next_goal?: string | null;
+  action: Array<Record<string, unknown>>;
+}
+
+export interface BrowserUseActionResultV0710 {
+  is_done?: boolean | null;
+  success?: boolean | null;
+  error?: string | null;
+  metadata?: Record<string, unknown> | null;
+  attachments?: string[] | null;
+  long_term_memory?: string | null;
+  extracted_content?: string | null;
+  include_extracted_content_only_once?: boolean | null;
+  include_in_memory?: boolean | null;
+}
+
+export interface BrowserUseBrowserStateHistoryV0710 {
+  url: string;
+  title: string;
+  tabs: Array<Record<string, unknown>>;
+  interacted_element: Array<Record<string, unknown> | null>;
+}
+
+export interface BrowserUseStepMetadataV0710 {
+  step_start_time: number;
+  step_end_time: number;
+  step_number: number;
+}
+
+export interface BrowserUseAgentHistoryV0710 {
+  model_output: BrowserUseAgentOutputV0710 | null;
+  result: BrowserUseActionResultV0710[];
+  state: BrowserUseBrowserStateHistoryV0710;
+  metadata?: BrowserUseStepMetadataV0710 | null;
+}
+
+// ===== latest response models =====
+
+export type BrowserUseAgentHistoryLatest = Record<string, unknown>;
+
+export type BrowserUseStep =
+  | BrowserUseAgentHistory
+  | BrowserUseAgentHistoryV0710
+  | BrowserUseAgentHistoryLatest;
+
 export interface BrowserUseTaskData {
-  steps: BrowserUseAgentHistory[];
+  steps: BrowserUseStep[];
   finalResult: string | null;
+}
+
+export interface BrowserUseTaskMetadata {
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+  numTaskStepsCompleted?: number | null;
 }
 
 export interface BrowserUseTaskResponse {
   jobId: string;
   status: BrowserUseTaskStatus;
+  metadata?: BrowserUseTaskMetadata | null;
   data?: BrowserUseTaskData | null;
   error?: string | null;
   liveUrl: string | null;
