@@ -186,4 +186,16 @@ export class ComputerActionService extends BaseService {
       returnScreenshot,
     });
   }
+
+  async putSelectionText(
+    session: SessionDetail | string,
+    text: string,
+    returnScreenshot: boolean = false
+  ): Promise<ComputerActionResponse> {
+    return this.executeRequest(session, {
+      action: ComputerAction.PUT_SELECTION_TEXT,
+      text,
+      returnScreenshot,
+    });
+  }
 }

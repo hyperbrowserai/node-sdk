@@ -13,6 +13,7 @@ export enum ComputerAction {
   SCROLL = "scroll",
   TYPE_TEXT = "type_text",
   GET_CLIPBOARD_TEXT = "get_clipboard_text",
+  PUT_SELECTION_TEXT = "put_selection_text",
 }
 
 export type ComputerActionMouseButton = "left" | "right" | "middle" | "back" | "forward" | "wheel";
@@ -126,6 +127,12 @@ export interface GetClipboardTextActionParams {
   returnScreenshot?: boolean;
 }
 
+export interface PutSelectionTextActionParams {
+  action: ComputerAction.PUT_SELECTION_TEXT;
+  text: string;
+  returnScreenshot?: boolean;
+}
+
 /**
  * Union type for all computer action parameters
  */
@@ -140,7 +147,8 @@ export type ComputerActionParams =
   | HoldKeyActionParams
   | MouseDownActionParams
   | MouseUpActionParams
-  | GetClipboardTextActionParams;
+  | GetClipboardTextActionParams
+  | PutSelectionTextActionParams;
 
 export interface ComputerActionResponseDataClipboardText {
   clipboardText?: string;
