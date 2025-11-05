@@ -55,6 +55,7 @@ export interface Session {
   updatedAt: string;
   sessionUrl: string;
   launchState?: SessionLaunchState | null;
+  creditsUsed: number | null;
 }
 
 export interface SessionDetail extends Session {
