@@ -10,6 +10,7 @@ import { CreateSessionParams } from "./session";
 export interface ScreenshotOptions {
   fullPage?: boolean;
   format?: ScrapeScreenshotFormat;
+  autoCropHeight?: boolean;
 }
 
 export interface StorageStateOptions {
