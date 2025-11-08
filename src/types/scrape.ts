@@ -11,6 +11,7 @@ export interface ScreenshotOptions {
   fullPage?: boolean;
   format?: ScrapeScreenshotFormat;
   cropToContent?: boolean;
+  cropToContentMaxHeight?: number;
 }
 
 export interface StorageStateOptions {
