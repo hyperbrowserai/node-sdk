@@ -12,6 +12,8 @@ export interface ScreenshotOptions {
   format?: ScrapeScreenshotFormat;
   cropToContent?: boolean;
   cropToContentMaxHeight?: number;
+  cropToContentMinHeight?: number;
+  waitFor?: number;
 }
 
 export interface StorageStateOptions {
