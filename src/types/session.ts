@@ -43,6 +43,7 @@ export interface SessionLaunchState {
   viewOnlyLiveView?: boolean;
   disablePasswordManager?: boolean;
   enableAlwaysOpenPdfExternally?: boolean;
+  appendTimestampToDownloads?: boolean;
 }
 
 export interface Session {
