@@ -133,6 +133,7 @@ export interface CreateSessionParams {
   viewOnlyLiveView?: boolean;
   disablePasswordManager?: boolean;
   enableAlwaysOpenPdfExternally?: boolean;
+  appendTimestampToDownloads?: boolean;
 }
 
 export interface SessionRecording {
