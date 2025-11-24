@@ -1,3 +1,4 @@
+import { toJSONSchema } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { BaseService } from "./base";
 import { isZodSchema, sleep } from "../utils";
@@ -22,7 +23,11 @@ export class ExtractService extends BaseService {
       }
       if (params.schema) {
         if (isZodSchema(params.schema)) {
-          params.schema = zodToJsonSchema(params.schema);
+          try {
+            params.schema = toJSONSchema(params.schema);
+          } catch {
+            params.schema = zodToJsonSchema(params.schema as any);
+          }
         }
       }
       return await this.request<StartExtractJobResponse>("/extract", {
