@@ -1,4 +1,5 @@
-import zodToJsonSchema from "zod-to-json-schema";
+import { toJSONSchema } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import { HyperbrowserError } from "../../client";
 import { BasicResponse } from "../../types";
 import { POLLING_ATTEMPTS } from "../../types/constants";
@@ -20,7 +21,12 @@ export class BrowserUseService extends BaseService {
     try {
       if (params.outputModelSchema) {
         if (isZodSchema(params.outputModelSchema)) {
-          params.outputModelSchema = zodToJsonSchema(params.outputModelSchema);
+          try {
+            params.outputModelSchema = toJSONSchema(params.outputModelSchema);
+          } catch (e) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            params.outputModelSchema = zodToJsonSchema(params.outputModelSchema as any);
+          }
         }
       }
       return await this.request<StartBrowserUseTaskResponse>("/task/browser-use", {
