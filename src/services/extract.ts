@@ -25,8 +25,7 @@ export class ExtractService extends BaseService {
         if (isZodSchema(params.schema)) {
           try {
             params.schema = toJSONSchema(params.schema);
-          } catch (e) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } catch {
             params.schema = zodToJsonSchema(params.schema as any);
           }
         }

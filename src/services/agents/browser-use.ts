@@ -23,8 +23,7 @@ export class BrowserUseService extends BaseService {
         if (isZodSchema(params.outputModelSchema)) {
           try {
             params.outputModelSchema = toJSONSchema(params.outputModelSchema);
-          } catch (e) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } catch {
             params.outputModelSchema = zodToJsonSchema(params.outputModelSchema as any);
           }
         }
