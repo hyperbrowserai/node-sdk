@@ -48,12 +48,21 @@ export type BrowserUseLlm =
   | "gemini-2.5-flash";
 
 export type ClaudeComputerUseLlm =
+  | "claude-opus-4-5"
   | "claude-haiku-4-5-20251001"
   | "claude-sonnet-4-5"
   | "claude-sonnet-4-20250514"
   | "claude-3-7-sonnet-20250219";
 
-export type HyperAgentLlm = "gpt-4o" | "gpt-4o-mini" | "gpt-4.1" | "gpt-4.1-mini" | "gpt-4.1-nano";
+export type HyperAgentLlm =
+  | "gpt-5.1"
+  | "gpt-5"
+  | "gpt-5-mini"
+  | "gpt-4o"
+  | "gpt-4o-mini"
+  | "gpt-4.1"
+  | "gpt-4.1-mini"
+  | "gpt-4.1-nano";
 
 export type GeminiComputerUseLlm = "gemini-2.5-computer-use-preview-10-2025";
 

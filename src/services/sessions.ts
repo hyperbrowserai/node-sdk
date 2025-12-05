@@ -323,4 +323,23 @@ export class SessionsService extends BaseService {
       throw new HyperbrowserError("Failed to get active sessions count", undefined);
     }
   }
+
+  /**
+   * Extend the duration of a session
+   * @param id The ID of the session to extend
+   * @param durationMinutes The duration in minutes to extend the session by
+   */
+  async extendSession(id: string, durationMinutes: number): Promise<BasicResponse> {
+    try {
+      return await this.request<BasicResponse>(`/session/${id}/extend-session`, {
+        method: "PUT",
+        body: JSON.stringify({ durationMinutes }),
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to extend session ${id}`, undefined);
+    }
+  }
 }
