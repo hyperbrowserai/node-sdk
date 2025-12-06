@@ -110,6 +110,11 @@ export {
   SessionEventLog,
   SessionProfile,
   SessionLaunchState,
+  SessionConsoleLogLevel,
+  SessionConsoleLog,
+  SessionConsolePage,
+  SessionConsoleLogListParams,
+  SessionConsoleLogListResponse,
 } from "./session";
 export {
   CreateProfileParams,

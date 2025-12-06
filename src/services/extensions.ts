@@ -62,7 +62,13 @@ export class ExtensionService extends BaseService {
    */
   async list(): Promise<ListExtensionsResponse> {
     try {
-      return await this.request("/extensions/list", { method: "GET" });
+      const response = await this.request<{
+        extensions?: ListExtensionsResponse;
+        totalCount?: number;
+        page?: number;
+        perPage?: number;
+      }>("/extensions/list", { method: "GET" });
+      return Array.isArray(response.extensions) ? response.extensions : [];
     } catch (err) {
       if (err instanceof HyperbrowserError) {
         throw err;
