@@ -174,6 +174,44 @@ export interface GetActiveSessionsCountResponse {
   activeSessionsCount: number;
 }
 
+export type SessionConsoleLogLevel = "log" | "debug" | "info" | "error" | "warning";
+
+export interface SessionConsoleLog {
+  id: string;
+  sessionId: string;
+  teamId: string;
+  log: string;
+  pageId: string;
+  logLevel: SessionConsoleLogLevel;
+  timestamp: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SessionConsolePage {
+  id: string;
+  sessionId: string;
+  teamId: string;
+  url: string;
+  timestamp: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SessionConsoleLogListParams {
+  logLevels?: SessionConsoleLogLevel[];
+  search?: string;
+  afterTimestamp?: number;
+  beforeTimestamp?: number;
+  order?: "asc" | "desc";
+  limit?: number;
+}
+
+export interface SessionConsoleLogListResponse {
+  consoleLogs: SessionConsoleLog[];
+  pages: SessionConsolePage[];
+}
+
 export interface SessionEventLog {
   id: string;
   sessionId: string;

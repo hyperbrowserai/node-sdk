@@ -17,6 +17,8 @@ import {
   UploadFileResponse,
   SessionEventLogListParams,
   SessionEventLogListResponse,
+  SessionConsoleLogListParams,
+  SessionConsoleLogListResponse,
 } from "../types/session";
 import { BaseService } from "./base";
 import { HyperbrowserError } from "../client";
@@ -52,12 +54,48 @@ class SessionEventLogsService extends BaseService {
   }
 }
 
+/**
+ * Service for managing session console logs
+ */
+class SessionConsoleLogsService extends BaseService {
+  /**
+   * List console logs for a session
+   * @param sessionId The ID of the session
+   * @param params Optional filters for console logs
+   */
+  async list(
+    sessionId: string,
+    params: SessionConsoleLogListParams = {}
+  ): Promise<SessionConsoleLogListResponse> {
+    try {
+      return await this.request<SessionConsoleLogListResponse>(
+        `/session/${sessionId}/console`,
+        undefined,
+        {
+          ...params,
+          logLevels: params.logLevels,
+        }
+      );
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(
+        `Failed to list console logs for session ${sessionId}`,
+        undefined
+      );
+    }
+  }
+}
+
 export class SessionsService extends BaseService {
   public readonly eventLogs: SessionEventLogsService;
+  public readonly consoleLogs: SessionConsoleLogsService;
 
   constructor(apiKey: string, baseUrl: string, timeout: number) {
     super(apiKey, baseUrl, timeout);
     this.eventLogs = new SessionEventLogsService(apiKey, baseUrl, timeout);
+    this.consoleLogs = new SessionConsoleLogsService(apiKey, baseUrl, timeout);
   }
 
   /**
