@@ -54,7 +54,10 @@ export type ClaudeComputerUseLlm =
   | "claude-sonnet-4-20250514"
   | "claude-3-7-sonnet-20250219";
 
+export type HyperAgentVersion = "0.8.0" | "1.1.0";
+
 export type HyperAgentLlm =
+  | "gpt-5.2"
   | "gpt-5.1"
   | "gpt-5"
   | "gpt-5-mini"
@@ -62,7 +65,12 @@ export type HyperAgentLlm =
   | "gpt-4o-mini"
   | "gpt-4.1"
   | "gpt-4.1-mini"
-  | "gpt-4.1-nano";
+  | "gpt-4.1-nano"
+  | "claude-sonnet-4-5"
+  | "claude-sonnet-4-20250514"
+  | "gemini-2.0-flash"
+  | "gemini-2.5-flash"
+  | "gemini-2.5-pro";
 
 export type GeminiComputerUseLlm = "gemini-2.5-computer-use-preview-10-2025";
 
