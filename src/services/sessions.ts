@@ -342,4 +342,23 @@ export class SessionsService extends BaseService {
       throw new HyperbrowserError(`Failed to extend session ${id}`, undefined);
     }
   }
+
+  /**
+   * Update the profile parameters of a session
+   * @param id The ID of the session to update the profile parameters of
+   * @param persistChanges Whether to persist the changes to the profile
+   */
+  async updateProfileParams(id: string, persistChanges: boolean): Promise<BasicResponse> {
+    try {
+      return await this.request<BasicResponse>(`/session/${id}/update`, {
+        method: "PUT",
+        body: JSON.stringify({ type: "profile", params: { persistChanges } }),
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to update profile for session ${id}`, undefined);
+    }
+  }
 }

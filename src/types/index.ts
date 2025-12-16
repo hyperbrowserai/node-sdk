@@ -78,6 +78,8 @@ export {
   HyperAgentActionOutput,
   HyperAgentApiKeys,
   HyperAgentTaskMetadata,
+  HyperAgentOutputV110,
+  HyperAgentStepV110,
 } from "./agents/hyper-agent";
 export {
   StartGeminiComputerUseTaskParams,
@@ -151,6 +153,7 @@ export {
   SessionEventLogType,
   SessionRegion,
   BrowserUseVersion,
+  HyperAgentVersion,
 } from "./constants";
 export { TeamCreditInfo } from "./team";
 export {
