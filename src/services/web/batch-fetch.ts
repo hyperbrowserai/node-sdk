@@ -3,10 +3,8 @@ import {
   BatchFetchJobResponse,
   BatchFetchJobStatusResponse,
   GetBatchFetchJobParams,
-  FetchResponse,
   StartBatchFetchJobResponse,
   StartBatchFetchParams,
-  FetchParams,
 } from "../../types/web/fetch";
 import { BaseService } from "../base";
 import { isZodSchema, sleep } from "../../utils";
@@ -170,41 +168,5 @@ export class BatchFetchService extends BaseService {
       await sleep(500);
     }
     return jobResponse;
-  }
-}
-
-export class FetchService extends BaseService {
-  public readonly batch: BatchFetchService;
-
-  constructor(apiKey: string, baseUrl: string, timeout: number) {
-    super(apiKey, baseUrl, timeout);
-    this.batch = new BatchFetchService(apiKey, baseUrl, timeout);
-  }
-
-  /**
-   * Execute a fetch
-   * @param params The parameters for the fetch
-   */
-  async run(params: FetchParams): Promise<FetchResponse> {
-    try {
-      const jsonOutput = params.outputs?.find(
-        (output) => typeof output === "object" && output.type === "json"
-      );
-      if (jsonOutput && jsonOutput.options?.schema) {
-        if (isZodSchema(jsonOutput.options.schema)) {
-          jsonOutput.options.schema = toJSONSchema(jsonOutput.options.schema);
-        }
-      }
-
-      return await this.request<FetchResponse>("/web/fetch", {
-        method: "POST",
-        body: JSON.stringify(params),
-      });
-    } catch (error) {
-      if (error instanceof HyperbrowserError) {
-        throw error;
-      }
-      throw new HyperbrowserError("Failed to execute fetch", undefined);
-    }
   }
 }

@@ -12,9 +12,7 @@ import { HyperAgentService } from "./services/agents/hyper-agent";
 import { TeamService } from "./services/team";
 import { ComputerActionService } from "./services/computer-action";
 import { GeminiComputerUseService } from "./services/agents/gemini-computer-use";
-import { FetchService } from "./services/web/fetch";
-import { WebCrawlService } from "./services/web/crawl";
-import { DeepFetchService } from "./services/web/deep-fetch";
+import { WebService } from "./services/web";
 
 export class HyperbrowserError extends Error {
   constructor(
@@ -28,11 +26,7 @@ export class HyperbrowserError extends Error {
 
 export class HyperbrowserClient {
   public readonly sessions: SessionsService;
-  public readonly web: {
-    fetch: FetchService;
-    crawl: WebCrawlService;
-    deepFetch: DeepFetchService;
-  };
+  public readonly web: WebService;
   public readonly scrape: ScrapeService;
   public readonly crawl: CrawlService;
   public readonly extract: ExtractService;
@@ -59,6 +53,7 @@ export class HyperbrowserClient {
     }
 
     this.sessions = new SessionsService(apiKey, baseUrl, timeout);
+    this.web = new WebService(apiKey, baseUrl, timeout);
     this.scrape = new ScrapeService(apiKey, baseUrl, timeout);
     this.crawl = new CrawlService(apiKey, baseUrl, timeout);
     this.extract = new ExtractService(apiKey, baseUrl, timeout);
@@ -66,12 +61,6 @@ export class HyperbrowserClient {
     this.extensions = new ExtensionService(apiKey, baseUrl, timeout);
     this.team = new TeamService(apiKey, baseUrl, timeout);
     this.computerAction = new ComputerActionService(apiKey, baseUrl, timeout);
-
-    this.web = {
-      fetch: new FetchService(apiKey, baseUrl, timeout),
-      crawl: new WebCrawlService(apiKey, baseUrl, timeout),
-      deepFetch: new DeepFetchService(apiKey, baseUrl, timeout),
-    };
 
     this.agents = {
       browserUse: new BrowserUseService(apiKey, baseUrl, timeout),
