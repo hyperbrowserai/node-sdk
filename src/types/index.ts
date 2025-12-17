@@ -1,5 +1,36 @@
 export { HyperbrowserConfig } from "./config";
 export {
+  FetchParams,
+  FetchResponse,
+  GetBatchFetchJobParams,
+  StartBatchFetchParams,
+  StartBatchFetchJobResponse,
+  BatchFetchJobStatusResponse,
+  BatchFetchJobResponse,
+  FetchResponseData,
+} from "./web/fetch";
+export {
+  StartWebCrawlJobParams,
+  StartWebCrawlJobResponse,
+  WebCrawlJobStatusResponse,
+  WebCrawlJobResponse,
+  GetWebCrawlJobParams,
+} from "./web/crawl";
+export {
+  StartDeepFetchJobParams,
+  StartDeepFetchJobResponse,
+  DeepFetchJobStatusResponse,
+  DeepFetchJobResponse,
+  DeepFetchJobMetadata,
+} from "./web/deep-fetch";
+export {
+  WebOutputOptions,
+  FetchOptions,
+  FetchedPage,
+  WebScreenshotOutputOptions,
+  WebStorageStateOptions,
+} from "./web/common";
+export {
   StartCrawlJobParams,
   StartCrawlJobResponse,
   CrawledPage,
@@ -154,6 +185,10 @@ export {
   SessionRegion,
   BrowserUseVersion,
   HyperAgentVersion,
+  FetchStatus,
+  FetchPageStatus,
+  FetchWaitUntil,
+  FetchScreenshotFormat,
 } from "./constants";
 export { TeamCreditInfo } from "./team";
 export {

@@ -5,6 +5,8 @@ export type SessionEventLogType =
   | "file_downloaded";
 export type ScrapeFormat = "markdown" | "html" | "links" | "screenshot";
 export type ScrapeJobStatus = "pending" | "running" | "completed" | "failed";
+export type FetchStatus = "pending" | "running" | "completed" | "failed";
+export type DeepFetchStatus = "pending" | "running" | "completed" | "failed";
 export type ExtractJobStatus = "pending" | "running" | "completed" | "failed";
 export type CrawlJobStatus = "pending" | "running" | "completed" | "failed";
 export type BrowserUseTaskStatus = "pending" | "running" | "completed" | "failed" | "stopped";
@@ -23,9 +25,12 @@ export type GeminiComputerUseTaskStatus =
   | "failed"
   | "stopped";
 export type ScrapePageStatus = "completed" | "failed" | "pending" | "running";
+export type FetchPageStatus = "completed" | "failed" | "pending" | "running";
 export type CrawlPageStatus = "completed" | "failed";
 export type ScrapeWaitUntil = "load" | "domcontentloaded" | "networkidle";
+export type FetchWaitUntil = "load" | "domcontentloaded" | "networkidle";
 export type ScrapeScreenshotFormat = "jpeg" | "png" | "webp";
+export type FetchScreenshotFormat = "jpeg" | "png" | "webp";
 export type RecordingStatus = "not_enabled" | "pending" | "in_progress" | "completed" | "failed";
 export type DownloadsStatus = "not_enabled" | "pending" | "in_progress" | "completed" | "failed";
 export const POLLING_ATTEMPTS = 5;
