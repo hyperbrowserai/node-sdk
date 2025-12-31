@@ -1,6 +1,6 @@
 # Hyperbrowser Node SDK
 
-Checkout the full documentation [here](https://docs.hyperbrowser.ai/)
+Checkout the full documentation [here](https://hyperbrowser.ai/docs)
 
 ## Installation
 
