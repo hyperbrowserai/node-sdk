@@ -67,7 +67,8 @@ export type HyperAgentLlm =
   | "gpt-4.1-mini"
   | "gpt-4.1-nano"
   | "claude-sonnet-4-5"
-  | "gemini-2.5-flash";
+  | "gemini-2.5-flash"
+  | "gemini-3-flash-preview";
 
 export type GeminiComputerUseLlm = "gemini-2.5-computer-use-preview-10-2025";
 
