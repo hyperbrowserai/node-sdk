@@ -360,7 +360,7 @@ export class SessionsService extends BaseService {
       params = {
         persistChanges: paramsOrPersist,
         // Legacy signature didn’t include this field; default to false.
-        persistNetworkCache: false,
+        persistNetworkCache: undefined,
       };
     } else {
       params = paramsOrPersist;
