@@ -202,7 +202,7 @@ export interface SessionEventLogListResponse {
   perPage: number;
 }
 
-export interface UpdateProfileParams {
+export interface UpdateSessionProfileParams {
   persistChanges?: boolean;
   persistNetworkCache?: boolean;
 }

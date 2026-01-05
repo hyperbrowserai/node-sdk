@@ -17,7 +17,7 @@ import {
   UploadFileResponse,
   SessionEventLogListParams,
   SessionEventLogListResponse,
-  UpdateProfileParams,
+  UpdateSessionProfileParams,
 } from "../types/session";
 import { BaseService } from "./base";
 import { HyperbrowserError } from "../client";
@@ -345,18 +345,18 @@ export class SessionsService extends BaseService {
   }
 
   // primary
-  async updateProfileParams(id: string, params: UpdateProfileParams): Promise<BasicResponse>;
+  async updateSessionProfileParams(id: string, params: UpdateSessionProfileParams): Promise<BasicResponse>;
   // deprecated
-  /** @deprecated Pass an UpdateProfileParams object instead of a boolean. */
-  async updateProfileParams(id: string, persistChanges: boolean): Promise<BasicResponse>;
+  /** @deprecated Pass an UpdateSessionProfileParams object instead of a boolean. */
+  async updateSessionProfileParams(id: string, persistChanges: boolean): Promise<BasicResponse>;
 
-  async updateProfileParams(
+  async updateSessionProfileParams(
     id: string,
-    paramsOrPersist: UpdateProfileParams | boolean
+    paramsOrPersist: UpdateSessionProfileParams | boolean
   ): Promise<BasicResponse> {
-    let params: UpdateProfileParams;
+    let params: UpdateSessionProfileParams;
     if (typeof paramsOrPersist === "boolean") {
-      this.warnUpdateProfileParamsBooleanDeprecated();
+      this.warnUpdateSessionProfileParamsBooleanDeprecated();
       params = {
         persistChanges: paramsOrPersist,
         // Legacy signature didn’t include this field; default to false.
@@ -379,15 +379,15 @@ export class SessionsService extends BaseService {
     }
   }
 
-  private static hasWarnedUpdateProfileParamsBooleanDeprecated = false;
+  private static hasWarnedUpdateSessionProfileParamsBooleanDeprecated = false;
 
-  private warnUpdateProfileParamsBooleanDeprecated(): void {
-    if (SessionsService.hasWarnedUpdateProfileParamsBooleanDeprecated) {
+  private warnUpdateSessionProfileParamsBooleanDeprecated(): void {
+    if (SessionsService.hasWarnedUpdateSessionProfileParamsBooleanDeprecated) {
       return;
     }
-    SessionsService.hasWarnedUpdateProfileParamsBooleanDeprecated = true;
+    SessionsService.hasWarnedUpdateSessionProfileParamsBooleanDeprecated = true;
     console.warn(
-      "[DEPRECATED] updateProfileParams(id, boolean) will be removed; pass an UpdateProfileParams object instead."
+      "[DEPRECATED] updateSessionProfileParams(id, boolean) will be removed; pass an UpdateSessionProfileParams object instead."
     );
   }
 }
