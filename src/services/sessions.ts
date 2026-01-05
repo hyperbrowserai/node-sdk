@@ -17,6 +17,7 @@ import {
   UploadFileResponse,
   SessionEventLogListParams,
   SessionEventLogListResponse,
+  UpdateSessionProfileParams,
 } from "../types/session";
 import { BaseService } from "./base";
 import { HyperbrowserError } from "../client";
@@ -343,16 +344,32 @@ export class SessionsService extends BaseService {
     }
   }
 
-  /**
-   * Update the profile parameters of a session
-   * @param id The ID of the session to update the profile parameters of
-   * @param persistChanges Whether to persist the changes to the profile
-   */
-  async updateProfileParams(id: string, persistChanges: boolean): Promise<BasicResponse> {
+  // primary
+  async updateProfileParams(id: string, params: UpdateSessionProfileParams): Promise<BasicResponse>;
+  // deprecated
+  /** @deprecated Pass an UpdateSessionProfileParams object instead of a boolean. */
+  async updateProfileParams(id: string, persistChanges: boolean): Promise<BasicResponse>;
+
+  async updateProfileParams(
+    id: string,
+    paramsOrPersist: UpdateSessionProfileParams | boolean
+  ): Promise<BasicResponse> {
+    let params: UpdateSessionProfileParams;
+    if (typeof paramsOrPersist === "boolean") {
+      this.warnUpdateSessionProfileParamsBooleanDeprecated();
+      params = {
+        persistChanges: paramsOrPersist,
+        // Legacy signature didn’t include this field; default to false.
+        persistNetworkCache: undefined,
+      };
+    } else {
+      params = paramsOrPersist;
+    }
+
     try {
       return await this.request<BasicResponse>(`/session/${id}/update`, {
         method: "PUT",
-        body: JSON.stringify({ type: "profile", params: { persistChanges } }),
+        body: JSON.stringify({ type: "profile", params }),
       });
     } catch (error) {
       if (error instanceof HyperbrowserError) {
@@ -360,5 +377,17 @@ export class SessionsService extends BaseService {
       }
       throw new HyperbrowserError(`Failed to update profile for session ${id}`, undefined);
     }
+  }
+
+  private static hasWarnedUpdateSessionProfileParamsBooleanDeprecated = false;
+
+  private warnUpdateSessionProfileParamsBooleanDeprecated(): void {
+    if (SessionsService.hasWarnedUpdateSessionProfileParamsBooleanDeprecated) {
+      return;
+    }
+    SessionsService.hasWarnedUpdateSessionProfileParamsBooleanDeprecated = true;
+    console.warn(
+      "[DEPRECATED] updateSessionProfileParams(id, boolean) will be removed; pass an UpdateSessionProfileParams object instead."
+    );
   }
 }

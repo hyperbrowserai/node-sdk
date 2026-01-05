@@ -88,6 +88,7 @@ export interface ScreenConfig {
 export interface CreateSessionProfile {
   id?: string;
   persistChanges?: boolean;
+  persistNetworkCache?: boolean;
 }
 
 export interface ImageCaptchaParam {
@@ -199,4 +200,9 @@ export interface SessionEventLogListResponse {
   totalCount: number;
   page: number;
   perPage: number;
+}
+
+export interface UpdateSessionProfileParams {
+  persistChanges?: boolean;
+  persistNetworkCache?: boolean;
 }
