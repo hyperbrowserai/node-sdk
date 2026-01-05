@@ -200,3 +200,8 @@ export interface SessionEventLogListResponse {
   page: number;
   perPage: number;
 }
+
+export interface UpdateProfileParams {
+  persistChanges?: boolean;
+  persistNetworkCache?: boolean;
+}
