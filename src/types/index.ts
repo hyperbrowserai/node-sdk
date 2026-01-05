@@ -112,6 +112,7 @@ export {
   SessionEventLog,
   SessionProfile,
   SessionLaunchState,
+  UpdateSessionProfileParams,
 } from "./session";
 export {
   CreateProfileParams,
