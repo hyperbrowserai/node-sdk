@@ -345,12 +345,12 @@ export class SessionsService extends BaseService {
   }
 
   // primary
-  async updateSessionProfileParams(id: string, params: UpdateSessionProfileParams): Promise<BasicResponse>;
+  async updateProfileParams(id: string, params: UpdateSessionProfileParams): Promise<BasicResponse>;
   // deprecated
   /** @deprecated Pass an UpdateSessionProfileParams object instead of a boolean. */
-  async updateSessionProfileParams(id: string, persistChanges: boolean): Promise<BasicResponse>;
+  async updateProfileParams(id: string, persistChanges: boolean): Promise<BasicResponse>;
 
-  async updateSessionProfileParams(
+  async updateProfileParams(
     id: string,
     paramsOrPersist: UpdateSessionProfileParams | boolean
   ): Promise<BasicResponse> {
