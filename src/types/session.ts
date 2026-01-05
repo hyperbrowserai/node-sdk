@@ -88,6 +88,7 @@ export interface ScreenConfig {
 export interface CreateSessionProfile {
   id?: string;
   persistChanges?: boolean;
+  persistNetworkCache?: boolean;
 }
 
 export interface ImageCaptchaParam {
