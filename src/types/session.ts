@@ -135,6 +135,8 @@ export interface CreateSessionParams {
   disablePasswordManager?: boolean;
   enableAlwaysOpenPdfExternally?: boolean;
   appendTimestampToDownloads?: boolean;
+  showScrollbars?: boolean;
+  replaceNativeElements?: boolean;
 }
 
 export interface SessionRecording {
