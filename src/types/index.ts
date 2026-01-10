@@ -96,6 +96,7 @@ export {
   SessionStatus,
   Session,
   SessionDetail,
+  SessionGetParams,
   SessionListParams,
   SessionListResponse,
   ScreenConfig,

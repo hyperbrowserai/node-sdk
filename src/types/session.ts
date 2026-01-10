@@ -67,6 +67,10 @@ export interface SessionDetail extends Session {
   token: string;
 }
 
+export interface SessionGetParams {
+  liveViewTtlSeconds?: number;
+}
+
 export interface SessionListParams {
   status?: SessionStatus;
   page?: number;
@@ -136,6 +140,7 @@ export interface CreateSessionParams {
   enableAlwaysOpenPdfExternally?: boolean;
   appendTimestampToDownloads?: boolean;
   showScrollbars?: boolean;
+  liveViewTtlSeconds?: number;
   replaceNativeElements?: boolean;
 }
 

@@ -18,6 +18,7 @@ import {
   SessionEventLogListParams,
   SessionEventLogListResponse,
   UpdateSessionProfileParams,
+  SessionGetParams,
 } from "../types/session";
 import { BaseService } from "./base";
 import { HyperbrowserError } from "../client";
@@ -83,9 +84,11 @@ export class SessionsService extends BaseService {
    * Get details of an existing session
    * @param id The ID of the session to get
    */
-  async get(id: string): Promise<SessionDetail> {
+  async get(id: string, params: SessionGetParams = {}): Promise<SessionDetail> {
     try {
-      return await this.request<SessionDetail>(`/session/${id}`);
+      return await this.request<SessionDetail>(`/session/${id}`, undefined, {
+        liveViewTtlSeconds: params.liveViewTtlSeconds,
+      });
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
