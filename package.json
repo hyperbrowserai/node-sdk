@@ -1,6 +1,6 @@
 {
   "name": "@hyperbrowser/sdk",
-  "version": "0.81.1",
+  "version": "0.81.2",
   "description": "Node SDK for Hyperbrowser API",
   "author": "",
   "main": "dist/index.js",
