@@ -558,6 +558,17 @@ export type ISO639_1 =
   | "zh"
   | "zu";
 
+// Web Fetch Constants
+export type FetchStatus = "pending" | "running" | "completed" | "failed";
+export type BatchFetchJobStatus = "pending" | "running" | "completed" | "failed";
+export type PageStatus = "pending" | "running" | "completed" | "failed";
+export type FetchWaitUntil = "load" | "domcontentloaded" | "networkidle";
+export type FetchScreenshotFormat = "jpeg" | "png" | "webp";
+
+// Web Search Constants
+export type WebSearchStatus = "pending" | "running" | "completed" | "failed" | "stopped";
+export type WebSearchFiletype = "pdf" | "doc" | "docx" | "xls" | "xlsx" | "ppt" | "pptx" | "html";
+
 export type State =
   | "AL"
   | "AK"

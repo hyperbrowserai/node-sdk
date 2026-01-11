@@ -156,7 +156,45 @@ export {
   SessionRegion,
   BrowserUseVersion,
   HyperAgentVersion,
+  FetchStatus,
+  BatchFetchJobStatus,
+  PageStatus,
+  FetchWaitUntil,
+  FetchScreenshotFormat,
+  WebSearchStatus,
+  WebSearchFiletype,
 } from "./constants";
+export {
+  // Fetch types
+  FetchSessionOptions,
+  FetchOutputScreenshotOptions,
+  FetchStorageStateOptions,
+  FetchOptions,
+  FetchOutputJsonOptions,
+  FetchOutputMarkdown,
+  FetchOutputHtml,
+  FetchOutputLinks,
+  FetchOutputScreenshot,
+  FetchOutputJson,
+  FetchOutputLike,
+  FetchParams,
+  FetchResponseData,
+  FetchResponse,
+  PageData,
+  // Batch Fetch types
+  StartBatchFetchJobParams,
+  GetBatchFetchJobParams,
+  StartBatchFetchJobResponse,
+  BatchFetchJobStatusResponse,
+  BatchFetchJobResponse,
+  // Web Search types
+  WebSearchFilters,
+  WebSearchRegion,
+  WebSearchParams,
+  WebSearchResultItem,
+  WebSearchResponseData,
+  WebSearchResponse,
+} from "./web";
 export { TeamCreditInfo } from "./team";
 export {
   ComputerAction,
