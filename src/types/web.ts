@@ -12,7 +12,6 @@ import {
 } from "./constants";
 import { CreateSessionProfile, ImageCaptchaParam, ScreenConfig } from "./session";
 
-// Fetch Session Options Interface
 export interface FetchSessionOptions {
   useUltraStealth?: boolean;
   useStealth?: boolean;
@@ -40,7 +39,6 @@ export interface FetchSessionOptions {
   region?: SessionRegion;
 }
 
-// Fetch Output Screenshot Options Interface
 export interface FetchOutputScreenshotOptions {
   fullPage?: boolean;
   format?: FetchScreenshotFormat;
@@ -50,13 +48,11 @@ export interface FetchOutputScreenshotOptions {
   waitFor?: number;
 }
 
-// Fetch Storage State Options Interface
 export interface FetchStorageStateOptions {
   localStorage?: Record<string, string>;
   sessionStorage?: Record<string, string>;
 }
 
-// Fetch Options Interface
 export interface FetchOptions {
   includeTags?: string[];
   excludeTags?: string[];
@@ -67,7 +63,6 @@ export interface FetchOptions {
   storageState?: FetchStorageStateOptions;
 }
 
-// Fetch Output Type Interfaces
 export interface FetchOutputJsonOptions {
   schema?: unknown;
 }
@@ -108,7 +103,6 @@ export type FetchOutputLike =
   | "links"
   | "screenshot";
 
-// Fetch Params and Response Interfaces
 export interface FetchParams {
   url: string;
   outputs?: FetchOutputLike[];
@@ -132,7 +126,6 @@ export interface FetchResponse {
   data?: FetchResponseData;
 }
 
-// PageData Interface (for batch fetch results)
 export interface PageData {
   url: string;
   status: PageStatus;
@@ -145,7 +138,6 @@ export interface PageData {
   json?: Record<string, unknown>;
 }
 
-// Batch Fetch Interfaces
 export interface StartBatchFetchJobParams {
   urls: string[];
   outputs?: FetchOutputLike[];
@@ -177,7 +169,6 @@ export interface BatchFetchJobResponse {
   batchSize: number;
 }
 
-// Web Search Interfaces
 export interface WebSearchFilters {
   exactPhrase?: boolean;
   semanticPhrase?: boolean;

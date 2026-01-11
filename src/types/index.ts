@@ -165,7 +165,6 @@ export {
   WebSearchFiletype,
 } from "./constants";
 export {
-  // Fetch types
   FetchSessionOptions,
   FetchOutputScreenshotOptions,
   FetchStorageStateOptions,
@@ -181,13 +180,11 @@ export {
   FetchResponseData,
   FetchResponse,
   PageData,
-  // Batch Fetch types
   StartBatchFetchJobParams,
   GetBatchFetchJobParams,
   StartBatchFetchJobResponse,
   BatchFetchJobStatusResponse,
   BatchFetchJobResponse,
-  // Web Search types
   WebSearchFilters,
   WebSearchRegion,
   WebSearchParams,

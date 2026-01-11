@@ -166,11 +166,6 @@ export class BatchFetchService extends BaseService {
     return jobResponse;
   }
 
-  /**
-   * Process output params to handle JSON schema conversion
-   * Note: In Node SDK, we expect users to pass plain JSON schemas, not Zod/class schemas
-   * If the schema has a toJsonSchema() method (like Zod), we call it
-   */
   private processOutputParams<T extends { outputs?: FetchOutputLike[] }>(params: T): T {
     if (!params.outputs) {
       return params;
@@ -180,7 +175,6 @@ export class BatchFetchService extends BaseService {
       if (typeof output === "object" && output.type === "json") {
         const jsonOutput = output as FetchOutputJson;
         if (jsonOutput.options?.schema) {
-          // Check if schema has a toJsonSchema method (e.g., Zod schema)
           const schema = jsonOutput.options.schema as { toJsonSchema?: () => unknown };
           if (typeof schema.toJsonSchema === "function") {
             return {
@@ -245,11 +239,6 @@ export class WebService extends BaseService {
     }
   }
 
-  /**
-   * Process output params to handle JSON schema conversion
-   * Note: In Node SDK, we expect users to pass plain JSON schemas, not Zod/class schemas
-   * If the schema has a toJsonSchema() method (like Zod), we call it
-   */
   private processOutputParams<T extends { outputs?: FetchOutputLike[] }>(params: T): T {
     if (!params.outputs) {
       return params;
@@ -259,7 +248,6 @@ export class WebService extends BaseService {
       if (typeof output === "object" && output.type === "json") {
         const jsonOutput = output as FetchOutputJson;
         if (jsonOutput.options?.schema) {
-          // Check if schema has a toJsonSchema method (e.g., Zod schema)
           const schema = jsonOutput.options.schema as { toJsonSchema?: () => unknown };
           if (typeof schema.toJsonSchema === "function") {
             return {
