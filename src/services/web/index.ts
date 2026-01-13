@@ -1,8 +1,11 @@
+import { toJSONSchema } from "zod";
+import zodToJsonSchema from "zod-to-json-schema";
 import { BaseService } from "../base";
 import { HyperbrowserError } from "../../client";
 import { FetchParams, FetchResponse } from "../../types/web/fetch";
 import { WebSearchParams, WebSearchResponse } from "../../types/web/search";
 import { FetchOutputJson } from "../../types/web/common";
+import { isZodSchema } from "../../utils";
 
 export class WebService extends BaseService {
   /**
@@ -17,9 +20,12 @@ export class WebService extends BaseService {
           if (typeof output === "object" && "type" in output && output.type === "json") {
             const jsonOutput = output as FetchOutputJson;
             if (jsonOutput.schema) {
-              // If schema is a Zod schema or similar with a method to get JSON schema
-              if (typeof jsonOutput.schema === "object" && "toJSON" in jsonOutput.schema) {
-                jsonOutput.schema = (jsonOutput.schema as any).toJSON();
+              if (isZodSchema(jsonOutput.schema)) {
+                try {
+                  output.schema = toJSONSchema(jsonOutput.schema);
+                } catch {
+                  output.schema = zodToJsonSchema(jsonOutput.schema as any);
+                }
               }
             }
           }
