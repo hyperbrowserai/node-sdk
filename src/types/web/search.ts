@@ -1,7 +1,7 @@
 import { Country, State } from "../constants";
 
 export type WebSearchFiletype = "pdf" | "doc" | "docx" | "xls" | "xlsx" | "ppt" | "pptx" | "html";
-export type WebSearchStatus = "completed" | "failed" | "pending" | "running" | "stopped";
+export type WebSearchStatus = "completed" | "failed" | "pending" | "running";
 
 export interface WebSearchFilters {
   exactPhrase?: boolean;
