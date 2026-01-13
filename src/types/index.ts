@@ -179,3 +179,36 @@ export {
   PutSelectionTextActionParams,
   ComputerActionResponseDataClipboardText,
 } from "./computer-action";
+export { FetchParams, FetchResponse, FetchResponseData, FetchStatus } from "./web/fetch";
+export {
+  WebSearchParams,
+  WebSearchResponse,
+  WebSearchResponseData,
+  WebSearchResultItem,
+  WebSearchFilters,
+  WebSearchLocation,
+  WebSearchFiletype,
+  WebSearchStatus,
+} from "./web/search";
+export {
+  FetchStealthMode,
+  FetchSanitizeMode,
+  FetchWaitUntil,
+  FetchScreenshotFormat,
+  PageStatus,
+  FetchOutputScreenshotOptions,
+  FetchStorageStateOptions,
+  FetchBrowserLocationOptions,
+  PageData,
+  FetchOutputMarkdown,
+  FetchOutputHtml,
+  FetchOutputLinks,
+  FetchOutputScreenshot,
+  FetchOutputJsonOptions,
+  FetchOutputJson,
+  FetchOutputFormat,
+  FetchOutputOptions,
+  FetchBrowserOptions,
+  FetchNavigationOptions,
+  FetchCacheOptions,
+} from "./web/common";
