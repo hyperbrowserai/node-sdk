@@ -41,6 +41,7 @@ export interface WebSearchResponseData {
 }
 
 export interface WebSearchResponse {
+  jobId: string;
   status: WebSearchStatus;
   error?: string;
   data?: WebSearchResponseData;
