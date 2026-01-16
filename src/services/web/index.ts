@@ -6,8 +6,15 @@ import { FetchParams, FetchResponse } from "../../types/web/fetch";
 import { WebSearchParams, WebSearchResponse } from "../../types/web/search";
 import { FetchOutputJson } from "../../types/web/common";
 import { isZodSchema } from "../../utils";
+import { BatchFetchService } from "./batch-fetch";
 
 export class WebService extends BaseService {
+  public readonly batchFetch: BatchFetchService;
+
+  constructor(apiKey: string, baseUrl: string, timeout: number) {
+    super(apiKey, baseUrl, timeout);
+    this.batchFetch = new BatchFetchService(apiKey, baseUrl, timeout);
+  }
   /**
    * Fetch a URL and extract content
    * @param params The parameters for the fetch request
