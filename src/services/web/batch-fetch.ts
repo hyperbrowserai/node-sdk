@@ -22,7 +22,6 @@ export class BatchFetchService extends BaseService {
    */
   async start(params: StartBatchFetchJobParams): Promise<StartBatchFetchJobResponse> {
     try {
-      // Handle JSON schema serialization if needed (similar to Python SDK)
       if (params.outputs?.formats) {
         for (const output of params.outputs.formats) {
           if (typeof output === "object" && "type" in output && output.type === "json") {
