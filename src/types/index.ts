@@ -181,6 +181,14 @@ export {
 } from "./computer-action";
 export { FetchParams, FetchResponse, FetchResponseData, FetchStatus } from "./web/fetch";
 export {
+  StartBatchFetchJobParams,
+  StartBatchFetchJobResponse,
+  GetBatchFetchJobParams,
+  BatchFetchJobStatusResponse,
+  BatchFetchJobResponse,
+  BatchFetchJobStatus,
+} from "./web/batch-fetch";
+export {
   WebSearchParams,
   WebSearchResponse,
   WebSearchResponseData,
