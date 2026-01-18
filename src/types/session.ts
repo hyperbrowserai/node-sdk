@@ -171,6 +171,9 @@ export interface GetSessionDownloadsUrlResponse {
 
 export interface UploadFileResponse {
   message: string;
+  filePath?: string;
+  fileName?: string;
+  originalName?: string;
 }
 
 export interface UploadFileOptions {
