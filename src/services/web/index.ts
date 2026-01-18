@@ -21,7 +21,6 @@ export class WebService extends BaseService {
    */
   async fetch(params: FetchParams): Promise<FetchResponse> {
     try {
-      // Handle JSON schema serialization if needed (similar to Python SDK)
       if (params.outputs?.formats) {
         for (const output of params.outputs.formats) {
           if (typeof output === "object" && "type" in output && output.type === "json") {
