@@ -44,6 +44,7 @@ export interface SessionLaunchState {
   disablePasswordManager?: boolean;
   enableAlwaysOpenPdfExternally?: boolean;
   appendTimestampToDownloads?: boolean;
+  disablePostQuantumKeyAgreement?: boolean;
 }
 
 export interface Session {
@@ -142,6 +143,7 @@ export interface CreateSessionParams {
   showScrollbars?: boolean;
   liveViewTtlSeconds?: number;
   replaceNativeElements?: boolean;
+  disablePostQuantumKeyAgreement?: boolean;
 }
 
 export interface SessionRecording {
