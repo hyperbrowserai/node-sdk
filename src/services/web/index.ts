@@ -7,13 +7,16 @@ import { WebSearchParams, WebSearchResponse } from "../../types/web/search";
 import { FetchOutputJson } from "../../types/web/common";
 import { isZodSchema } from "../../utils";
 import { BatchFetchService } from "./batch-fetch";
+import { WebCrawlService } from "./crawl";
 
 export class WebService extends BaseService {
   public readonly batchFetch: BatchFetchService;
+  public readonly crawl: WebCrawlService;
 
   constructor(apiKey: string, baseUrl: string, timeout: number) {
     super(apiKey, baseUrl, timeout);
     this.batchFetch = new BatchFetchService(apiKey, baseUrl, timeout);
+    this.crawl = new WebCrawlService(apiKey, baseUrl, timeout);
   }
   /**
    * Fetch a URL and extract content
