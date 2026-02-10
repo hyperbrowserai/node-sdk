@@ -55,6 +55,7 @@ export interface FetchOutputScreenshot extends FetchOutputScreenshotOptions {
 }
 
 export interface FetchOutputJsonOptions {
+  prompt?: string;
   schema?: any;
 }
 
