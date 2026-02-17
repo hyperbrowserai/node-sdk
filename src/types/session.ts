@@ -41,6 +41,7 @@ export interface SessionLaunchState {
   enableWindowManager?: boolean;
   enableWindowManagerTaskbar?: boolean;
   viewOnlyLiveView?: boolean;
+  allowOnGeolocationPrompt?: boolean;
   disablePasswordManager?: boolean;
   enableAlwaysOpenPdfExternally?: boolean;
   appendTimestampToDownloads?: boolean;
@@ -137,6 +138,7 @@ export interface CreateSessionParams {
   enableWindowManagerTaskbar?: boolean;
   region?: SessionRegion;
   viewOnlyLiveView?: boolean;
+  allowOnGeolocationPrompt?: boolean;
   disablePasswordManager?: boolean;
   enableAlwaysOpenPdfExternally?: boolean;
   appendTimestampToDownloads?: boolean;
