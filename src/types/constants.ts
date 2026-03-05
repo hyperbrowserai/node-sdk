@@ -57,6 +57,8 @@ export type ClaudeComputerUseLlm =
   | "claude-sonnet-4-20250514"
   | "claude-3-7-sonnet-20250219";
 
+export type CuaLlm = "computer-use-preview" | "gpt-5.4";
+
 export type HyperAgentVersion = "0.8.0" | "1.1.0";
 
 export type HyperAgentLlm =
