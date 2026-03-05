@@ -132,6 +132,7 @@ export {
   BrowserUseTaskStatus,
   BrowserUseLlm,
   ClaudeComputerUseLlm,
+  CuaLlm,
   GeminiComputerUseLlm,
   ScrapeScreenshotFormat,
   ScrapeJobStatus,
