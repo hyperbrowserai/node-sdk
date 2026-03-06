@@ -362,6 +362,11 @@ export interface SandboxTerminalWaitParams {
   includeOutput?: boolean;
 }
 
+export interface SandboxTerminalKillParams {
+  signal?: string;
+  timeoutMs?: number;
+}
+
 export type SandboxTerminalEvent =
   | {
       type: "output";

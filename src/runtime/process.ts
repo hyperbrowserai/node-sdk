@@ -55,6 +55,8 @@ interface StartProcessResponse {
   process: RawProcessSummary;
 }
 
+const DEFAULT_PROCESS_KILL_WAIT_MS = 5_000;
+
 const normalizeProcessSummary = (
   process: RawProcessSummary
 ): SandboxProcessSummary => ({
@@ -80,6 +82,18 @@ const normalizeProcessResult = (
   startedAt: result.started_at,
   completedAt: result.completed_at,
   error: result.error,
+});
+
+const normalizeResultToSummary = (
+  result: SandboxProcessResult
+): SandboxProcessSummary => ({
+  id: result.id,
+  status: result.status,
+  command: "",
+  cwd: "",
+  exitCode: result.exitCode,
+  startedAt: result.startedAt,
+  completedAt: result.completedAt,
 });
 
 const normalizeStreamEvent = (
@@ -185,7 +199,16 @@ export class SandboxProcessHandle {
         },
       }
     );
-    return normalizeProcessResult(response.result);
+    const result = normalizeProcessResult(response.result);
+    this.summary = {
+      ...this.summary,
+      ...normalizeResultToSummary(result),
+      command: this.summary.command,
+      args: this.summary.args,
+      cwd: this.summary.cwd,
+      pid: this.summary.pid,
+    };
+    return result;
   }
 
   async signal(signal: SandboxProcessSignal): Promise<void> {
@@ -202,7 +225,9 @@ export class SandboxProcessHandle {
     this.summary = normalizeProcessSummary(response.process);
   }
 
-  async kill(): Promise<void> {
+  async kill(
+    params: SandboxProcessWaitParams = {}
+  ): Promise<SandboxProcessResult> {
     const response = await this.transport.requestJSON<ProcessSummaryResponse>(
       `/sandbox/processes/${this.id}`,
       {
@@ -210,6 +235,22 @@ export class SandboxProcessHandle {
       }
     );
     this.summary = normalizeProcessSummary(response.process);
+    const waitParams: SandboxProcessWaitParams =
+      params.timeoutMs !== undefined
+        ? {
+            timeoutMs: params.timeoutMs,
+            timeoutSec: params.timeoutSec,
+          }
+        : params.timeoutSec !== undefined
+          ? {
+              timeoutSec: params.timeoutSec,
+            }
+          : {
+              timeoutMs: DEFAULT_PROCESS_KILL_WAIT_MS,
+            };
+    return this.wait({
+      ...waitParams,
+    });
   }
 
   async writeStdin(input: string | Uint8Array | SandboxProcessStdinParams): Promise<void> {

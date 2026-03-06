@@ -163,6 +163,7 @@ export {
   SandboxTerminalCreateParams,
   SandboxTerminalStatus,
   SandboxTerminalWaitParams,
+  SandboxTerminalKillParams,
   SandboxTerminalEvent,
 } from "./sandbox";
 export {

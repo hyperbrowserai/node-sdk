@@ -102,9 +102,22 @@ describe.sequential("sandbox terminal e2e", () => {
       }
     );
 
-    await timeoutTerminal.kill();
+    await timeoutTerminal.signal("TERM");
     const status = await timeoutTerminal.wait({ timeoutMs: 3_000 });
     expect(status.running).toBe(false);
+  });
+
+  test("kill waits for the PTY to fully exit", async () => {
+    const killTerminal = await sandbox!.pty.create({
+      command: "bash",
+      args: ["-lc", "sleep 30"],
+      rows: 24,
+      cols: 80,
+    });
+
+    const status = await killTerminal.kill();
+    expect(status.running).toBe(false);
+    expect(killTerminal.current.running).toBe(false);
   });
 
   test("missing PTY lookups return structured errors", async () => {

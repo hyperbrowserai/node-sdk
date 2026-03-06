@@ -4,6 +4,7 @@ import { AsyncEventQueue, toWebSocketUrl } from "./ws";
 import {
   SandboxTerminalCreateParams,
   SandboxTerminalEvent,
+  SandboxTerminalKillParams,
   SandboxTerminalStatus,
   SandboxTerminalWaitParams,
 } from "../types/sandbox";
@@ -33,6 +34,8 @@ interface RuntimeConnectionInfo {
   baseUrl: string;
   token: string;
 }
+
+const DEFAULT_TERMINAL_KILL_WAIT_MS = 5_000;
 
 const normalizeTerminalStatus = (pty: RawPTYStatus): SandboxTerminalStatus => ({
   id: pty.id,
@@ -202,7 +205,7 @@ export class SandboxTerminalHandle {
     return this.current;
   }
 
-  async kill(signal?: string): Promise<SandboxTerminalStatus> {
+  async signal(signal?: string): Promise<SandboxTerminalStatus> {
     const response = await this.transport.requestJSON<PTYStatusResponse>(
       `/sandbox/pty/${this.id}/kill`,
       {
@@ -215,6 +218,23 @@ export class SandboxTerminalHandle {
     );
     this.status = normalizeTerminalStatus(response.pty);
     return this.current;
+  }
+
+  async kill(): Promise<SandboxTerminalStatus>;
+  async kill(signal: string): Promise<SandboxTerminalStatus>;
+  async kill(params: SandboxTerminalKillParams): Promise<SandboxTerminalStatus>;
+  async kill(
+    input?: string | SandboxTerminalKillParams
+  ): Promise<SandboxTerminalStatus> {
+    const params =
+      typeof input === "string"
+        ? { signal: input }
+        : input ?? {};
+
+    await this.signal(params.signal);
+    return this.wait({
+      timeoutMs: params.timeoutMs ?? DEFAULT_TERMINAL_KILL_WAIT_MS,
+    });
   }
 
   async resize(rows: number, cols: number): Promise<SandboxTerminalStatus> {

@@ -121,9 +121,9 @@ describe.sequential("sandbox process e2e", () => {
       args: ["-lc", "sleep 30"],
     });
 
-    await killProcess.kill();
-    const refreshed = await killProcess.refresh();
-    expect(["running", "queued"]).not.toContain(refreshed.status);
+    const result = await killProcess.kill();
+    expect(["running", "queued"]).not.toContain(result.status);
+    expect(["running", "queued"]).not.toContain(killProcess.status);
   });
 
   test("missing process lookups return structured errors", async () => {
