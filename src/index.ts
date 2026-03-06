@@ -1,5 +1,9 @@
 import { HyperbrowserClient } from "./client";
-export { HyperbrowserError } from "./client";
+export {
+  HyperbrowserError,
+  HyperbrowserErrorOptions,
+  HyperbrowserService,
+} from "./client";
 export { SandboxesService, SandboxHandle } from "./services/sandboxes";
 export {
   SandboxProcessHandle,

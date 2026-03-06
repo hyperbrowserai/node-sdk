@@ -16,6 +16,36 @@ export interface RuntimeSSEEvent {
 
 type RuntimeParams = Record<string, string | number | boolean | undefined>;
 
+const RETRYABLE_STATUS_CODES = new Set([429, 502, 503, 504]);
+const RETRYABLE_NETWORK_CODES = new Set([
+  "ECONNRESET",
+  "ECONNREFUSED",
+  "EAI_AGAIN",
+  "ETIMEDOUT",
+  "ESOCKETTIMEDOUT",
+]);
+
+const getRequestId = (response: Response): string | undefined => {
+  return (
+    response.headers.get("x-request-id") ||
+    response.headers.get("request-id") ||
+    undefined
+  );
+};
+
+const isRetryableNetworkError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const networkError = error as Error & { code?: string; type?: string };
+  return (
+    networkError.name === "AbortError" ||
+    networkError.type === "request-timeout" ||
+    (networkError.code ? RETRYABLE_NETWORK_CODES.has(networkError.code) : false)
+  );
+};
+
 export class RuntimeTransport {
   constructor(
     private readonly resolveConnection: (
@@ -37,7 +67,12 @@ export class RuntimeTransport {
     try {
       return (await response.json()) as T;
     } catch {
-      throw new HyperbrowserError("Failed to parse JSON response", response.status);
+      throw new HyperbrowserError("Failed to parse JSON response", {
+        statusCode: response.status,
+        requestId: getRequestId(response),
+        retryable: false,
+        service: "runtime",
+      });
     }
   }
 
@@ -209,7 +244,12 @@ export class RuntimeTransport {
         throw error;
       }
       throw new HyperbrowserError(
-        error instanceof Error ? error.message : "Unknown runtime request error"
+        error instanceof Error ? error.message : "Unknown runtime request error",
+        {
+          retryable: isRetryableNetworkError(error),
+          service: "runtime",
+          cause: error,
+        }
       );
     } finally {
       clearTimeout(timeoutId);
@@ -222,13 +262,22 @@ export class RuntimeTransport {
     }
 
     let message = `Runtime request failed: ${response.status} ${response.statusText}`;
+    let details: unknown;
+    let code: string | undefined;
     try {
       const rawText = await response.text();
       if (rawText) {
         try {
-          const parsed = JSON.parse(rawText) as { error?: string; message?: string };
+          const parsed = JSON.parse(rawText) as {
+            error?: string;
+            message?: string;
+            code?: string;
+          };
+          details = parsed;
+          code = typeof parsed.code === "string" ? parsed.code : undefined;
           message = parsed.message || parsed.error || rawText;
         } catch {
+          details = rawText;
           message = rawText;
         }
       }
@@ -236,7 +285,14 @@ export class RuntimeTransport {
       // Keep the fallback message.
     }
 
-    throw new HyperbrowserError(message, response.status);
+    throw new HyperbrowserError(message, {
+      statusCode: response.status,
+      code,
+      requestId: getRequestId(response),
+      retryable: RETRYABLE_STATUS_CODES.has(response.status),
+      service: "runtime",
+      details,
+    });
   }
 
   private buildHeaders(

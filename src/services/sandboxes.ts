@@ -25,7 +25,7 @@ export class SandboxHandle {
   public readonly pty: SandboxTerminalApi;
   private readonly transport: RuntimeTransport;
   private detail: SandboxDetail;
-  private runtimeSession: SandboxRuntimeSession;
+  private runtimeSession: SandboxRuntimeSession | null;
 
   constructor(
     private readonly service: SandboxesService,
@@ -88,39 +88,36 @@ export class SandboxHandle {
     return this;
   }
 
+  async connect(): Promise<SandboxHandle> {
+    await this.createRuntimeSession();
+    return this;
+  }
+
   async stop(): Promise<BasicResponse> {
     const response = await this.service.stop(this.id);
-    this.detail = {
-      ...this.detail,
-      status: "closed",
-    };
+    this.clearRuntimeSession("closed");
     return response;
   }
 
   async delete(): Promise<BasicResponse> {
     const response = await this.service.delete(this.id);
-    this.detail = {
-      ...this.detail,
-      status: "closed",
-    };
+    this.clearRuntimeSession("closed");
     return response;
   }
 
   async createRuntimeSession(forceRefresh: boolean = false): Promise<SandboxRuntimeSession> {
-    if (!forceRefresh && !this.isRuntimeSessionExpiring()) {
+    this.assertRuntimeAvailable();
+
+    if (
+      !forceRefresh &&
+      this.runtimeSession &&
+      !this.isRuntimeSessionExpiring()
+    ) {
       return { ...this.runtimeSession };
     }
 
     const session = await this.service.getRuntimeSession(this.id);
-    this.runtimeSession = session;
-    this.detail = {
-      ...this.detail,
-      status: session.status,
-      region: session.region,
-      runtime: session.runtime,
-      token: session.token,
-      tokenExpiresAt: session.tokenExpiresAt,
-    };
+    this.applyRuntimeSession(session);
     return { ...session };
   }
 
@@ -171,7 +168,7 @@ export class SandboxHandle {
   }
 
   private isRuntimeSessionExpiring(): boolean {
-    if (!this.runtimeSession.tokenExpiresAt) {
+    if (!this.runtimeSession?.tokenExpiresAt) {
       return false;
     }
 
@@ -183,7 +180,46 @@ export class SandboxHandle {
     return expiresAt - Date.now() <= RUNTIME_SESSION_REFRESH_BUFFER_MS;
   }
 
-  private static toRuntimeSession(detail: SandboxDetail): SandboxRuntimeSession {
+  private applyRuntimeSession(session: SandboxRuntimeSession) {
+    this.runtimeSession = { ...session };
+    this.detail = {
+      ...this.detail,
+      status: session.status,
+      region: session.region,
+      runtime: session.runtime,
+      token: session.token,
+      tokenExpiresAt: session.tokenExpiresAt,
+    };
+  }
+
+  private clearRuntimeSession(status: SandboxDetail["status"] = this.detail.status) {
+    this.runtimeSession = null;
+    this.detail = {
+      ...this.detail,
+      status,
+      token: null,
+      tokenExpiresAt: null,
+    };
+  }
+
+  private assertRuntimeAvailable() {
+    if (this.detail.status === "closed" || this.detail.status === "error") {
+      throw new HyperbrowserError(`Sandbox ${this.id} is not running`, {
+        statusCode: 409,
+        code: "sandbox_not_running",
+        retryable: false,
+        service: "runtime",
+      });
+    }
+  }
+
+  private static toRuntimeSession(
+    detail: SandboxDetail
+  ): SandboxRuntimeSession | null {
+    if (!detail.token) {
+      return null;
+    }
+
     return {
       sandboxId: detail.id,
       status: detail.status,
@@ -218,6 +254,12 @@ export class SandboxesService extends BaseService {
   async get(id: string): Promise<SandboxHandle> {
     const detail = await this.getDetail(id);
     return this.attach(detail);
+  }
+
+  async connect(id: string): Promise<SandboxHandle> {
+    const sandbox = await this.get(id);
+    await sandbox.connect();
+    return sandbox;
   }
 
   async list(params: SandboxListParams = {}): Promise<SandboxListResponse> {

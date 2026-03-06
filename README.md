@@ -150,26 +150,17 @@ const main = async () => {
   const version = await sandbox.exec("node -v");
   console.log(version.stdout.trim());
 
-  await sandbox.files.writeText({
-    path: "/tmp/hello.txt",
-    data: "hello from sdk",
-  });
+  await sandbox.files.writeText("/tmp/hello.txt", "hello from sdk");
 
-  const content = await sandbox.files.readText({
-    path: "/tmp/hello.txt",
-  });
+  const content = await sandbox.files.readText("/tmp/hello.txt");
   console.log(content);
 
-  const watch = await sandbox.files.watch({
-    path: "/tmp",
+  const watch = await sandbox.files.watch("/tmp", {
     recursive: false,
   });
 
   const watchEvents = watch.events();
-  await sandbox.files.writeText({
-    path: "/tmp/watch-demo.txt",
-    data: "watch me",
-  });
+  await sandbox.files.writeText("/tmp/watch-demo.txt", "watch me");
 
   for await (const event of watchEvents) {
     if (event.type === "event") {
@@ -211,4 +202,12 @@ const main = async () => {
 };
 
 main().catch(console.error);
+```
+
+Reconnect an existing sandbox:
+
+```typescript
+const sandbox = await client.sandboxes.connect("sandbox-id");
+await sandbox.files.readText("/tmp/hello.txt");
+await sandbox.stop();
 ```

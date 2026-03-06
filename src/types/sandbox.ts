@@ -32,7 +32,7 @@ export interface Sandbox {
 }
 
 export interface SandboxDetail extends Sandbox {
-  token: string;
+  token: string | null;
   tokenExpiresAt: string | null;
 }
 
