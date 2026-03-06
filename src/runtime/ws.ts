@@ -70,12 +70,58 @@ export class AsyncEventQueue<T> implements AsyncIterable<T> {
   }
 }
 
-export const toWebSocketUrl = (baseUrl: string, path: string): string => {
+export interface RuntimeTransportTarget {
+  url: string;
+  hostHeader?: string;
+}
+
+const REGIONAL_PROXY_DEV_HOST = process.env.REGIONAL_PROXY_DEV_HOST?.trim();
+
+const hasScheme = (value: string): boolean => /^[a-z][a-z0-9+.-]*:\/\//i.test(value);
+
+export const resolveRuntimeTransportTarget = (
+  baseUrl: string,
+  path: string
+): RuntimeTransportTarget => {
   const url = new URL(path, baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`);
+
+  if (!REGIONAL_PROXY_DEV_HOST) {
+    return {
+      url: url.toString(),
+    };
+  }
+
+  const override = new URL(
+    hasScheme(REGIONAL_PROXY_DEV_HOST)
+      ? REGIONAL_PROXY_DEV_HOST
+      : `${url.protocol}//${REGIONAL_PROXY_DEV_HOST}`
+  );
+
+  url.protocol = override.protocol;
+  url.username = override.username;
+  url.password = override.password;
+  url.hostname = override.hostname;
+  url.port = override.port || url.port;
+
+  return {
+    url: url.toString(),
+    hostHeader: new URL(baseUrl).host,
+  };
+};
+
+export const toWebSocketUrl = (
+  baseUrl: string,
+  path: string
+): RuntimeTransportTarget => {
+  const target = resolveRuntimeTransportTarget(baseUrl, path);
+  const url = new URL(target.url);
   if (url.protocol === "https:") {
     url.protocol = "wss:";
   } else if (url.protocol === "http:") {
     url.protocol = "ws:";
   }
-  return url.toString();
+  return {
+    url: url.toString(),
+    hostHeader: target.hostHeader,
+  };
 };

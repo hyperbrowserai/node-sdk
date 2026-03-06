@@ -1,5 +1,6 @@
 import fetch, { RequestInit, Response } from "node-fetch";
 import { HyperbrowserError } from "../client";
+import { resolveRuntimeTransportTarget } from "./ws";
 
 export interface RuntimeConnection {
   sandboxId: string;
@@ -229,12 +230,20 @@ export class RuntimeTransport {
       }
     }
 
-    const headers = this.buildHeaders(connection, init?.headers);
+    const target = resolveRuntimeTransportTarget(
+      connection.baseUrl,
+      `${url.pathname}${url.search}`
+    );
+    const headers = this.buildHeaders(
+      connection,
+      init?.headers,
+      target.hostHeader
+    );
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
-      return await fetch(url.toString(), {
+      return await fetch(target.url, {
         ...init,
         headers,
         signal: controller.signal,
@@ -297,7 +306,8 @@ export class RuntimeTransport {
 
   private buildHeaders(
     connection: RuntimeConnection,
-    rawHeaders?: RequestInit["headers"]
+    rawHeaders?: RequestInit["headers"],
+    hostHeader?: string
   ): Record<string, string> {
     const headers: Record<string, string> = {
       Authorization: `Bearer ${connection.token}`,
@@ -313,6 +323,10 @@ export class RuntimeTransport {
           headers[key] = String(value);
         }
       }
+    }
+
+    if (hostHeader && headers.host === undefined && headers.Host === undefined) {
+      headers.Host = hostHeader;
     }
 
     return headers;

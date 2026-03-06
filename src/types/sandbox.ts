@@ -45,20 +45,26 @@ export interface SandboxRuntimeSession {
   runtime: SandboxRuntimeTarget;
 }
 
-export interface CreateSandboxParams {
+export type SandboxSnapshotSelector =
+  | {
+      snapshotId: string;
+      snapshotName?: never;
+      snapshotNamespace?: never;
+    }
+  | {
+      snapshotId?: never;
+      snapshotName: string;
+      snapshotNamespace?: string;
+    };
+
+export type CreateSandboxParams = {
   sandboxName: string;
-  snapshotName?: string;
-  snapshotNamespace?: string;
-  snapshotId?: string;
   region?: SessionRegion;
   enableRecording?: boolean;
   timeoutMinutes?: number;
-}
+} & SandboxSnapshotSelector;
 
-export interface StartSandboxFromSnapshotParams extends CreateSandboxParams {
-  snapshotName?: string;
-  snapshotId?: string;
-}
+export type StartSandboxFromSnapshotParams = CreateSandboxParams;
 
 export interface SandboxListParams {
   status?: SandboxStatus;

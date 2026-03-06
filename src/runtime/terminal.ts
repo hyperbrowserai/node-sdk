@@ -234,7 +234,7 @@ export class SandboxTerminalHandle {
 
   async attach(): Promise<SandboxTerminalConnection> {
     const connectionInfo = await this.getConnectionInfo();
-    const wsUrl = toWebSocketUrl(
+    const target = toWebSocketUrl(
       connectionInfo.baseUrl,
       `/sandbox/pty/${this.id}/ws?sessionId=${encodeURIComponent(
         connectionInfo.sandboxId
@@ -242,10 +242,15 @@ export class SandboxTerminalHandle {
     );
 
     const ws = await new Promise<WebSocket>((resolve, reject) => {
-      const socket = new WebSocket(wsUrl, {
-        headers: {
-          Authorization: `Bearer ${connectionInfo.token}`,
-        },
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${connectionInfo.token}`,
+      };
+      if (target.hostHeader) {
+        headers.Host = target.hostHeader;
+      }
+
+      const socket = new WebSocket(target.url, {
+        headers,
       });
 
       socket.once("open", () => resolve(socket));

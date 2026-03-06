@@ -144,8 +144,10 @@ const main = async () => {
   const sandbox = await client.sandboxes.create({
     sandboxName: "sdk-runtime-example",
     snapshotName: "nodejs",
-    region: "us",
+    region: "us-west",
   });
+
+  // snapshotId or snapshotName is required for sandbox creation
 
   const version = await sandbox.exec("node -v");
   console.log(version.stdout.trim());
@@ -211,3 +213,5 @@ const sandbox = await client.sandboxes.connect("sandbox-id");
 await sandbox.files.readText("/tmp/hello.txt");
 await sandbox.stop();
 ```
+
+`connect()` refreshes runtime auth and throws if the sandbox is no longer running.

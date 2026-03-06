@@ -89,7 +89,7 @@ export class SandboxHandle {
   }
 
   async connect(): Promise<SandboxHandle> {
-    await this.createRuntimeSession();
+    await this.createRuntimeSession(true);
     return this;
   }
 

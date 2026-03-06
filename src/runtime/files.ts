@@ -185,7 +185,7 @@ export class SandboxFileWatchHandle {
   ): AsyncGenerator<SandboxFileWatchStreamEvent> {
     const connectionInfo = await this.getConnectionInfo();
     const route = params.route || "ws";
-    const wsUrl = toWebSocketUrl(
+    const target = toWebSocketUrl(
       connectionInfo.baseUrl,
       `/sandbox/files/watch/${this.id}/${route}?sessionId=${encodeURIComponent(
         connectionInfo.sandboxId
@@ -193,10 +193,15 @@ export class SandboxFileWatchHandle {
     );
 
     const ws = await new Promise<WebSocket>((resolve, reject) => {
-      const socket = new WebSocket(wsUrl, {
-        headers: {
-          Authorization: `Bearer ${connectionInfo.token}`,
-        },
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${connectionInfo.token}`,
+      };
+      if (target.hostHeader) {
+        headers.Host = target.hostHeader;
+      }
+
+      const socket = new WebSocket(target.url, {
+        headers,
       });
 
       socket.once("open", () => resolve(socket));
