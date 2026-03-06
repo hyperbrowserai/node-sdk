@@ -30,8 +30,10 @@
     "ai"
   ],
   "dependencies": {
+    "@types/ws": "^8.18.1",
     "form-data": "^4.0.1",
     "node-fetch": "2.7.0",
+    "ws": "^8.19.0",
     "zod": "^4.1.12",
     "zod-to-json-schema": "^3.25.0"
   },

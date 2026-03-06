@@ -1,5 +1,15 @@
 import { HyperbrowserClient } from "./client";
 export { HyperbrowserError } from "./client";
+export { SandboxesService, SandboxHandle } from "./services/sandboxes";
+export {
+  SandboxProcessHandle,
+  SandboxProcessesApi,
+  SandboxFilesApi,
+  SandboxFileWatchHandle,
+  SandboxTerminalApi,
+  SandboxTerminalConnection,
+  SandboxTerminalHandle,
+} from "./runtime";
 
 // Export HyperbrowserClient as Hyperbrowser for named imports
 export const Hyperbrowser = HyperbrowserClient;
