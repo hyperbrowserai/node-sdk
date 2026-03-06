@@ -1,4 +1,5 @@
 import WebSocket from "ws";
+import { HyperbrowserError } from "../client";
 import { RuntimeTransport } from "./base";
 import { AsyncEventQueue, toWebSocketUrl } from "./ws";
 import {
@@ -318,6 +319,9 @@ export class SandboxFilesApi {
       await this.stat(path);
       return true;
     } catch (error: unknown) {
+      if (error instanceof HyperbrowserError && error.statusCode === 404) {
+        return false;
+      }
       if (
         error instanceof Error &&
         /not found|no such file|does not exist/i.test(error.message)

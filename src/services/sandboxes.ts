@@ -99,12 +99,6 @@ export class SandboxHandle {
     return response;
   }
 
-  async delete(): Promise<BasicResponse> {
-    const response = await this.service.delete(this.id);
-    this.clearRuntimeSession("closed");
-    return response;
-  }
-
   async createRuntimeSession(forceRefresh: boolean = false): Promise<SandboxRuntimeSession> {
     this.assertRuntimeAvailable();
 
@@ -288,19 +282,6 @@ export class SandboxesService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError(`Failed to stop sandbox ${id}`, undefined);
-    }
-  }
-
-  async delete(id: string): Promise<BasicResponse> {
-    try {
-      return await this.request<BasicResponse>(`/sandboxes/${id}`, {
-        method: "DELETE",
-      });
-    } catch (error) {
-      if (error instanceof HyperbrowserError) {
-        throw error;
-      }
-      throw new HyperbrowserError(`Failed to delete sandbox ${id}`, undefined);
     }
   }
 

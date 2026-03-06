@@ -11,7 +11,9 @@
     "build": "tsc",
     "lint": "eslint src/**/*.ts",
     "prepare": "yarn build",
-    "test": "jest",
+    "test": "vitest run",
+    "test:e2e": "vitest run tests/sandbox/e2e",
+    "test:watch": "vitest",
     "format": "prettier --write 'src/**/*.ts'"
   },
   "files": [
@@ -47,7 +49,8 @@
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.3.3",
     "ts-node": "^10.9.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^4.0.18"
   },
   "exports": {
     ".": {
