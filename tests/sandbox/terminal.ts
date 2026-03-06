@@ -1,3 +1,4 @@
+import "../load-env";
 import {
   Hyperbrowser,
   HyperbrowserError,
@@ -5,9 +6,8 @@ import {
 } from "../../src";
 import type { CreateSandboxParams } from "../../src/types";
 
-// Edit these values directly for local SDK testing.
-const API_KEY = "";
-const BASE_URL = "http://localhost:8080";
+const API_KEY = process.env.HYPERBROWSER_API_KEY || "";
+const BASE_URL = process.env.HYPERBROWSER_BASE_URL || "http://localhost:8080";
 
 const SANDBOX = {
   sandboxName: `sdk-terminal-${Date.now()}`,
@@ -21,7 +21,9 @@ const TERMINAL = {
 
 async function main() {
   if (!API_KEY) {
-    throw new Error("Set API_KEY in tests/sandbox/terminal.ts before running this script");
+    throw new Error(
+      "Set HYPERBROWSER_API_KEY in tests/.env before running this script"
+    );
   }
 
   if (!process.stdin.isTTY || !process.stdout.isTTY) {

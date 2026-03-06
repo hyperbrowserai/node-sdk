@@ -1,3 +1,4 @@
+import "../load-env";
 import { Hyperbrowser, HyperbrowserError } from "../../src";
 import type {
   CreateSandboxParams,
@@ -5,9 +6,8 @@ import type {
   SandboxProcessResult,
 } from "../../src/types";
 
-// Edit these values directly for local SDK testing.
-const API_KEY = "";
-const BASE_URL = "http://localhost:8080";
+const API_KEY = process.env.HYPERBROWSER_API_KEY || "";
+const BASE_URL = process.env.HYPERBROWSER_BASE_URL || "http://localhost:8080";
 const COMMAND = "echo hb-sdk-start-stop-ok";
 
 const SANDBOX = {
@@ -39,7 +39,9 @@ function summarizeResult(result: SandboxProcessResult) {
 
 async function main() {
   if (!API_KEY) {
-    throw new Error("Set API_KEY in tests/sandbox/start-stop.ts before running this script");
+    throw new Error(
+      "Set HYPERBROWSER_API_KEY in tests/.env before running this script"
+    );
   }
 
   const client = new Hyperbrowser({
