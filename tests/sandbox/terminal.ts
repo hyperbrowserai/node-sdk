@@ -1,9 +1,6 @@
 import "../load-env";
-import {
-  Hyperbrowser,
-  HyperbrowserError,
-  type SandboxTerminalConnection,
-} from "../../src";
+import { Hyperbrowser, HyperbrowserError } from "../../src";
+import type { SandboxTerminalConnection } from "../../src/runtime/terminal";
 import type { CreateSandboxParams } from "../../src/types";
 
 const API_KEY = process.env.HYPERBROWSER_API_KEY || "";
