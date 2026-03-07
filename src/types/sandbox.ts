@@ -1,3 +1,5 @@
+import type { Blob } from "buffer";
+import type { ReadableStream } from "node:stream/web";
 import { SessionRegion } from "./constants";
 import { SessionLaunchState, SessionStatus } from "./session";
 
@@ -165,84 +167,74 @@ export type SandboxProcessStreamEvent =
       result: SandboxProcessResult;
     };
 
-export interface SandboxFileEntry {
+export type SandboxFileType = "file" | "dir";
+
+export interface SandboxFileInfo {
   path: string;
   name: string;
-  type: string;
+  type: SandboxFileType;
   size: number;
-  mode: string;
-  modTime: number;
+  mode: number;
+  permissions: string;
+  owner: string;
+  group: string;
+  modifiedTime?: Date;
+  symlinkTarget?: string;
 }
 
-export interface SandboxFileListParams {
+export interface SandboxFileWriteInfo {
   path: string;
-  recursive?: boolean;
-  limit?: number;
-  cursor?: number;
+  name: string;
+  type?: SandboxFileType;
 }
 
-export interface SandboxFileListResponse {
-  path: string;
-  entries: SandboxFileEntry[];
-  limit: number;
-  cursor: number;
-  recursive: boolean;
-  nextCursor?: number;
+export interface SandboxFileListOptions {
+  depth?: number;
 }
 
-export interface SandboxFileReadParams {
-  path: string;
+export type SandboxFileReadFormat = "text" | "bytes" | "blob" | "stream";
+
+export interface SandboxFileReadOptions {
   offset?: number;
   length?: number;
+  format?: SandboxFileReadFormat;
 }
 
-export interface SandboxFileReadResult {
-  content: string;
-  encoding: "utf8" | "base64";
-  bytesRead: number;
-  truncated: boolean;
-  contentType?: string;
-}
+export type SandboxFileWriteData =
+  | string
+  | Uint8Array
+  | Buffer
+  | ArrayBuffer
+  | Blob
+  | ReadableStream<Uint8Array>;
 
-export interface SandboxFileWriteTextParams {
+export interface SandboxFileWriteEntry {
   path: string;
-  data: string;
+  data: SandboxFileWriteData;
+}
+
+export interface SandboxFileTextWriteOptions {
   append?: boolean;
   mode?: string;
 }
 
-export interface SandboxFileWriteBytesParams {
-  path: string;
-  data: Uint8Array;
+export interface SandboxFileBytesWriteOptions {
   append?: boolean;
   mode?: string;
 }
 
-export interface SandboxFileWriteResult {
-  bytesWritten: number;
-  path: string;
-}
-
-export interface SandboxFileUploadParams {
-  path: string;
-  data: Buffer | Uint8Array | string;
-}
-
-export interface SandboxFileDeleteParams {
-  path: string;
+export interface SandboxFileRemoveOptions {
   recursive?: boolean;
 }
 
-export interface SandboxFileMkdirParams {
-  path: string;
+export interface SandboxFileMakeDirOptions {
   parents?: boolean;
   mode?: string;
 }
 
-export interface SandboxFileMoveParams {
-  source: string;
-  destination: string;
-  overwrite?: boolean;
+export interface SandboxFileTransferResult {
+  path: string;
+  bytesWritten: number;
 }
 
 export interface SandboxFileCopyParams {
@@ -265,57 +257,23 @@ export interface SandboxFileChownParams {
   recursive?: boolean;
 }
 
-export interface SandboxFileMutationResult {
-  path: string;
+export type SandboxFileSystemEventType =
+  | "chmod"
+  | "create"
+  | "remove"
+  | "rename"
+  | "write";
+
+export interface SandboxFileSystemEvent {
+  name: string;
+  type: SandboxFileSystemEventType;
 }
 
-export interface SandboxFileTransferResult {
-  path: string;
-  bytesWritten: number;
-}
-
-export interface SandboxFileWatchParams {
-  path: string;
+export interface SandboxWatchDirOptions {
   recursive?: boolean;
+  timeoutMs?: number;
+  onExit?: (error?: Error) => void | Promise<void>;
 }
-
-export interface SandboxFileWatchEvent {
-  seq: number;
-  path: string;
-  op: string;
-  timestamp: number;
-}
-
-export interface SandboxFileWatchStatus {
-  id: string;
-  path: string;
-  recursive: boolean;
-  active: boolean;
-  error?: string;
-  createdAt: number;
-  stoppedAt?: number;
-  oldestSeq: number;
-  lastSeq: number;
-  eventCount: number;
-  events?: SandboxFileWatchEvent[];
-}
-
-export type SandboxFileWatchRoute = "ws" | "stream";
-
-export interface SandboxFileWatchEventsParams {
-  cursor?: number;
-  route?: SandboxFileWatchRoute;
-}
-
-export type SandboxFileWatchStreamEvent =
-  | {
-      type: "event";
-      event: SandboxFileWatchEvent;
-    }
-  | {
-      type: "done";
-      status: SandboxFileWatchStatus;
-    };
 
 export interface SandboxPresignFileParams {
   path: string;
