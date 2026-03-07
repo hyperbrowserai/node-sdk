@@ -11,6 +11,7 @@ import { expectHyperbrowserError } from "../../helpers/errors";
 import {
   defaultSandboxParams,
   stopSandboxIfRunning,
+  waitForRuntimeReady,
 } from "../../helpers/sandbox";
 
 const client = createClient();
@@ -23,6 +24,7 @@ describe.sequential("sandbox lifecycle e2e", () => {
   beforeAll(async () => {
     sandbox = await client.sandboxes.create(defaultSandboxParams("sdk-lifecycle"));
     staleHandle = await client.sandboxes.get(sandbox.id);
+    await waitForRuntimeReady(sandbox);
   });
 
   afterAll(async () => {
@@ -55,6 +57,38 @@ describe.sequential("sandbox lifecycle e2e", () => {
   test("connect succeeds while sandbox is active", async () => {
     await sandbox!.connect();
     expect(sandbox!.status).toBe("active");
+  });
+
+  test("runtime requests refresh and retry on 401", async () => {
+    const originalCreateRuntimeSession = sandbox!.createRuntimeSession.bind(sandbox);
+    const validSession = await originalCreateRuntimeSession(true);
+    const invalidJwt =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.invalid-signature";
+    let refreshCount = 0;
+
+    sandbox!.createRuntimeSession = (async (forceRefresh: boolean = false) => {
+      if (forceRefresh) {
+        refreshCount += 1;
+        return originalCreateRuntimeSession(true);
+      }
+
+      return {
+        ...validSession,
+        token: invalidJwt,
+        tokenExpiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      };
+    }) as SandboxHandle["createRuntimeSession"];
+
+    try {
+      const result = await sandbox!.exec("echo runtime-refresh-ok");
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain("runtime-refresh-ok");
+      expect(refreshCount).toBeGreaterThan(0);
+      expect(sandbox!.toJSON().token).toBeTruthy();
+      expect(sandbox!.toJSON().token).not.toBe(invalidJwt);
+    } finally {
+      sandbox!.createRuntimeSession = originalCreateRuntimeSession;
+    }
   });
 
   test("list includes the active sandbox", async () => {

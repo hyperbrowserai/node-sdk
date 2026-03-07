@@ -1,6 +1,6 @@
 import WebSocket from "ws";
 import { RuntimeTransport } from "./base";
-import { AsyncEventQueue, toWebSocketUrl } from "./ws";
+import { AsyncEventQueue, openRuntimeWebSocket, toWebSocketUrl } from "./ws";
 import {
   SandboxTerminalCreateParams,
   SandboxTerminalEvent,
@@ -261,21 +261,14 @@ export class SandboxTerminalHandle {
       )}`
     );
 
-    const ws = await new Promise<WebSocket>((resolve, reject) => {
-      const headers: Record<string, string> = {
-        Authorization: `Bearer ${connectionInfo.token}`,
-      };
-      if (target.hostHeader) {
-        headers.Host = target.hostHeader;
-      }
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${connectionInfo.token}`,
+    };
+    if (target.hostHeader) {
+      headers.Host = target.hostHeader;
+    }
 
-      const socket = new WebSocket(target.url, {
-        headers,
-      });
-
-      socket.once("open", () => resolve(socket));
-      socket.once("error", reject);
-    });
+    const ws = await openRuntimeWebSocket(target, headers);
 
     return new SandboxTerminalConnection(ws);
   }

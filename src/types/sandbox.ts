@@ -294,6 +294,7 @@ export interface SandboxFileWatchStatus {
   error?: string;
   createdAt: number;
   stoppedAt?: number;
+  oldestSeq: number;
   lastSeq: number;
   eventCount: number;
   events?: SandboxFileWatchEvent[];

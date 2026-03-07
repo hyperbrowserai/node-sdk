@@ -83,6 +83,32 @@ describe.sequential("sandbox terminal e2e", () => {
     expect(result.exitCode).toBe(0);
   });
 
+  test("terminal refresh reflects connection-side resize updates", async () => {
+    const terminal = await sandbox!.terminal.create({
+      command: "bash",
+      args: ["-l"],
+      rows: 24,
+      cols: 80,
+    });
+
+    const connection = await terminal.attach();
+    try {
+      await connection.resize(32, 110);
+      const refreshed = await terminal.refresh();
+      expect(refreshed.current.rows).toBe(32);
+      expect(refreshed.current.cols).toBe(110);
+
+      await connection.write("exit\n");
+      const result = await collectTerminalSession(connection);
+      expect(result.exitCode).toBe(0);
+    } finally {
+      await connection.close();
+    }
+
+    const status = await terminal.wait({ timeoutMs: 2_000 });
+    expect(status.running).toBe(false);
+  });
+
   test("PTY wait timeout returns a structured error", async () => {
     const timeoutTerminal = await sandbox!.pty.create({
       command: "bash",

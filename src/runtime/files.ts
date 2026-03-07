@@ -1,7 +1,7 @@
 import WebSocket from "ws";
 import { HyperbrowserError } from "../client";
 import { RuntimeTransport } from "./base";
-import { AsyncEventQueue, toWebSocketUrl } from "./ws";
+import { AsyncEventQueue, openRuntimeWebSocket, toWebSocketUrl } from "./ws";
 import {
   SandboxFileChmodParams,
   SandboxFileChownParams,
@@ -68,6 +68,7 @@ interface RawFileWatchStatus {
   error?: string;
   createdAt: number;
   stoppedAt?: number;
+  oldestSeq?: number;
   lastSeq?: number;
   eventCount?: number;
   events?: RawFileWatchEvent[];
@@ -131,6 +132,7 @@ const normalizeFileWatchStatus = (
   error: watch.error,
   createdAt: watch.createdAt,
   stoppedAt: watch.stoppedAt,
+  oldestSeq: watch.oldestSeq || 0,
   lastSeq: watch.lastSeq || 0,
   eventCount: watch.eventCount || 0,
   events: watch.events,
@@ -193,21 +195,14 @@ export class SandboxFileWatchHandle {
       )}${params.cursor !== undefined ? `&cursor=${encodeURIComponent(String(params.cursor))}` : ""}`
     );
 
-    const ws = await new Promise<WebSocket>((resolve, reject) => {
-      const headers: Record<string, string> = {
-        Authorization: `Bearer ${connectionInfo.token}`,
-      };
-      if (target.hostHeader) {
-        headers.Host = target.hostHeader;
-      }
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${connectionInfo.token}`,
+    };
+    if (target.hostHeader) {
+      headers.Host = target.hostHeader;
+    }
 
-      const socket = new WebSocket(target.url, {
-        headers,
-      });
-
-      socket.once("open", () => resolve(socket));
-      socket.once("error", reject);
-    });
+    const ws = await openRuntimeWebSocket(target, headers);
 
     const queue = new AsyncEventQueue<SandboxFileWatchStreamEvent>();
 
@@ -224,6 +219,11 @@ export class SandboxFileWatchHandle {
             };
 
         if (parsed.type === "event") {
+          this.status = {
+            ...this.status,
+            oldestSeq: this.status.oldestSeq || parsed.event.seq,
+            lastSeq: Math.max(this.status.lastSeq, parsed.event.seq),
+          };
           queue.push({
             type: "event",
             event: parsed.event,

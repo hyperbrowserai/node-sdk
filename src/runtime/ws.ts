@@ -1,3 +1,7 @@
+import type { IncomingMessage } from "http";
+import WebSocket from "ws";
+import { HyperbrowserError } from "../client";
+
 export class AsyncEventQueue<T> implements AsyncIterable<T> {
   private readonly values: T[] = [];
   private readonly waiters: Array<{
@@ -75,6 +79,15 @@ export interface RuntimeTransportTarget {
   hostHeader?: string;
 }
 
+const RETRYABLE_STATUS_CODES = new Set([429, 502, 503, 504]);
+const RETRYABLE_NETWORK_CODES = new Set([
+  "ECONNRESET",
+  "ECONNREFUSED",
+  "EAI_AGAIN",
+  "ETIMEDOUT",
+  "ESOCKETTIMEDOUT",
+]);
+
 const REGIONAL_PROXY_DEV_HOST = process.env.REGIONAL_PROXY_DEV_HOST?.trim();
 
 const hasScheme = (value: string): boolean => /^[a-z][a-z0-9+.-]*:\/\//i.test(value);
@@ -125,3 +138,107 @@ export const toWebSocketUrl = (
     hostHeader: target.hostHeader,
   };
 };
+
+const readIncomingMessageBody = (response: IncomingMessage): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    response.on("data", (chunk) => {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    });
+    response.on("end", () => {
+      resolve(Buffer.concat(chunks).toString("utf8"));
+    });
+    response.on("error", reject);
+  });
+
+const normalizeWebSocketError = (error: unknown): HyperbrowserError => {
+  if (error instanceof HyperbrowserError) {
+    return error;
+  }
+
+  const networkError = error as Error & { code?: string };
+  return new HyperbrowserError(
+    error instanceof Error ? error.message : "Unknown runtime websocket error",
+    {
+      retryable: Boolean(
+        networkError?.code && RETRYABLE_NETWORK_CODES.has(networkError.code)
+      ),
+      service: "runtime",
+      cause: error,
+    }
+  );
+};
+
+const buildHandshakeError = async (
+  response: IncomingMessage
+): Promise<HyperbrowserError> => {
+  const rawText = await readIncomingMessageBody(response);
+  let message = `Runtime websocket request failed: ${response.statusCode ?? 0}`;
+  let code: string | undefined;
+  let details: unknown;
+
+  if (rawText) {
+    try {
+      const parsed = JSON.parse(rawText) as {
+        error?: string;
+        message?: string;
+        code?: string;
+      };
+      details = parsed;
+      code = typeof parsed.code === "string" ? parsed.code : undefined;
+      message = parsed.message || parsed.error || rawText;
+    } catch {
+      details = rawText;
+      message = rawText;
+    }
+  }
+
+  return new HyperbrowserError(message, {
+    statusCode: response.statusCode,
+    code,
+    requestId:
+      (typeof response.headers["x-request-id"] === "string"
+        ? response.headers["x-request-id"]
+        : undefined) ||
+      (typeof response.headers["request-id"] === "string"
+        ? response.headers["request-id"]
+        : undefined),
+    retryable: Boolean(
+      response.statusCode && RETRYABLE_STATUS_CODES.has(response.statusCode)
+    ),
+    service: "runtime",
+    details,
+  });
+};
+
+export const openRuntimeWebSocket = async (
+  target: RuntimeTransportTarget,
+  headers: Record<string, string>
+): Promise<WebSocket> =>
+  new Promise<WebSocket>((resolve, reject) => {
+    let settled = false;
+
+    const socket = new WebSocket(target.url, { headers });
+
+    const rejectOnce = (error: unknown) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      reject(normalizeWebSocketError(error));
+    };
+
+    socket.once("open", () => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      resolve(socket);
+    });
+
+    socket.once("unexpected-response", (_request, response) => {
+      void buildHandshakeError(response).then(rejectOnce).catch(rejectOnce);
+    });
+
+    socket.once("error", rejectOnce);
+  });

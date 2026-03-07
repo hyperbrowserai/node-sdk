@@ -76,6 +76,19 @@ describe.sequential("sandbox process e2e", () => {
     expect(result.stderr).toContain("stderr:sdk-stdin");
   });
 
+  test("refresh reports current state for a running process", async () => {
+    const runningProcess = await sandbox!.processes.start({
+      command: "bash",
+      args: ["-lc", "sleep 30"],
+    });
+
+    const refreshed = await runningProcess.refresh();
+    expect(["queued", "running"]).toContain(refreshed.status);
+
+    const result = await runningProcess.kill();
+    expect(["running", "queued"]).not.toContain(result.status);
+  });
+
   test("stream normalizes stdout, stderr, and exit events", async () => {
     const streamed = await sandbox!.processes.start({
       command: "bash",
@@ -91,6 +104,42 @@ describe.sequential("sandbox process e2e", () => {
       events.some((event) => event.type === "stderr" && event.data.includes("stream-err"))
     ).toBe(true);
     expect(events.some((event) => event.type === "exit")).toBe(true);
+  });
+
+  test("result is an alias for wait", async () => {
+    const resultProcess = await sandbox!.processes.start({
+      command: "bash",
+      args: ["-lc", "echo result-alias-ok"],
+    });
+
+    const result = await resultProcess.result();
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("result-alias-ok");
+  });
+
+  test("stale process stream cursors fail with replay_window_expired", async () => {
+    const noisyProcess = await sandbox!.processes.start({
+      command: "bash",
+      args: [
+        "-lc",
+        'yes "process-replay-window-overflow-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" | head -n 120000',
+      ],
+    });
+
+    const result = await noisyProcess.result();
+    expect(result.stdout.length).toBeGreaterThan(3 * 1024 * 1024);
+
+    await expectHyperbrowserError(
+      "process replay window expired",
+      () => collectProcessStream(noisyProcess.stream(1)),
+      {
+        statusCode: 410,
+        code: "replay_window_expired",
+        service: "runtime",
+        retryable: false,
+        messageIncludes: "Replay window expired",
+      }
+    );
   });
 
   test("wait timeout returns a structured error", async () => {
