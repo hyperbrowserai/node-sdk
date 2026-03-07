@@ -131,3 +131,87 @@ const main = async () => {
 
 main();
 ```
+
+### Sandboxes
+```typescript
+import { Hyperbrowser } from "@hyperbrowser/sdk";
+
+const client = new Hyperbrowser({
+  apiKey: process.env.HYPERBROWSER_API_KEY,
+});
+
+const main = async () => {
+  const sandbox = await client.sandboxes.create({
+    sandboxName: "sdk-runtime-example",
+    snapshotName: "nodejs",
+    region: "us-west",
+  });
+
+  // snapshotId or snapshotName is required for sandbox creation
+
+  const version = await sandbox.exec("node -v");
+  console.log(version.stdout.trim());
+
+  await sandbox.files.writeText("/tmp/hello.txt", "hello from sdk");
+
+  const content = await sandbox.files.readText("/tmp/hello.txt");
+  console.log(content);
+
+  const watch = await sandbox.files.watch("/tmp", {
+    recursive: false,
+  });
+
+  const watchEvents = watch.events();
+  await sandbox.files.writeText("/tmp/watch-demo.txt", "watch me");
+
+  for await (const event of watchEvents) {
+    if (event.type === "event") {
+      console.log(event.event.op, event.event.path);
+      break;
+    }
+  }
+
+  await watch.stop();
+
+  const proc = await sandbox.processes.start({
+    command: "bash",
+    args: ["-lc", "echo process-started && sleep 1 && echo process-finished"],
+  });
+
+  for await (const event of proc.stream()) {
+    if (event.type === "stdout") {
+      process.stdout.write(event.data);
+    }
+  }
+
+  const terminal = await sandbox.terminal.create({
+    command: "bash",
+    cols: 120,
+    rows: 30,
+  });
+
+  const connection = await terminal.attach();
+  await connection.write("echo terminal-ok\n");
+
+  for await (const event of connection.events()) {
+    if (event.type === "output" && event.data.includes("terminal-ok")) {
+      break;
+    }
+  }
+
+  await connection.close();
+  await sandbox.stop();
+};
+
+main().catch(console.error);
+```
+
+Reconnect an existing sandbox:
+
+```typescript
+const sandbox = await client.sandboxes.connect("sandbox-id");
+await sandbox.files.readText("/tmp/hello.txt");
+await sandbox.stop();
+```
+
+`connect()` refreshes runtime auth and throws if the sandbox is no longer running.

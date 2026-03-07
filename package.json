@@ -11,7 +11,9 @@
     "build": "tsc",
     "lint": "eslint src/**/*.ts",
     "prepare": "yarn build",
-    "test": "jest",
+    "test": "vitest run",
+    "test:e2e": "vitest run tests/sandbox/e2e",
+    "test:watch": "vitest",
     "format": "prettier --write 'src/**/*.ts'"
   },
   "files": [
@@ -30,8 +32,10 @@
     "ai"
   ],
   "dependencies": {
+    "@types/ws": "^8.18.1",
     "form-data": "^4.0.1",
     "node-fetch": "2.7.0",
+    "ws": "^8.19.0",
     "zod": "^4.1.12",
     "zod-to-json-schema": "^3.25.0"
   },
@@ -40,11 +44,13 @@
     "@types/node-fetch": "^2.6.4",
     "@typescript-eslint/eslint-plugin": "^8.15.0",
     "@typescript-eslint/parser": "^8.15.0",
+    "dotenv": "^17.3.1",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.3.3",
     "ts-node": "^10.9.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^4.0.18"
   },
   "exports": {
     ".": {

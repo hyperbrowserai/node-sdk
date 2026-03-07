@@ -13,14 +13,46 @@ import { TeamService } from "./services/team";
 import { ComputerActionService } from "./services/computer-action";
 import { GeminiComputerUseService } from "./services/agents/gemini-computer-use";
 import { WebService } from "./services/web";
+import { SandboxesService } from "./services/sandboxes";
+
+export type HyperbrowserService = "control" | "runtime";
+
+export interface HyperbrowserErrorOptions {
+  statusCode?: number;
+  code?: string;
+  requestId?: string;
+  retryable?: boolean;
+  service?: HyperbrowserService;
+  details?: unknown;
+  cause?: unknown;
+}
 
 export class HyperbrowserError extends Error {
+  public readonly statusCode?: number;
+  public readonly code?: string;
+  public readonly requestId?: string;
+  public readonly retryable: boolean;
+  public readonly service?: HyperbrowserService;
+  public readonly details?: unknown;
+  public readonly cause?: unknown;
+
   constructor(
     message: string,
-    public statusCode?: number
+    options: number | HyperbrowserErrorOptions = {}
   ) {
     super(`[Hyperbrowser]: ${message}`);
     this.name = "HyperbrowserError";
+
+    const normalized =
+      typeof options === "number" ? { statusCode: options } : options;
+
+    this.statusCode = normalized.statusCode;
+    this.code = normalized.code;
+    this.requestId = normalized.requestId;
+    this.retryable = normalized.retryable ?? false;
+    this.service = normalized.service;
+    this.details = normalized.details;
+    this.cause = normalized.cause;
   }
 }
 
@@ -41,6 +73,7 @@ export class HyperbrowserClient {
   };
   public readonly team: TeamService;
   public readonly computerAction: ComputerActionService;
+  public readonly sandboxes: SandboxesService;
 
   constructor(config: HyperbrowserConfig = {}) {
     const apiKey = config.apiKey || process.env["HYPERBROWSER_API_KEY"];
@@ -61,6 +94,7 @@ export class HyperbrowserClient {
     this.web = new WebService(apiKey, baseUrl, timeout);
     this.team = new TeamService(apiKey, baseUrl, timeout);
     this.computerAction = new ComputerActionService(apiKey, baseUrl, timeout);
+    this.sandboxes = new SandboxesService(apiKey, baseUrl, timeout);
 
     this.agents = {
       browserUse: new BrowserUseService(apiKey, baseUrl, timeout),
