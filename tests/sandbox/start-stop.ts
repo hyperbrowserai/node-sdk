@@ -11,7 +11,6 @@ const BASE_URL = process.env.HYPERBROWSER_BASE_URL || "http://localhost:8080";
 const COMMAND = "echo hb-sdk-start-stop-ok";
 
 const SANDBOX = {
-  sandboxName: `sdk-smoke-${Date.now()}`,
   snapshotName: "receiverStarted-ubuntu-24-node",
 } satisfies CreateSandboxParams;
 

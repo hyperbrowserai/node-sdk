@@ -4,9 +4,15 @@
  */
 
 import { randomUUID } from "crypto";
+import fetch from "node-fetch";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import type { SandboxHandle } from "../../../src/services/sandboxes";
-import { createClient } from "../../helpers/config";
+import {
+  API_KEY,
+  BASE_URL,
+  createClient,
+  DEFAULT_IMAGE_NAME,
+} from "../../helpers/config";
 import { expectHyperbrowserError } from "../../helpers/errors";
 import {
   defaultSandboxParams,
@@ -15,15 +21,75 @@ import {
 } from "../../helpers/sandbox";
 
 const client = createClient();
+const CUSTOM_IMAGE_NAME = "node";
+
+type ListedFirecrackerImage = {
+  id: string;
+  imageName: string;
+  namespace: string;
+  uploaded: boolean;
+};
+
+async function getCustomImageByName(
+  imageName: string
+): Promise<ListedFirecrackerImage> {
+  const response = await fetch(`${BASE_URL}/api/images`, {
+    headers: {
+      Authorization: `Bearer ${API_KEY}`,
+    },
+  });
+
+  const text = await response.text();
+  let payload: any = {};
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error(`failed to parse /api/images response: ${text}`);
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      `GET /api/images failed (${response.status}): ${JSON.stringify(payload)}`
+    );
+  }
+
+  const images = payload.data?.images || payload.images;
+  if (!Array.isArray(images)) {
+    throw new Error(`unexpected /api/images payload: ${JSON.stringify(payload)}`);
+  }
+
+  const image = images.find(
+    (entry: ListedFirecrackerImage) => entry.imageName === imageName
+  );
+
+  if (!image) {
+    throw new Error(
+      `custom image ${JSON.stringify(imageName)} not found in /api/images`
+    );
+  }
+
+  return image;
+}
 
 describe.sequential("sandbox lifecycle e2e", () => {
   let sandbox: SandboxHandle | null = null;
   let staleHandle: SandboxHandle | null = null;
   let secondary: SandboxHandle | null = null;
+  let imageSandbox: SandboxHandle | null = null;
+  let customImageSandbox: SandboxHandle | null = null;
+  let customSnapshotSandbox: SandboxHandle | null = null;
+  let memorySnapshot:
+    | Awaited<ReturnType<NonNullable<SandboxHandle>["createMemorySnapshot"]>>
+    | null = null;
+  let customImageMemorySnapshot:
+    | Awaited<ReturnType<NonNullable<SandboxHandle>["createMemorySnapshot"]>>
+    | null = null;
+  let customImage: ListedFirecrackerImage | null = null;
 
   beforeAll(async () => {
     sandbox = await client.sandboxes.create(defaultSandboxParams("sdk-lifecycle"));
     staleHandle = await client.sandboxes.get(sandbox.id);
+    customImage = await getCustomImageByName(CUSTOM_IMAGE_NAME);
     await waitForRuntimeReady(sandbox);
   });
 
@@ -31,6 +97,9 @@ describe.sequential("sandbox lifecycle e2e", () => {
     await stopSandboxIfRunning(sandbox);
     await stopSandboxIfRunning(staleHandle);
     await stopSandboxIfRunning(secondary);
+    await stopSandboxIfRunning(imageSandbox);
+    await stopSandboxIfRunning(customImageSandbox);
+    await stopSandboxIfRunning(customSnapshotSandbox);
   });
 
   test("create response contains runtime auth", async () => {
@@ -57,6 +126,17 @@ describe.sequential("sandbox lifecycle e2e", () => {
   test("connect succeeds while sandbox is active", async () => {
     await sandbox!.connect();
     expect(sandbox!.status).toBe("active");
+  });
+
+  test("createMemorySnapshot returns snapshot metadata for an active sandbox", async () => {
+    memorySnapshot = await sandbox!.createMemorySnapshot();
+    expect(memorySnapshot.snapshotName.length).toBeGreaterThan(0);
+    expect(memorySnapshot.snapshotId.length).toBeGreaterThan(0);
+    expect(memorySnapshot.namespace.length).toBeGreaterThan(0);
+    expect(memorySnapshot.status.length).toBeGreaterThan(0);
+    expect(memorySnapshot.imageName.length).toBeGreaterThan(0);
+    expect(memorySnapshot.imageId.length).toBeGreaterThan(0);
+    expect(memorySnapshot.imageNamespace.length).toBeGreaterThan(0);
   });
 
   test("runtime requests refresh and retry on 401", async () => {
@@ -91,19 +171,115 @@ describe.sequential("sandbox lifecycle e2e", () => {
     }
   });
 
-  test("list includes the active sandbox", async () => {
-    const list = await client.sandboxes.list({
-      search: sandbox!.id,
-      limit: 20,
+  test("create from image returns a sandbox that can be stopped", async () => {
+    imageSandbox = await client.sandboxes.create({
+      imageName: DEFAULT_IMAGE_NAME,
     });
 
-    expect(list.sandboxes.some((entry) => entry.id === sandbox!.id)).toBe(true);
+    expect(imageSandbox.id).toBeTruthy();
+    expect(imageSandbox.status).toBe("active");
+
+    const response = await imageSandbox.stop();
+    expect(response.success).toBe(true);
+    expect(imageSandbox.status).toBe("closed");
+  });
+
+  test("create from a custom image by explicit imageName and imageId succeeds", async () => {
+    expect(customImage).toBeTruthy();
+
+    customImageSandbox = await client.sandboxes.create({
+      imageName: customImage!.imageName,
+      imageId: customImage!.id,
+    });
+
+    expect(customImageSandbox.id).toBeTruthy();
+    expect(customImageSandbox.status).toBe("active");
+
+    await waitForRuntimeReady(customImageSandbox);
+  });
+
+  test("memory snapshot from an image-backed sandbox returns matching image metadata", async () => {
+    expect(customImageSandbox).toBeTruthy();
+    expect(customImage).toBeTruthy();
+
+    customImageMemorySnapshot = await customImageSandbox!.createMemorySnapshot();
+
+    expect(customImageMemorySnapshot.imageName).toBe(customImage!.imageName);
+    expect(customImageMemorySnapshot.imageId).toBe(customImage!.id);
+    expect(customImageMemorySnapshot.imageNamespace).toBe(customImage!.namespace);
+  });
+
+  test("create from an image-backed memory snapshot succeeds", async () => {
+    expect(customImageMemorySnapshot).toBeTruthy();
+
+    customSnapshotSandbox = await client.sandboxes.create({
+      snapshotName: customImageMemorySnapshot!.snapshotName,
+      snapshotId: customImageMemorySnapshot!.snapshotId,
+    });
+
+    expect(customSnapshotSandbox.id).toBeTruthy();
+    expect(customSnapshotSandbox.status).toBe("active");
+
+    const response = await customSnapshotSandbox.stop();
+    expect(response.success).toBe(true);
+    expect(customSnapshotSandbox.status).toBe("closed");
+  });
+
+  test("mismatched imageName and imageId returns a structured 404", async () => {
+    expect(customImage).toBeTruthy();
+
+    await expectHyperbrowserError(
+      "mismatched image selector",
+      () =>
+        client.sandboxes.create({
+          imageName: customImage!.imageName,
+          imageId: randomUUID(),
+        }),
+      {
+        statusCode: 404,
+        service: "control",
+        retryable: false,
+        messageIncludesAny: ["image not found", "not found"],
+      }
+    );
+  });
+
+  test("mismatched snapshotName and snapshotId returns a structured 404", async () => {
+    expect(memorySnapshot).toBeTruthy();
+
+    await expectHyperbrowserError(
+      "mismatched snapshot selector",
+      () =>
+        client.sandboxes.create({
+          snapshotName: memorySnapshot!.snapshotName,
+          snapshotId: randomUUID(),
+        }),
+      {
+        statusCode: 404,
+        service: "control",
+        retryable: false,
+        messageIncludesAny: ["snapshot not found", "not found"],
+      }
+    );
   });
 
   test("stop closes the sandbox", async () => {
     const response = await sandbox!.stop();
     expect(response.success).toBe(true);
     expect(sandbox!.status).toBe("closed");
+  });
+
+  test("memory snapshot on a stopped sandbox fails cleanly", async () => {
+    await expectHyperbrowserError(
+      "stopped sandbox memory snapshot",
+      () => sandbox!.createMemorySnapshot(),
+      {
+        statusCode: 409,
+        service: "control",
+        retryable: false,
+        messageIncludes: "Sandbox is not running",
+      }
+    );
   });
 
   test("connect on a stopped handle fails locally with a structured error", async () => {
@@ -170,10 +346,13 @@ describe.sequential("sandbox lifecycle e2e", () => {
     );
   });
 
-  test("startFromSnapshot creates a second sandbox that can also be stopped", async () => {
-    secondary = await client.sandboxes.startFromSnapshot(
-      defaultSandboxParams("sdk-secondary")
-    );
+  test("create with a snapshot selector creates a second sandbox that can also be stopped", async () => {
+    expect(memorySnapshot).toBeTruthy();
+
+    secondary = await client.sandboxes.create({
+      snapshotName: memorySnapshot!.snapshotName,
+      snapshotId: memorySnapshot!.snapshotId,
+    });
 
     const response = await secondary.stop();
     expect(response.success).toBe(true);

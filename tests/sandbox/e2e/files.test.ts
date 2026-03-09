@@ -52,6 +52,39 @@ const waitForEvent = <T>() => {
   return { promise, resolve, reject };
 };
 
+const createParentSymlinkEscapeFixture = async (
+  sandbox: SandboxHandle,
+  baseDir: string,
+  name: string
+) => {
+  const allowedDir = `${baseDir}/${name}`;
+  const outsideDir = `/var/tmp/${testName(name)}`;
+  const outsideFile = `${outsideDir}/secret.txt`;
+  const linkDir = `${allowedDir}/evil`;
+  const escapedFile = `${linkDir}/secret.txt`;
+  const setup = await sandbox.exec({
+    command: "bash",
+    args: [
+      "-lc",
+      [
+        `mkdir -p "${allowedDir}"`,
+        `mkdir -p "${outsideDir}"`,
+        `printf 'outside secret' > "${outsideFile}"`,
+        `ln -sfn "${outsideDir}" "${linkDir}"`,
+      ].join(" && "),
+    ],
+  });
+  expect(setup.exitCode).toBe(0);
+
+  return {
+    allowedDir,
+    outsideDir,
+    outsideFile,
+    linkDir,
+    escapedFile,
+  };
+};
+
 describe.sequential("sandbox filesystem e2e", () => {
   let sandbox: SandboxHandle | null = null;
   const baseDir = `/tmp/${testName("sdk-files")}`;
@@ -468,7 +501,7 @@ describe.sequential("sandbox filesystem e2e", () => {
     expect(await sandbox!.files.readText(targetFile)).toBe("keep tree");
   });
 
-  test("read rejects symlinks whose targets resolve outside allowed roots", async () => {
+  test("read and download follow symlinks whose targets resolve outside the old roots", async () => {
     const link = `${baseDir}/escape/file-link`;
     const result = await sandbox!.exec({
       command: "bash",
@@ -479,67 +512,103 @@ describe.sequential("sandbox filesystem e2e", () => {
     });
     expect(result.exitCode).toBe(0);
 
-    await expectHyperbrowserError(
-      "read escape symlink",
-      () => sandbox!.files.readText(link),
-      {
-        statusCode: 400,
-        service: "runtime",
-        retryable: false,
-        messageIncludes: "outside allowed roots",
-      }
-    );
+    const text = await sandbox!.files.readText(link);
+    expect(text.length).toBeGreaterThan(0);
+    expect(text).toContain("localhost");
+
+    const downloaded = await sandbox!.files.download(link);
+    expect(downloaded.toString("utf8")).toContain("localhost");
   });
 
-  test("list and watchDir reject symlinked directories outside allowed roots", async () => {
+  test("read, download, list, and watchDir follow parent symlink targets", async () => {
+    const { escapedFile, linkDir, outsideDir } = await createParentSymlinkEscapeFixture(
+      sandbox!,
+      baseDir,
+      "parent-escape-read"
+    );
+
+    expect(await sandbox!.files.readText(escapedFile)).toBe("outside secret");
+    expect((await sandbox!.files.download(escapedFile)).toString("utf8")).toBe(
+      "outside secret"
+    );
+
+    const entries = await sandbox!.files.list(linkDir, { depth: 1 });
+    expect(entries.map((entry) => entry.path)).toEqual([`${outsideDir}/secret.txt`]);
+
+    const seen = waitForEvent<string>();
+    const handle = await sandbox!.files.watchDir(linkDir, async (event) => {
+      if (event.type === "write" && event.name === "fresh.txt") {
+        seen.resolve(event.name);
+      }
+    });
+
+    try {
+      await sandbox!.files.writeText(`${outsideDir}/fresh.txt`, "watch parent link");
+      await expect(seen.promise).resolves.toBe("fresh.txt");
+    } finally {
+      await handle.stop();
+    }
+  });
+
+  test("getInfo, copy, rename, and remove follow parent symlink targets", async () => {
+    const { escapedFile, outsideFile } = await createParentSymlinkEscapeFixture(
+      sandbox!,
+      baseDir,
+      "parent-escape-mutate"
+    );
+    const copyDestination = `${baseDir}/parent-escape-mutate/copied.txt`;
+    const renameDestination = `${baseDir}/parent-escape-mutate/renamed.txt`;
+
+    const info = await sandbox!.files.getInfo(escapedFile);
+    expect(info.type).toBe("file");
+    expect(info.size).toBe("outside secret".length);
+
+    const copied = await sandbox!.files.copy({
+      source: escapedFile,
+      destination: copyDestination,
+    });
+    expect(copied.path).toBe(copyDestination);
+    expect(await sandbox!.files.readText(copyDestination)).toBe("outside secret");
+
+    const renamed = await sandbox!.files.rename(escapedFile, renameDestination);
+    expect(renamed.path).toBe(renameDestination);
+    expect(await sandbox!.files.exists(outsideFile)).toBe(false);
+    expect(await sandbox!.files.readText(renameDestination)).toBe("outside secret");
+
+    await sandbox!.files.writeText(escapedFile, "remove me");
+    await sandbox!.files.remove(escapedFile);
+
+    const outsideRead = await sandbox!.exec({
+      command: "bash",
+      args: [
+        "-lc",
+        `if [ -e "${outsideFile}" ]; then cat "${outsideFile}"; else printf '__MISSING__'; fi`,
+      ],
+    });
+    expect(outsideRead.exitCode).toBe(0);
+    expect(outsideRead.stdout.trim()).toBe("__MISSING__");
+    expect(await sandbox!.files.exists(copyDestination)).toBe(true);
+    expect(await sandbox!.files.exists(renameDestination)).toBe(true);
+  });
+
+  test("list and watchDir follow symlinked directories outside the old roots", async () => {
+    const targetDir = `/var/tmp/${testName("watch-outside-target")}`;
+    const targetFile = `${targetDir}/child.txt`;
     const link = `${baseDir}/escape/dir-link`;
     const result = await sandbox!.exec({
       command: "bash",
       args: [
         "-lc",
-        `mkdir -p \"${baseDir}/escape\" && ln -sfn /etc \"${link}\"`,
+        `mkdir -p \"${baseDir}/escape\" \"${targetDir}\" && printf 'child' > \"${targetFile}\" && ln -sfn \"${targetDir}\" \"${link}\"`,
       ],
     });
     expect(result.exitCode).toBe(0);
 
-    await expectHyperbrowserError(
-      "list escape symlink dir",
-      () => sandbox!.files.list(link, { depth: 1 }),
-      {
-        statusCode: 400,
-        service: "runtime",
-        retryable: false,
-        messageIncludes: "outside allowed roots",
-      }
-    );
-
-    await expectHyperbrowserError(
-      "watch escape symlink dir",
-      () => sandbox!.files.watchDir(link, () => undefined),
-      {
-        statusCode: 400,
-        service: "runtime",
-        retryable: false,
-        messageIncludes: "outside allowed roots",
-      }
-    );
-  });
-
-  test("watchDir follows symlinked directories inside allowed roots", async () => {
-    const targetDir = `${baseDir}/watch-link/target`;
-    const linkDir = `${baseDir}/watch-link/link`;
-    await sandbox!.files.makeDir(targetDir);
-    const result = await sandbox!.exec({
-      command: "bash",
-      args: [
-        "-lc",
-        `mkdir -p \"${baseDir}/watch-link\" && ln -sfn \"${targetDir}\" \"${linkDir}\"`,
-      ],
-    });
-    expect(result.exitCode).toBe(0);
+    const entries = await sandbox!.files.list(link, { depth: 1 });
+    expect(entries.map((entry) => entry.path)).toEqual([targetFile]);
 
     const seen = waitForEvent<string>();
-    const handle = await sandbox!.files.watchDir(linkDir, async (event) => {
+    const handle = await sandbox!.files.watchDir(link, async (event) => {
       if (event.type === "write" && event.name === "file.txt") {
         seen.resolve(event.name);
       }

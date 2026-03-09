@@ -5,6 +5,7 @@ export const API_KEY = process.env.HYPERBROWSER_API_KEY || "";
 export const BASE_URL = process.env.HYPERBROWSER_BASE_URL || "http://localhost:8080";
 export const REGIONAL_PROXY_DEV_HOST = process.env.REGIONAL_PROXY_DEV_HOST || "";
 export const DEFAULT_SNAPSHOT_NAME = "receiverStarted-ubuntu-24-node";
+export const DEFAULT_IMAGE_NAME = "ubuntu-24-node";
 
 export function createClient(): HyperbrowserClient {
   if (!API_KEY) {

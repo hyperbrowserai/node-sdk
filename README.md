@@ -9,7 +9,9 @@ Hyperbrowser can be installed via npm by running:
 ```bash
 npm install @hyperbrowser/sdk
 ```
+
 or
+
 ```bash
 yarn add @hyperbrowser/sdk
 ```
@@ -17,6 +19,7 @@ yarn add @hyperbrowser/sdk
 ## Usage
 
 ### Playwright
+
 ```typescript
 import { chromium } from "playwright-core";
 import { Hyperbrowser } from "@hyperbrowser/sdk";
@@ -74,6 +77,7 @@ main();
 ```
 
 ### Puppeteer
+
 ```typescript
 import { connect } from "puppeteer-core";
 import { Hyperbrowser } from "@hyperbrowser/sdk";
@@ -133,6 +137,7 @@ main();
 ```
 
 ### Sandboxes
+
 ```typescript
 import { Hyperbrowser } from "@hyperbrowser/sdk";
 
@@ -142,12 +147,13 @@ const client = new Hyperbrowser({
 
 const main = async () => {
   const sandbox = await client.sandboxes.create({
-    sandboxName: "sdk-runtime-example",
-    snapshotName: "nodejs",
+    imageName: "ubuntu-24-node",
     region: "us-west",
   });
 
-  // snapshotId or snapshotName is required for sandbox creation
+  // Provide exactly one launch source:
+  // sandboxName, snapshotName, or imageName.
+  // snapshotId requires snapshotName and imageId requires imageName.
 
   const version = await sandbox.exec("node -v");
   console.log(version.stdout.trim());
@@ -157,20 +163,19 @@ const main = async () => {
   const content = await sandbox.files.readText("/tmp/hello.txt");
   console.log(content);
 
-  const watch = await sandbox.files.watch("/tmp", {
-    recursive: false,
-  });
-
-  const watchEvents = watch.events();
-  await sandbox.files.writeText("/tmp/watch-demo.txt", "watch me");
-
-  for await (const event of watchEvents) {
-    if (event.type === "event") {
-      console.log(event.event.op, event.event.path);
-      break;
+  const watch = await sandbox.files.watchDir(
+    "/tmp",
+    (event) => {
+      if (event.type === "write") {
+        console.log(event.name);
+      }
+    },
+    {
+      recursive: false,
     }
-  }
+  );
 
+  await sandbox.files.writeText("/tmp/watch-demo.txt", "watch me");
   await watch.stop();
 
   const proc = await sandbox.processes.start({
@@ -200,6 +205,10 @@ const main = async () => {
   }
 
   await connection.close();
+
+  const snapshot = await sandbox.createMemorySnapshot();
+  console.log(snapshot.snapshotId);
+
   await sandbox.stop();
 };
 

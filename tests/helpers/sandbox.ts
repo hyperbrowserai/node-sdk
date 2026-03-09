@@ -1,11 +1,10 @@
 import { HyperbrowserError } from "../../src/client";
 import type { SandboxHandle } from "../../src/services/sandboxes";
 import type { CreateSandboxParams } from "../../src/types";
-import { DEFAULT_SNAPSHOT_NAME, testName } from "./config";
+import { DEFAULT_SNAPSHOT_NAME } from "./config";
 
 export function defaultSandboxParams(prefix: string): CreateSandboxParams {
   return {
-    sandboxName: testName(prefix),
     snapshotName: DEFAULT_SNAPSHOT_NAME,
   };
 }

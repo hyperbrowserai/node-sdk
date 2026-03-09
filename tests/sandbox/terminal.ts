@@ -7,7 +7,6 @@ const API_KEY = process.env.HYPERBROWSER_API_KEY || "";
 const BASE_URL = process.env.HYPERBROWSER_BASE_URL || "http://localhost:8080";
 
 const SANDBOX = {
-  sandboxName: `sdk-terminal-${Date.now()}`,
   snapshotName: "receiverStarted-ubuntu-24-node",
 } satisfies CreateSandboxParams;
 

@@ -8,11 +8,10 @@ import {
   CreateSandboxParams,
   SandboxDetail,
   SandboxExecParams,
-  SandboxListParams,
-  SandboxListResponse,
+  SandboxMemorySnapshotParams,
+  SandboxMemorySnapshotResult,
   SandboxProcessResult,
   SandboxRuntimeSession,
-  StartSandboxFromSnapshotParams,
 } from "../types/sandbox";
 import { BaseService } from "./base";
 
@@ -97,6 +96,12 @@ export class SandboxHandle {
     const response = await this.service.stop(this.id);
     this.clearRuntimeSession("closed");
     return response;
+  }
+
+  async createMemorySnapshot(
+    params: SandboxMemorySnapshotParams = {}
+  ): Promise<SandboxMemorySnapshotResult> {
+    return this.service.createMemorySnapshot(this.id, params);
   }
 
   async createRuntimeSession(forceRefresh: boolean = false): Promise<SandboxRuntimeSession> {
@@ -238,13 +243,6 @@ export class SandboxesService extends BaseService {
     return this.attach(detail);
   }
 
-  async startFromSnapshot(
-    params: StartSandboxFromSnapshotParams
-  ): Promise<SandboxHandle> {
-    const detail = await this.startFromSnapshotDetail(params);
-    return this.attach(detail);
-  }
-
   async get(id: string): Promise<SandboxHandle> {
     const detail = await this.getDetail(id);
     return this.attach(detail);
@@ -256,26 +254,10 @@ export class SandboxesService extends BaseService {
     return sandbox;
   }
 
-  async list(params: SandboxListParams = {}): Promise<SandboxListResponse> {
-    try {
-      return await this.request<SandboxListResponse>("/sandboxes", undefined, {
-        status: params.status,
-        page: params.page,
-        limit: params.limit,
-        search: params.search,
-      });
-    } catch (error) {
-      if (error instanceof HyperbrowserError) {
-        throw error;
-      }
-      throw new HyperbrowserError("Failed to list sandboxes", undefined);
-    }
-  }
-
   async stop(id: string): Promise<BasicResponse> {
     try {
-      return await this.request<BasicResponse>(`/sandboxes/${id}/stop`, {
-        method: "POST",
+      return await this.request<BasicResponse>(`/sandbox/${id}/stop`, {
+        method: "PUT",
       });
     } catch (error) {
       if (error instanceof HyperbrowserError) {
@@ -288,7 +270,7 @@ export class SandboxesService extends BaseService {
   async getRuntimeSession(id: string): Promise<SandboxRuntimeSession> {
     try {
       return await this.request<SandboxRuntimeSession>(
-        `/sandboxes/${id}/runtime-session`,
+        `/sandbox/${id}/runtime-session`,
         {
           method: "POST",
         }
@@ -306,7 +288,7 @@ export class SandboxesService extends BaseService {
 
   async getDetail(id: string): Promise<SandboxDetail> {
     try {
-      return await this.request<SandboxDetail>(`/sandboxes/${id}`);
+      return await this.request<SandboxDetail>(`/sandbox/${id}`);
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
@@ -319,9 +301,32 @@ export class SandboxesService extends BaseService {
     return new SandboxHandle(this, detail);
   }
 
+  async createMemorySnapshot(
+    id: string,
+    params: SandboxMemorySnapshotParams = {}
+  ): Promise<SandboxMemorySnapshotResult> {
+    try {
+      return await this.request<SandboxMemorySnapshotResult>(
+        `/sandbox/${id}/snapshot`,
+        {
+          method: "POST",
+          body: JSON.stringify(params),
+        }
+      );
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(
+        `Failed to create memory snapshot for sandbox ${id}`,
+        undefined
+      );
+    }
+  }
+
   private async createDetail(params: CreateSandboxParams): Promise<SandboxDetail> {
     try {
-      return await this.request<SandboxDetail>("/sandboxes", {
+      return await this.request<SandboxDetail>("/sandbox", {
         method: "POST",
         body: JSON.stringify(params),
       });
@@ -330,22 +335,6 @@ export class SandboxesService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError("Failed to create sandbox", undefined);
-    }
-  }
-
-  private async startFromSnapshotDetail(
-    params: StartSandboxFromSnapshotParams
-  ): Promise<SandboxDetail> {
-    try {
-      return await this.request<SandboxDetail>("/sandboxes/startFromSnapshot", {
-        method: "POST",
-        body: JSON.stringify(params),
-      });
-    } catch (error) {
-      if (error instanceof HyperbrowserError) {
-        throw error;
-      }
-      throw new HyperbrowserError("Failed to start sandbox from snapshot", undefined);
     }
   }
 }

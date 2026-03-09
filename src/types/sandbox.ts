@@ -47,39 +47,47 @@ export interface SandboxRuntimeSession {
   runtime: SandboxRuntimeTarget;
 }
 
-export type SandboxSnapshotSelector =
-  | {
-      snapshotId: string;
-      snapshotName?: never;
-      snapshotNamespace?: never;
-    }
-  | {
-      snapshotId?: never;
-      snapshotName: string;
-      snapshotNamespace?: string;
-    };
-
-export type CreateSandboxParams = {
-  sandboxName: string;
+interface SandboxCreateCommonParams {
   region?: SessionRegion;
   enableRecording?: boolean;
   timeoutMinutes?: number;
-} & SandboxSnapshotSelector;
-
-export type StartSandboxFromSnapshotParams = CreateSandboxParams;
-
-export interface SandboxListParams {
-  status?: SandboxStatus;
-  page?: number;
-  limit?: number;
-  search?: string;
 }
 
-export interface SandboxListResponse {
-  sandboxes: Sandbox[];
-  totalCount: number;
-  page: number;
-  perPage: number;
+export type CreateSandboxParams =
+  | (SandboxCreateCommonParams & {
+      sandboxName: string;
+      snapshotName?: never;
+      snapshotId?: never;
+      imageName?: never;
+      imageId?: never;
+    })
+  | (SandboxCreateCommonParams & {
+      sandboxName?: never;
+      snapshotName: string;
+      snapshotId?: string;
+      imageName?: never;
+      imageId?: never;
+    })
+  | (SandboxCreateCommonParams & {
+      sandboxName?: never;
+      snapshotName?: never;
+      snapshotId?: never;
+      imageName: string;
+      imageId?: string;
+    });
+
+export interface SandboxMemorySnapshotParams {
+  snapshotName?: string;
+}
+
+export interface SandboxMemorySnapshotResult {
+  snapshotName: string;
+  snapshotId: string;
+  namespace: string;
+  status: string;
+  imageName: string;
+  imageId: string;
+  imageNamespace: string;
 }
 
 export type SandboxProcessStatus =
