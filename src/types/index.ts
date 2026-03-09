@@ -120,7 +120,6 @@ export {
   SandboxRuntimeTarget,
   Sandbox,
   SandboxDetail,
-  SandboxRuntimeSession,
   CreateSandboxParams,
   SandboxMemorySnapshotParams,
   SandboxMemorySnapshotResult,

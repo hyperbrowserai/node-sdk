@@ -11,11 +11,19 @@ import {
   SandboxMemorySnapshotParams,
   SandboxMemorySnapshotResult,
   SandboxProcessResult,
-  SandboxRuntimeSession,
 } from "../types/sandbox";
 import { BaseService } from "./base";
 
 const RUNTIME_SESSION_REFRESH_BUFFER_MS = 60_000;
+
+type SandboxRuntimeState = {
+  sandboxId: string;
+  status: SandboxDetail["status"];
+  region: SandboxDetail["region"];
+  token: string;
+  tokenExpiresAt: string | null;
+  runtime: SandboxDetail["runtime"];
+};
 
 export class SandboxHandle {
   public readonly processes: SandboxProcessesApi;
@@ -24,7 +32,7 @@ export class SandboxHandle {
   public readonly pty: SandboxTerminalApi;
   private readonly transport: RuntimeTransport;
   private detail: SandboxDetail;
-  private runtimeSession: SandboxRuntimeSession | null;
+  private runtimeSession: SandboxRuntimeState | null;
 
   constructor(
     private readonly service: SandboxesService,
@@ -88,7 +96,7 @@ export class SandboxHandle {
   }
 
   async connect(): Promise<SandboxHandle> {
-    await this.createRuntimeSession(true);
+    await this.ensureRuntimeSession(true);
     return this;
   }
 
@@ -102,22 +110,6 @@ export class SandboxHandle {
     params: SandboxMemorySnapshotParams = {}
   ): Promise<SandboxMemorySnapshotResult> {
     return this.service.createMemorySnapshot(this.id, params);
-  }
-
-  async createRuntimeSession(forceRefresh: boolean = false): Promise<SandboxRuntimeSession> {
-    this.assertRuntimeAvailable();
-
-    if (
-      !forceRefresh &&
-      this.runtimeSession &&
-      !this.isRuntimeSessionExpiring()
-    ) {
-      return { ...this.runtimeSession };
-    }
-
-    const session = await this.service.getRuntimeSession(this.id);
-    this.applyRuntimeSession(session);
-    return { ...session };
   }
 
   async exec(
@@ -145,7 +137,7 @@ export class SandboxHandle {
   private async resolveRuntimeConnection(
     forceRefresh: boolean = false
   ): Promise<RuntimeConnection> {
-    const session = await this.createRuntimeSession(forceRefresh);
+    const session = await this.ensureRuntimeSession(forceRefresh);
     return {
       sandboxId: this.id,
       baseUrl: session.runtime.baseUrl,
@@ -158,7 +150,7 @@ export class SandboxHandle {
     baseUrl: string;
     token: string;
   }> {
-    const session = await this.createRuntimeSession();
+    const session = await this.ensureRuntimeSession();
     return {
       sandboxId: this.id,
       baseUrl: session.runtime.baseUrl,
@@ -179,7 +171,35 @@ export class SandboxHandle {
     return expiresAt - Date.now() <= RUNTIME_SESSION_REFRESH_BUFFER_MS;
   }
 
-  private applyRuntimeSession(session: SandboxRuntimeSession) {
+  private async ensureRuntimeSession(
+    forceRefresh: boolean = false
+  ): Promise<SandboxRuntimeState> {
+    this.assertRuntimeAvailable();
+
+    if (
+      !forceRefresh &&
+      this.runtimeSession &&
+      !this.isRuntimeSessionExpiring()
+    ) {
+      return { ...this.runtimeSession };
+    }
+
+    const detail = await this.service.getDetail(this.id);
+    this.hydrate(detail);
+
+    if (!this.runtimeSession) {
+      throw new HyperbrowserError(`Sandbox ${this.id} is not running`, {
+        statusCode: 409,
+        code: "sandbox_not_running",
+        retryable: false,
+        service: "runtime",
+      });
+    }
+
+    return { ...this.runtimeSession };
+  }
+
+  private applyRuntimeSession(session: SandboxRuntimeState) {
     this.runtimeSession = { ...session };
     this.detail = {
       ...this.detail,
@@ -214,7 +234,7 @@ export class SandboxHandle {
 
   private static toRuntimeSession(
     detail: SandboxDetail
-  ): SandboxRuntimeSession | null {
+  ): SandboxRuntimeState | null {
     if (!detail.token) {
       return null;
     }
@@ -249,9 +269,7 @@ export class SandboxesService extends BaseService {
   }
 
   async connect(id: string): Promise<SandboxHandle> {
-    const sandbox = await this.get(id);
-    await sandbox.connect();
-    return sandbox;
+    return this.get(id);
   }
 
   async stop(id: string): Promise<BasicResponse> {
@@ -264,25 +282,6 @@ export class SandboxesService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError(`Failed to stop sandbox ${id}`, undefined);
-    }
-  }
-
-  async getRuntimeSession(id: string): Promise<SandboxRuntimeSession> {
-    try {
-      return await this.request<SandboxRuntimeSession>(
-        `/sandbox/${id}/runtime-session`,
-        {
-          method: "POST",
-        }
-      );
-    } catch (error) {
-      if (error instanceof HyperbrowserError) {
-        throw error;
-      }
-      throw new HyperbrowserError(
-        `Failed to create runtime session for sandbox ${id}`,
-        undefined
-      );
     }
   }
 

@@ -1,5 +1,5 @@
 /**
- * Intent: verify sandbox lifecycle and runtime-session behavior, including
+ * Intent: verify sandbox lifecycle and runtime-auth refresh behavior, including
  * negative cases for stopped or missing sandboxes.
  */
 
@@ -109,11 +109,11 @@ describe.sequential("sandbox lifecycle e2e", () => {
     expect(detail.tokenExpiresAt).toBeTruthy();
   });
 
-  test("createRuntimeSession returns a usable runtime session", async () => {
-    const session = await sandbox!.createRuntimeSession();
-    expect(session.token.length).toBeGreaterThan(0);
-    expect(session.sandboxId).toBe(sandbox!.id);
-    expect(session.runtime.baseUrl).toBe(sandbox!.runtime.baseUrl);
+  test("get returns runtime auth for an active sandbox", async () => {
+    expect(staleHandle).toBeTruthy();
+    const detail = staleHandle!.toJSON();
+    expect(detail.token).toBeTruthy();
+    expect(detail.runtime.baseUrl).toBe(sandbox!.runtime.baseUrl);
   });
 
   test("info and refresh update the sandbox handle", async () => {
@@ -140,24 +140,46 @@ describe.sequential("sandbox lifecycle e2e", () => {
   });
 
   test("runtime requests refresh and retry on 401", async () => {
-    const originalCreateRuntimeSession = sandbox!.createRuntimeSession.bind(sandbox);
-    const validSession = await originalCreateRuntimeSession(true);
+    const sandboxInternal = sandbox as unknown as {
+      detail: SandboxHandle["toJSON"] extends () => infer T ? T : never;
+      runtimeSession: {
+        sandboxId: string;
+        status: string;
+        region: string;
+        token: string;
+        tokenExpiresAt: string | null;
+        runtime: { baseUrl: string };
+      } | null;
+      service: {
+        getDetail: (id: string) => Promise<ReturnType<SandboxHandle["toJSON"]>>;
+      };
+    };
+    const validDetail = await sandbox!.info();
     const invalidJwt =
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.invalid-signature";
     let refreshCount = 0;
+    const originalGetDetail = sandboxInternal.service.getDetail.bind(
+      sandboxInternal.service
+    );
 
-    sandbox!.createRuntimeSession = (async (forceRefresh: boolean = false) => {
-      if (forceRefresh) {
-        refreshCount += 1;
-        return originalCreateRuntimeSession(true);
-      }
+    sandboxInternal.runtimeSession = {
+      sandboxId: sandbox!.id,
+      status: validDetail.status,
+      region: validDetail.region,
+      token: invalidJwt,
+      tokenExpiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      runtime: validDetail.runtime,
+    };
+    sandboxInternal.detail = {
+      ...validDetail,
+      token: invalidJwt,
+      tokenExpiresAt: sandboxInternal.runtimeSession.tokenExpiresAt,
+    };
 
-      return {
-        ...validSession,
-        token: invalidJwt,
-        tokenExpiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-      };
-    }) as SandboxHandle["createRuntimeSession"];
+    sandboxInternal.service.getDetail = (async (id: string) => {
+      refreshCount += 1;
+      return originalGetDetail(id);
+    }) as typeof sandboxInternal.service.getDetail;
 
     try {
       const result = await sandbox!.exec("echo runtime-refresh-ok");
@@ -167,7 +189,7 @@ describe.sequential("sandbox lifecycle e2e", () => {
       expect(sandbox!.toJSON().token).toBeTruthy();
       expect(sandbox!.toJSON().token).not.toBe(invalidJwt);
     } finally {
-      sandbox!.createRuntimeSession = originalCreateRuntimeSession;
+      sandboxInternal.service.getDetail = originalGetDetail;
     }
   });
 

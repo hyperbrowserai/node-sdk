@@ -38,15 +38,6 @@ export interface SandboxDetail extends Sandbox {
   tokenExpiresAt: string | null;
 }
 
-export interface SandboxRuntimeSession {
-  sandboxId: string;
-  status: SandboxStatus;
-  region: SessionRegion;
-  token: string;
-  tokenExpiresAt: string | null;
-  runtime: SandboxRuntimeTarget;
-}
-
 interface SandboxCreateCommonParams {
   region?: SessionRegion;
   enableRecording?: boolean;
