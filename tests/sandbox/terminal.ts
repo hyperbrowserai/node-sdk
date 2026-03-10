@@ -2,12 +2,13 @@ import "../load-env";
 import { Hyperbrowser, HyperbrowserError } from "../../src";
 import type { SandboxTerminalConnection } from "../../src/runtime/terminal";
 import type { CreateSandboxParams } from "../../src/types";
+import { DEFAULT_IMAGE_NAME } from "../helpers/config";
 
 const API_KEY = process.env.HYPERBROWSER_API_KEY || "";
 const BASE_URL = process.env.HYPERBROWSER_BASE_URL || "http://localhost:8080";
 
 const SANDBOX = {
-  snapshotName: "receiverStarted-ubuntu-24-node",
+  imageName: DEFAULT_IMAGE_NAME,
 } satisfies CreateSandboxParams;
 
 const TERMINAL = {

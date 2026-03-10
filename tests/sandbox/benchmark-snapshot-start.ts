@@ -1,6 +1,7 @@
 import "../load-env";
 import { Hyperbrowser, HyperbrowserError } from "../../src";
 import type { CreateSandboxParams } from "../../src/types";
+import { DEFAULT_IMAGE_NAME } from "../helpers/config";
 import { waitForRuntimeReady } from "../helpers/sandbox";
 
 const API_KEY = process.env.HYPERBROWSER_API_KEY || "";
@@ -9,8 +10,7 @@ const BASE_URL = process.env.HYPERBROWSER_BASE_URL || "http://localhost:8080";
 // Edit these directly for local benchmarking.
 const ITERATIONS = 3;
 const SANDBOX = {
-  snapshotName: "receiverStarted-ubuntu-24-node",
-  // snapshotId: "",
+  imageName: DEFAULT_IMAGE_NAME,
 } satisfies CreateSandboxParams;
 
 type IterationResult = {
@@ -121,8 +121,8 @@ async function main() {
   console.log(
     JSON.stringify(
       {
-        snapshotName: SANDBOX.snapshotName,
-        snapshotId: "snapshotId" in SANDBOX ? SANDBOX.snapshotId : undefined,
+        imageName: SANDBOX.imageName,
+        imageId: "imageId" in SANDBOX ? SANDBOX.imageId : undefined,
         iterations: results.length,
         create: summarize(results.map((result) => result.createMs)),
         runtimeReady: summarize(results.map((result) => result.runtimeReadyMs)),

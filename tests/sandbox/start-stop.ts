@@ -11,7 +11,8 @@ const BASE_URL = process.env.HYPERBROWSER_BASE_URL || "http://localhost:8080";
 const COMMAND = "echo hb-sdk-start-stop-ok";
 
 const SANDBOX = {
-  snapshotName: "receiverStarted-ubuntu-24-node",
+  imageName: "node",
+  region: "dev-us-east" as any,
 } satisfies CreateSandboxParams;
 
 function summarizeSandbox(detail: SandboxDetail) {
@@ -55,13 +56,20 @@ async function main() {
     console.log("sandbox created");
     console.log(JSON.stringify(summarizeSandbox(sandbox.toJSON()), null, 2));
 
-    const result = await sandbox.exec(COMMAND);
-    console.log("command result");
-    console.log(JSON.stringify(summarizeResult(result), null, 2));
+    // const result = await sandbox.exec(COMMAND);
+    // console.log("command result");
+    // console.log(JSON.stringify(summarizeResult(result), null, 2));
 
-    if (result.exitCode !== 0) {
-      process.exitCode = 1;
-    }
+    const writeResult = await sandbox.files.writeText("/tmp/hello.txt", "hello from sdk");
+    console.log("write result");
+    console.log(writeResult);
+    const fileResult = await sandbox.files.getInfo("/tmp/hello.txt");
+    console.log("file result");
+    console.log(JSON.stringify(fileResult, null, 2));
+
+    // if (result.exitCode !== 0) {
+    //   process.exitCode = 1;
+    // }
   } catch (error) {
     if (error instanceof HyperbrowserError) {
       console.error("sdk error");

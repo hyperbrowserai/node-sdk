@@ -61,6 +61,26 @@ export class RuntimeTransport {
     params?: RuntimeParams
   ): Promise<T> {
     const response = await this.fetchWithAuth(path, init, params);
+    if (
+      process.env.DEBUG_SANDBOX_EXEC_RESPONSE === "1" &&
+      path === "/sandbox/exec"
+    ) {
+      const rawBody = await response
+        .clone()
+        .text()
+        .catch(() => "<failed to read body>");
+      console.error("DEBUG_SANDBOX_EXEC_RESPONSE_META", {
+        status: response.status,
+        statusText: response.statusText,
+        contentLength: response.headers.get("content-length"),
+        contentType: response.headers.get("content-type"),
+        requestId:
+          response.headers.get("x-request-id") ||
+          response.headers.get("request-id") ||
+          undefined,
+        body: rawBody,
+      });
+    }
     if (response.headers.get("content-length") === "0") {
       return {} as T;
     }
