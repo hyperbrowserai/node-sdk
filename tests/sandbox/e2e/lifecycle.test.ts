@@ -7,6 +7,7 @@ import { randomUUID } from "crypto";
 import fetch from "node-fetch";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import type { SandboxHandle } from "../../../src/services/sandboxes";
+import { HyperbrowserError } from "../../../src/client";
 import {
   API_KEY,
   BASE_URL,
@@ -22,6 +23,9 @@ import {
 
 const client = createClient();
 const CUSTOM_IMAGE_NAME = "node";
+const SNAPSHOT_CREATE_RETRY_DELAY_MS = 500;
+const SNAPSHOT_CREATE_RETRY_TIMEOUT_MS = 60_000;
+const SNAPSHOT_CREATE_TEST_TIMEOUT_MS = 90_000;
 
 type ListedFirecrackerImage = {
   id: string;
@@ -69,6 +73,45 @@ async function getCustomImageByName(
   }
 
   return image;
+}
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+
+async function createSandboxWithSnapshotRetry(params: {
+  snapshotName: string;
+  snapshotId: string;
+}): Promise<SandboxHandle> {
+  let lastError: unknown = null;
+  const deadline = Date.now() + SNAPSHOT_CREATE_RETRY_TIMEOUT_MS;
+
+  while (Date.now() < deadline) {
+    try {
+      return await client.sandboxes.create(params);
+    } catch (error) {
+      const isSnapshotCatalogRace =
+        error instanceof HyperbrowserError &&
+        error.statusCode === 404 &&
+        typeof error.message === "string" &&
+        error.message.toLowerCase().includes("snapshot not found");
+
+      if (!isSnapshotCatalogRace) {
+        throw error;
+      }
+
+      lastError = error;
+
+      // TODO: remove this retry once snapshot creation becomes synchronously
+      // resolvable by sandbox create without waiting for async upload/catalog propagation.
+      await sleep(SNAPSHOT_CREATE_RETRY_DELAY_MS);
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("snapshot create retry failed");
 }
 
 describe.sequential("sandbox lifecycle e2e", () => {
@@ -231,21 +274,25 @@ describe.sequential("sandbox lifecycle e2e", () => {
     expect(customImageMemorySnapshot.imageNamespace).toBe(customImage!.namespace);
   });
 
-  test("create from an image-backed memory snapshot succeeds", async () => {
+  test(
+    "create from an image-backed memory snapshot succeeds",
+    async () => {
     expect(customImageMemorySnapshot).toBeTruthy();
 
-    customSnapshotSandbox = await client.sandboxes.create({
+      customSnapshotSandbox = await createSandboxWithSnapshotRetry({
       snapshotName: customImageMemorySnapshot!.snapshotName,
       snapshotId: customImageMemorySnapshot!.snapshotId,
     });
 
-    expect(customSnapshotSandbox.id).toBeTruthy();
-    expect(customSnapshotSandbox.status).toBe("active");
+      expect(customSnapshotSandbox.id).toBeTruthy();
+      expect(customSnapshotSandbox.status).toBe("active");
 
-    const response = await customSnapshotSandbox.stop();
-    expect(response.success).toBe(true);
-    expect(customSnapshotSandbox.status).toBe("closed");
-  });
+      const response = await customSnapshotSandbox.stop();
+      expect(response.success).toBe(true);
+      expect(customSnapshotSandbox.status).toBe("closed");
+    },
+    SNAPSHOT_CREATE_TEST_TIMEOUT_MS
+  );
 
   test("mismatched imageName and imageId returns a structured 404", async () => {
     expect(customImage).toBeTruthy();
@@ -334,9 +381,10 @@ describe.sequential("sandbox lifecycle e2e", () => {
       () => staleHandle!.connect(),
       {
         statusCode: 409,
-        service: "control",
+        code: "sandbox_not_running",
+        service: "runtime",
         retryable: false,
-        messageIncludes: "Sandbox is not running",
+        messageIncludes: "not running",
       }
     );
   });
@@ -368,16 +416,20 @@ describe.sequential("sandbox lifecycle e2e", () => {
     );
   });
 
-  test("create with a snapshot selector creates a second sandbox that can also be stopped", async () => {
-    expect(memorySnapshot).toBeTruthy();
+  test(
+    "create with a snapshot selector creates a second sandbox that can also be stopped",
+    async () => {
+      expect(memorySnapshot).toBeTruthy();
 
-    secondary = await client.sandboxes.create({
+      secondary = await createSandboxWithSnapshotRetry({
       snapshotName: memorySnapshot!.snapshotName,
       snapshotId: memorySnapshot!.snapshotId,
     });
 
-    const response = await secondary.stop();
-    expect(response.success).toBe(true);
-    expect(secondary.status).toBe("closed");
-  });
+      const response = await secondary.stop();
+      expect(response.success).toBe(true);
+      expect(secondary.status).toBe("closed");
+    },
+    SNAPSHOT_CREATE_TEST_TIMEOUT_MS
+  );
 });

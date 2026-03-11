@@ -289,7 +289,9 @@ export class SandboxesService extends BaseService {
   }
 
   async connect(id: string): Promise<SandboxHandle> {
-    return this.get(id);
+    const handle = await this.get(id);
+    await handle.connect();
+    return handle;
   }
 
   async stop(id: string): Promise<BasicResponse> {
