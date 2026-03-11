@@ -79,6 +79,7 @@ export class HyperbrowserClient {
     const apiKey = config.apiKey || process.env["HYPERBROWSER_API_KEY"];
     const baseUrl = config.baseUrl || "https://api.hyperbrowser.ai";
     const timeout = config.timeout || 30000;
+    const runtimeProxyOverride = config.runtimeProxyOverride?.trim() || undefined;
     if (!apiKey) {
       throw new HyperbrowserError(
         "API key is required - either pass it in config or set HYPERBROWSER_API_KEY environment variable"
@@ -94,7 +95,12 @@ export class HyperbrowserClient {
     this.web = new WebService(apiKey, baseUrl, timeout);
     this.team = new TeamService(apiKey, baseUrl, timeout);
     this.computerAction = new ComputerActionService(apiKey, baseUrl, timeout);
-    this.sandboxes = new SandboxesService(apiKey, baseUrl, timeout);
+    this.sandboxes = new SandboxesService(
+      apiKey,
+      baseUrl,
+      timeout,
+      runtimeProxyOverride
+    );
 
     this.agents = {
       browserUse: new BrowserUseService(apiKey, baseUrl, timeout),

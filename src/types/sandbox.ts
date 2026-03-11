@@ -281,6 +281,7 @@ export interface SandboxFileSystemEvent {
 
 export interface SandboxWatchDirOptions {
   recursive?: boolean;
+  // Optional client-side auto-stop. Omit to keep the watch open until stop() is called.
   timeoutMs?: number;
   onExit?: (error?: Error) => void | Promise<void>;
 }
@@ -310,6 +311,13 @@ export interface SandboxTerminalCreateParams {
   timeoutMs?: number;
 }
 
+export interface SandboxTerminalOutputChunk {
+  seq: number;
+  data: string;
+  raw: Buffer;
+  timestamp: number;
+}
+
 export interface SandboxTerminalStatus {
   id: string;
   command: string;
@@ -324,6 +332,7 @@ export interface SandboxTerminalStatus {
   cols: number;
   startedAt: number;
   finishedAt?: number;
+  output?: SandboxTerminalOutputChunk[];
 }
 
 export interface SandboxTerminalWaitParams {
@@ -337,13 +346,9 @@ export interface SandboxTerminalKillParams {
 }
 
 export type SandboxTerminalEvent =
-  | {
+  | ({
       type: "output";
-      seq: number;
-      data: string;
-      raw: Buffer;
-      timestamp: number;
-    }
+    } & SandboxTerminalOutputChunk)
   | {
       type: "exit";
       status: SandboxTerminalStatus;

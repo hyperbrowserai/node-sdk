@@ -5,6 +5,7 @@ import {
   SandboxTerminalCreateParams,
   SandboxTerminalEvent,
   SandboxTerminalKillParams,
+  SandboxTerminalOutputChunk,
   SandboxTerminalStatus,
   SandboxTerminalWaitParams,
 } from "../types/sandbox";
@@ -27,6 +28,13 @@ interface RawPTYStatus {
   cols: number;
   startedAt: number;
   finishedAt?: number;
+  output?: RawPTYOutput[];
+}
+
+interface RawPTYOutput {
+  seq: number;
+  data: string;
+  timestamp: number;
 }
 
 interface RuntimeConnectionInfo {
@@ -36,6 +44,28 @@ interface RuntimeConnectionInfo {
 }
 
 const DEFAULT_TERMINAL_KILL_WAIT_MS = 5_000;
+
+const normalizeTerminalOutputChunk = (
+  output: RawPTYOutput
+): SandboxTerminalOutputChunk => {
+  const raw = Buffer.from(output.data, "base64");
+  return {
+    seq: output.seq,
+    data: raw.toString("utf8"),
+    raw,
+    timestamp: output.timestamp,
+  };
+};
+
+const cloneTerminalStatus = (
+  status: SandboxTerminalStatus
+): SandboxTerminalStatus => ({
+  ...status,
+  output: status.output?.map((chunk) => ({
+    ...chunk,
+    raw: Buffer.from(chunk.raw),
+  })),
+});
 
 const normalizeTerminalStatus = (pty: RawPTYStatus): SandboxTerminalStatus => ({
   id: pty.id,
@@ -51,6 +81,7 @@ const normalizeTerminalStatus = (pty: RawPTYStatus): SandboxTerminalStatus => ({
   cols: pty.cols,
   startedAt: pty.startedAt,
   finishedAt: pty.finishedAt,
+  output: pty.output?.map(normalizeTerminalOutputChunk),
 });
 
 export class SandboxTerminalConnection {
@@ -72,13 +103,10 @@ export class SandboxTerminalConnection {
             };
 
         if (parsed.type === "output") {
-          const raw = Buffer.from(parsed.data, "base64");
+          const output = normalizeTerminalOutputChunk(parsed);
           this.eventsQueue.push({
             type: "output",
-            seq: parsed.seq,
-            data: raw.toString("utf8"),
-            raw,
-            timestamp: parsed.timestamp,
+            ...output,
           });
           return;
         }
@@ -160,7 +188,8 @@ export class SandboxTerminalHandle {
   constructor(
     private readonly transport: RuntimeTransport,
     private readonly getConnectionInfo: () => Promise<RuntimeConnectionInfo>,
-    private status: SandboxTerminalStatus
+    private status: SandboxTerminalStatus,
+    private readonly runtimeProxyOverride?: string
   ) {}
 
   get id(): string {
@@ -168,11 +197,11 @@ export class SandboxTerminalHandle {
   }
 
   get current(): SandboxTerminalStatus {
-    return { ...this.status };
+    return cloneTerminalStatus(this.status);
   }
 
   toJSON(): SandboxTerminalStatus {
-    return { ...this.status };
+    return cloneTerminalStatus(this.status);
   }
 
   async refresh(includeOutput: boolean = false): Promise<SandboxTerminalHandle> {
@@ -258,7 +287,8 @@ export class SandboxTerminalHandle {
       connectionInfo.baseUrl,
       `/sandbox/pty/${this.id}/ws?sessionId=${encodeURIComponent(
         connectionInfo.sandboxId
-      )}`
+      )}`,
+      this.runtimeProxyOverride
     );
 
     const headers: Record<string, string> = {
@@ -277,7 +307,8 @@ export class SandboxTerminalHandle {
 export class SandboxTerminalApi {
   constructor(
     private readonly transport: RuntimeTransport,
-    private readonly getConnectionInfo: () => Promise<RuntimeConnectionInfo>
+    private readonly getConnectionInfo: () => Promise<RuntimeConnectionInfo>,
+    private readonly runtimeProxyOverride?: string
   ) {}
 
   async create(
@@ -297,7 +328,8 @@ export class SandboxTerminalApi {
     return new SandboxTerminalHandle(
       this.transport,
       this.getConnectionInfo,
-      normalizeTerminalStatus(response.pty)
+      normalizeTerminalStatus(response.pty),
+      this.runtimeProxyOverride
     );
   }
 
@@ -311,7 +343,8 @@ export class SandboxTerminalApi {
     return new SandboxTerminalHandle(
       this.transport,
       this.getConnectionInfo,
-      normalizeTerminalStatus(response.pty)
+      normalizeTerminalStatus(response.pty),
+      this.runtimeProxyOverride
     );
   }
 }

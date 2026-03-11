@@ -54,16 +54,19 @@ export class SandboxHandle {
     this.runtimeSession = SandboxHandle.toRuntimeSession(detail);
     this.transport = new RuntimeTransport(
       (forceRefresh) => this.resolveRuntimeConnection(forceRefresh),
-      service.runtimeTimeout
+      service.runtimeTimeout,
+      service.runtimeProxyOverride
     );
     this.processes = new SandboxProcessesApi(this.transport);
     this.files = new SandboxFilesApi(
       this.transport,
-      () => this.resolveRuntimeSocketConnectionInfo()
+      () => this.resolveRuntimeSocketConnectionInfo(),
+      service.runtimeProxyOverride
     );
     this.terminal = new SandboxTerminalApi(
       this.transport,
-      () => this.resolveRuntimeSocketConnectionInfo()
+      () => this.resolveRuntimeSocketConnectionInfo(),
+      service.runtimeProxyOverride
     );
     this.pty = this.terminal;
   }
@@ -272,10 +275,17 @@ export class SandboxHandle {
 
 export class SandboxesService extends BaseService {
   public readonly runtimeTimeout: number;
+  public readonly runtimeProxyOverride?: string;
 
-  constructor(apiKey: string, baseUrl: string, timeout: number) {
+  constructor(
+    apiKey: string,
+    baseUrl: string,
+    timeout: number,
+    runtimeProxyOverride?: string
+  ) {
     super(apiKey, baseUrl, timeout);
     this.runtimeTimeout = timeout;
+    this.runtimeProxyOverride = runtimeProxyOverride;
   }
 
   async create(params: CreateSandboxParams): Promise<SandboxHandle> {

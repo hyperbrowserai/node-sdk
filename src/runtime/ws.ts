@@ -88,26 +88,25 @@ const RETRYABLE_NETWORK_CODES = new Set([
   "ESOCKETTIMEDOUT",
 ]);
 
-const REGIONAL_PROXY_DEV_HOST = process.env.REGIONAL_PROXY_DEV_HOST?.trim();
-
 const hasScheme = (value: string): boolean => /^[a-z][a-z0-9+.-]*:\/\//i.test(value);
 
 export const resolveRuntimeTransportTarget = (
   baseUrl: string,
-  path: string
+  path: string,
+  runtimeProxyOverride?: string
 ): RuntimeTransportTarget => {
   const url = new URL(path, baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`);
 
-  if (!REGIONAL_PROXY_DEV_HOST) {
+  if (!runtimeProxyOverride) {
     return {
       url: url.toString(),
     };
   }
 
   const override = new URL(
-    hasScheme(REGIONAL_PROXY_DEV_HOST)
-      ? REGIONAL_PROXY_DEV_HOST
-      : `${url.protocol}//${REGIONAL_PROXY_DEV_HOST}`
+    hasScheme(runtimeProxyOverride)
+      ? runtimeProxyOverride
+      : `${url.protocol}//${runtimeProxyOverride}`
   );
 
   url.protocol = override.protocol;
@@ -124,9 +123,14 @@ export const resolveRuntimeTransportTarget = (
 
 export const toWebSocketUrl = (
   baseUrl: string,
-  path: string
+  path: string,
+  runtimeProxyOverride?: string
 ): RuntimeTransportTarget => {
-  const target = resolveRuntimeTransportTarget(baseUrl, path);
+  const target = resolveRuntimeTransportTarget(
+    baseUrl,
+    path,
+    runtimeProxyOverride
+  );
   const url = new URL(target.url);
   if (url.protocol === "https:") {
     url.protocol = "wss:";

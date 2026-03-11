@@ -156,6 +156,7 @@ export {
   SandboxPresignFileParams,
   SandboxPresignedUrl,
   SandboxTerminalCreateParams,
+  SandboxTerminalOutputChunk,
   SandboxTerminalStatus,
   SandboxTerminalWaitParams,
   SandboxTerminalKillParams,

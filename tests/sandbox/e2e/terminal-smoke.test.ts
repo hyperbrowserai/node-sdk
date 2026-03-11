@@ -6,6 +6,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import type { SandboxHandle } from "../../../src/services/sandboxes";
 import type { SandboxTerminalConnection } from "../../../src/runtime/terminal";
+import type { SandboxTerminalStatus } from "../../../src/types/sandbox";
 import { createClient } from "../../helpers/config";
 import { expectHyperbrowserError } from "../../helpers/errors";
 import {
@@ -31,6 +32,42 @@ async function collectTerminalSession(
   }
 
   return { output, exitCode };
+}
+
+function terminalStatusOutput(status: SandboxTerminalStatus | undefined): string {
+  return status?.output?.map((chunk) => chunk.data).join("") ?? "";
+}
+
+function terminalStatusRawOutput(
+  status: SandboxTerminalStatus | undefined
+): string {
+  if (!status?.output || status.output.length === 0) {
+    return "";
+  }
+  return Buffer.concat(status.output.map((chunk) => chunk.raw)).toString("utf8");
+}
+
+async function waitForTerminalStatusOutput(
+  readStatus: () => Promise<SandboxTerminalStatus>,
+  marker: string,
+  timeoutMs: number = 5_000
+): Promise<SandboxTerminalStatus> {
+  const deadline = Date.now() + timeoutMs;
+  let lastStatus: SandboxTerminalStatus | undefined;
+
+  while (Date.now() < deadline) {
+    lastStatus = await readStatus();
+    if (terminalStatusOutput(lastStatus).includes(marker)) {
+      return lastStatus;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  throw new Error(
+    `Timed out waiting for terminal output ${JSON.stringify(marker)}. Last output: ${JSON.stringify(
+      terminalStatusOutput(lastStatus)
+    )}`
+  );
 }
 
 const client = createClient();
@@ -107,6 +144,79 @@ describe.sequential("sandbox terminal e2e", () => {
 
     const status = await terminal.wait({ timeoutMs: 2_000 });
     expect(status.running).toBe(false);
+  });
+
+  test("terminal.get(id, true) includes buffered output", async () => {
+    const marker = "terminal-get-output";
+    const terminal = await sandbox!.terminal.create({
+      command: "bash",
+      args: ["-lc", `printf '${marker}' && sleep 1`],
+      rows: 24,
+      cols: 80,
+    });
+
+    const withoutOutput = await sandbox!.terminal.get(terminal.id);
+    expect(withoutOutput.current.output).toBeUndefined();
+
+    const fetched = await waitForTerminalStatusOutput(
+      async () => (await sandbox!.terminal.get(terminal.id, true)).current,
+      marker
+    );
+
+    expect(terminalStatusOutput(fetched)).toContain(marker);
+    expect(terminalStatusRawOutput(fetched)).toContain(marker);
+    expect(fetched.output?.length).toBeGreaterThan(0);
+
+    const status = await terminal.wait({ timeoutMs: 2_000 });
+    expect(status.running).toBe(false);
+    expect(status.exitCode).toBe(0);
+  });
+
+  test("terminal.refresh(true) includes buffered output", async () => {
+    const marker = "terminal-refresh-output";
+    const terminal = await sandbox!.terminal.create({
+      command: "bash",
+      args: ["-lc", `printf '${marker}' && sleep 1`],
+      rows: 24,
+      cols: 80,
+    });
+
+    const withoutOutput = await terminal.refresh();
+    expect(withoutOutput.current.output).toBeUndefined();
+
+    const refreshed = await waitForTerminalStatusOutput(
+      async () => (await terminal.refresh(true)).current,
+      marker
+    );
+
+    expect(terminalStatusOutput(refreshed)).toContain(marker);
+    expect(terminalStatusRawOutput(refreshed)).toContain(marker);
+    expect(refreshed.output?.length).toBeGreaterThan(0);
+
+    const status = await terminal.wait({ timeoutMs: 2_000 });
+    expect(status.running).toBe(false);
+    expect(status.exitCode).toBe(0);
+  });
+
+  test("terminal.wait({ includeOutput: true }) returns buffered output", async () => {
+    const marker = "terminal-wait-output";
+    const terminal = await sandbox!.terminal.create({
+      command: "bash",
+      args: ["-lc", `printf '${marker}'`],
+      rows: 24,
+      cols: 80,
+    });
+
+    const status = await terminal.wait({
+      timeoutMs: 2_000,
+      includeOutput: true,
+    });
+
+    expect(status.running).toBe(false);
+    expect(status.exitCode).toBe(0);
+    expect(terminalStatusOutput(status)).toContain(marker);
+    expect(terminalStatusRawOutput(status)).toContain(marker);
+    expect(status.output?.length).toBeGreaterThan(0);
   });
 
   test("PTY wait timeout returns a structured error", async () => {

@@ -138,6 +138,16 @@ main();
 
 ### Sandboxes
 
+For local sandbox development, you can explicitly route sandbox runtime traffic
+through a regional proxy override:
+
+```typescript
+const client = new Hyperbrowser({
+  apiKey: process.env.HYPERBROWSER_API_KEY,
+  runtimeProxyOverride: process.env.REGIONAL_PROXY_DEV_HOST,
+});
+```
+
 ```typescript
 import { Hyperbrowser } from "@hyperbrowser/sdk";
 

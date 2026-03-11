@@ -107,8 +107,6 @@ interface RuntimeConnectionInfo {
   token: string;
 }
 
-const DEFAULT_WATCH_TIMEOUT_MS = 60_000;
-
 const normalizeFileType = (value?: string): SandboxFileType | undefined => {
   if (!value) {
     return undefined;
@@ -256,7 +254,8 @@ class RuntimeFileWatchHandle {
   constructor(
     private readonly transport: RuntimeTransport,
     private readonly getConnectionInfo: () => Promise<RuntimeConnectionInfo>,
-    private readonly status: RawFileWatchStatus
+    private readonly status: RawFileWatchStatus,
+    private readonly runtimeProxyOverride?: string
   ) {}
 
   get id(): string {
@@ -282,7 +281,8 @@ class RuntimeFileWatchHandle {
       connectionInfo.baseUrl,
       `/sandbox/files/watch/${this.status.id}/ws?sessionId=${encodeURIComponent(
         connectionInfo.sandboxId
-      )}${cursor !== undefined ? `&cursor=${encodeURIComponent(String(cursor))}` : ""}`
+      )}${cursor !== undefined ? `&cursor=${encodeURIComponent(String(cursor))}` : ""}`,
+      this.runtimeProxyOverride
     );
 
     const headers: Record<string, string> = {
@@ -347,7 +347,6 @@ class RuntimeFileWatchHandle {
 }
 
 export class SandboxWatchDirHandle {
-  private readonly timeoutMs: number;
   private readonly runPromise: Promise<void>;
   private timeout?: NodeJS.Timeout;
   private stopRequested = false;
@@ -359,11 +358,10 @@ export class SandboxWatchDirHandle {
     private readonly onExit?: (error?: Error) => void | Promise<void>,
     timeoutMs?: number
   ) {
-    this.timeoutMs = timeoutMs ?? DEFAULT_WATCH_TIMEOUT_MS;
-    if (this.timeoutMs > 0) {
+    if (timeoutMs !== undefined && timeoutMs > 0) {
       this.timeout = setTimeout(() => {
         void this.stop();
-      }, this.timeoutMs);
+      }, timeoutMs);
       this.timeout.unref?.();
     }
     this.runPromise = this.run(onEvent);
@@ -415,7 +413,8 @@ export class SandboxWatchDirHandle {
 export class SandboxFilesApi {
   constructor(
     private readonly transport: RuntimeTransport,
-    private readonly getConnectionInfo: () => Promise<RuntimeConnectionInfo>
+    private readonly getConnectionInfo: () => Promise<RuntimeConnectionInfo>,
+    private readonly runtimeProxyOverride?: string
   ) {}
 
   async exists(path: string): Promise<boolean> {
@@ -741,7 +740,8 @@ export class SandboxFilesApi {
     const watch = new RuntimeFileWatchHandle(
       this.transport,
       this.getConnectionInfo,
-      response.watch
+      response.watch,
+      this.runtimeProxyOverride
     );
 
     return new SandboxWatchDirHandle(

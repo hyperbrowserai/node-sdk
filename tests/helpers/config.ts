@@ -15,6 +15,7 @@ export function createClient(): HyperbrowserClient {
   return new HyperbrowserClient({
     apiKey: API_KEY,
     baseUrl: BASE_URL,
+    runtimeProxyOverride: REGIONAL_PROXY_DEV_HOST || undefined,
   });
 }
 
