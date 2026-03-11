@@ -81,6 +81,17 @@ export interface SandboxMemorySnapshotResult {
   imageNamespace: string;
 }
 
+export interface SandboxExposeParams {
+  port: number;
+  auth?: boolean;
+}
+
+export interface SandboxExposeResult {
+  port: number;
+  auth: boolean;
+  url: string;
+}
+
 export type SandboxProcessStatus =
   | "queued"
   | "running"

@@ -57,3 +57,10 @@ export async function fetchSignedUrl(
     headers,
   });
 }
+
+export async function fetchRuntimeUrl(
+  input: string,
+  init: RequestInit = {}
+): Promise<Response> {
+  return fetchSignedUrl(input, init);
+}

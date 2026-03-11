@@ -11,7 +11,7 @@ const BASE_URL = process.env.HYPERBROWSER_BASE_URL || "http://localhost:8080";
 const COMMAND = "echo hb-sdk-start-stop-ok";
 
 const SANDBOX = {
-  imageName: "node",
+  sandboxName: "node",
   region: "dev-us-east" as any,
 } satisfies CreateSandboxParams;
 

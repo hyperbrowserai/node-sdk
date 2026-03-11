@@ -123,6 +123,8 @@ export {
   CreateSandboxParams,
   SandboxMemorySnapshotParams,
   SandboxMemorySnapshotResult,
+  SandboxExposeParams,
+  SandboxExposeResult,
   SandboxProcessStatus,
   SandboxExecParams,
   SandboxProcessSummary,

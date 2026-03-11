@@ -7,10 +7,13 @@ import { BasicResponse } from "../types/session";
 import {
   CreateSandboxParams,
   SandboxDetail,
+  SandboxExposeParams,
+  SandboxExposeResult,
   SandboxExecParams,
   SandboxMemorySnapshotParams,
   SandboxMemorySnapshotResult,
   SandboxProcessResult,
+  SandboxRuntimeTarget,
 } from "../types/sandbox";
 import { BaseService } from "./base";
 
@@ -23,6 +26,15 @@ type SandboxRuntimeState = {
   token: string;
   tokenExpiresAt: string | null;
   runtime: SandboxDetail["runtime"];
+};
+
+const buildSandboxExposedUrl = (
+  runtime: SandboxRuntimeTarget,
+  port: number
+): string => {
+  const url = new URL(runtime.baseUrl);
+  url.hostname = `${port}-${url.hostname}`;
+  return url.toString().replace(/\/$/, "");
 };
 
 export class SandboxHandle {
@@ -110,6 +122,14 @@ export class SandboxHandle {
     params: SandboxMemorySnapshotParams = {}
   ): Promise<SandboxMemorySnapshotResult> {
     return this.service.createMemorySnapshot(this.id, params);
+  }
+
+  async expose(params: SandboxExposeParams): Promise<SandboxExposeResult> {
+    return this.service.expose(this.id, params, this.runtime);
+  }
+
+  getExposedUrl(port: number): string {
+    return buildSandboxExposedUrl(this.runtime, port);
   }
 
   async exec(
@@ -320,6 +340,34 @@ export class SandboxesService extends BaseService {
         `Failed to create memory snapshot for sandbox ${id}`,
         undefined
       );
+    }
+  }
+
+  async expose(
+    id: string,
+    params: SandboxExposeParams,
+    runtime?: SandboxRuntimeTarget
+  ): Promise<SandboxExposeResult> {
+    try {
+      const response = await this.request<{
+        port: number;
+        auth: boolean;
+      }>(`/sandbox/${id}/expose`, {
+        method: "POST",
+        body: JSON.stringify(params),
+      });
+
+      const targetRuntime = runtime ?? (await this.getDetail(id)).runtime;
+      return {
+        port: response.port,
+        auth: response.auth,
+        url: buildSandboxExposedUrl(targetRuntime, response.port),
+      };
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to expose port ${params.port} for sandbox ${id}`);
     }
   }
 
