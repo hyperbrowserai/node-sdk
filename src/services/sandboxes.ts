@@ -10,10 +10,15 @@ import {
   SandboxExposeParams,
   SandboxExposeResult,
   SandboxExecParams,
+  SandboxImageSummary,
+  SandboxListParams,
+  SandboxListResponse,
   SandboxMemorySnapshotParams,
   SandboxMemorySnapshotResult,
   SandboxProcessResult,
   SandboxRuntimeTarget,
+  SandboxSnapshotListParams,
+  SandboxSnapshotSummary,
 } from "../types/sandbox";
 import { BaseService } from "./base";
 
@@ -284,6 +289,54 @@ export class SandboxesService extends BaseService {
     const handle = await this.get(id);
     await handle.connect();
     return handle;
+  }
+
+  async list(params: SandboxListParams = {}): Promise<SandboxListResponse> {
+    try {
+      return await this.request<SandboxListResponse>("/sandboxes", undefined, {
+        status: params.status,
+        page: params.page,
+        limit: params.limit,
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError("Failed to list sandboxes", undefined);
+    }
+  }
+
+  async listImages(): Promise<SandboxImageSummary[]> {
+    try {
+      const response = await this.request<{ images: SandboxImageSummary[] }>("/images");
+      return response.images;
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError("Failed to list sandbox images", undefined);
+    }
+  }
+
+  async listSnapshots(
+    params: SandboxSnapshotListParams = {}
+  ): Promise<SandboxSnapshotSummary[]> {
+    try {
+      const response = await this.request<{ snapshots: SandboxSnapshotSummary[] }>(
+        "/snapshots",
+        undefined,
+        {
+          status: params.status,
+          limit: params.limit,
+        }
+      );
+      return response.snapshots;
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError("Failed to list sandbox snapshots", undefined);
+    }
   }
 
   async stop(id: string): Promise<BasicResponse> {
