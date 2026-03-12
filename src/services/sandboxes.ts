@@ -1,8 +1,8 @@
 import { HyperbrowserError } from "../client";
-import { SandboxFilesApi } from "../runtime/files";
-import { RuntimeConnection, RuntimeTransport } from "../runtime/base";
-import { SandboxProcessHandle, SandboxProcessesApi } from "../runtime/process";
-import { SandboxTerminalApi } from "../runtime/terminal";
+import { SandboxFilesApi } from "../sandbox/files";
+import { RuntimeConnection, RuntimeTransport } from "../sandbox/base";
+import { SandboxProcessHandle, SandboxProcessesApi } from "../sandbox/process";
+import { SandboxTerminalApi } from "../sandbox/terminal";
 import { BasicResponse } from "../types/session";
 import {
   CreateSandboxParams,
