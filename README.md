@@ -162,7 +162,7 @@ const main = async () => {
   });
 
   // Provide exactly one launch source:
-  // sandboxName, snapshotName, or imageName.
+  // snapshotName or imageName.
   // snapshotId requires snapshotName and imageId requires imageName.
 
   const version = await sandbox.exec("node -v");

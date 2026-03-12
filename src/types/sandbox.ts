@@ -46,21 +46,12 @@ interface SandboxCreateCommonParams {
 
 export type CreateSandboxParams =
   | (SandboxCreateCommonParams & {
-      sandboxName: string;
-      snapshotName?: never;
-      snapshotId?: never;
-      imageName?: never;
-      imageId?: never;
-    })
-  | (SandboxCreateCommonParams & {
-      sandboxName?: never;
       snapshotName: string;
       snapshotId?: string;
       imageName?: never;
       imageId?: never;
     })
   | (SandboxCreateCommonParams & {
-      sandboxName?: never;
       snapshotName?: never;
       snapshotId?: never;
       imageName: string;
