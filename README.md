@@ -9,7 +9,9 @@ Hyperbrowser can be installed via npm by running:
 ```bash
 npm install @hyperbrowser/sdk
 ```
+
 or
+
 ```bash
 yarn add @hyperbrowser/sdk
 ```
@@ -17,6 +19,7 @@ yarn add @hyperbrowser/sdk
 ## Usage
 
 ### Playwright
+
 ```typescript
 import { chromium } from "playwright-core";
 import { Hyperbrowser } from "@hyperbrowser/sdk";
@@ -74,6 +77,7 @@ main();
 ```
 
 ### Puppeteer
+
 ```typescript
 import { connect } from "puppeteer-core";
 import { Hyperbrowser } from "@hyperbrowser/sdk";
@@ -131,3 +135,102 @@ const main = async () => {
 
 main();
 ```
+
+### Sandboxes
+
+For local sandbox development, you can explicitly route sandbox runtime traffic
+through a regional proxy override:
+
+```typescript
+const client = new Hyperbrowser({
+  apiKey: process.env.HYPERBROWSER_API_KEY,
+  runtimeProxyOverride: process.env.REGIONAL_PROXY_DEV_HOST,
+});
+```
+
+```typescript
+import { Hyperbrowser } from "@hyperbrowser/sdk";
+
+const client = new Hyperbrowser({
+  apiKey: process.env.HYPERBROWSER_API_KEY,
+});
+
+const main = async () => {
+  const sandbox = await client.sandboxes.create({
+    imageName: "ubuntu-24-node",
+    region: "us-west",
+  });
+
+  // Provide exactly one launch source:
+  // snapshotName or imageName.
+  // snapshotId requires snapshotName and imageId requires imageName.
+
+  const version = await sandbox.exec("node -v");
+  console.log(version.stdout.trim());
+
+  await sandbox.files.writeText("/tmp/hello.txt", "hello from sdk");
+
+  const content = await sandbox.files.readText("/tmp/hello.txt");
+  console.log(content);
+
+  const watch = await sandbox.files.watchDir(
+    "/tmp",
+    (event) => {
+      if (event.type === "write") {
+        console.log(event.name);
+      }
+    },
+    {
+      recursive: false,
+    }
+  );
+
+  await sandbox.files.writeText("/tmp/watch-demo.txt", "watch me");
+  await watch.stop();
+
+  const proc = await sandbox.processes.start({
+    command: "bash",
+    args: ["-lc", "echo process-started && sleep 1 && echo process-finished"],
+  });
+
+  for await (const event of proc.stream()) {
+    if (event.type === "stdout") {
+      process.stdout.write(event.data);
+    }
+  }
+
+  const terminal = await sandbox.terminal.create({
+    command: "bash",
+    cols: 120,
+    rows: 30,
+  });
+
+  const connection = await terminal.attach();
+  await connection.write("echo terminal-ok\n");
+
+  for await (const event of connection.events()) {
+    if (event.type === "output" && event.data.includes("terminal-ok")) {
+      break;
+    }
+  }
+
+  await connection.close();
+
+  const snapshot = await sandbox.createMemorySnapshot();
+  console.log(snapshot.snapshotId);
+
+  await sandbox.stop();
+};
+
+main().catch(console.error);
+```
+
+Reconnect an existing sandbox:
+
+```typescript
+const sandbox = await client.sandboxes.connect("sandbox-id");
+await sandbox.files.readText("/tmp/hello.txt");
+await sandbox.stop();
+```
+
+`connect()` refreshes runtime auth and throws if the sandbox is no longer running.

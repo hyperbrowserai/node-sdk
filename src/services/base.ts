@@ -1,5 +1,31 @@
-import fetch, { HeadersInit, RequestInit } from "node-fetch";
+import fetch, { HeadersInit, RequestInit, Response } from "node-fetch";
 import { HyperbrowserError } from "../client";
+
+const RETRYABLE_STATUS_CODES = new Set([429, 502, 503, 504]);
+const RETRYABLE_NETWORK_CODES = new Set([
+  "ECONNRESET",
+  "ECONNREFUSED",
+  "EAI_AGAIN",
+  "ETIMEDOUT",
+  "ESOCKETTIMEDOUT",
+]);
+
+const getRequestId = (response: Response): string | undefined => {
+  return response.headers.get("x-request-id") || response.headers.get("request-id") || undefined;
+};
+
+const isRetryableNetworkError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const networkError = error as Error & { code?: string; type?: string };
+  return (
+    networkError.name === "AbortError" ||
+    networkError.type === "request-timeout" ||
+    (networkError.code ? RETRYABLE_NETWORK_CODES.has(networkError.code) : false)
+  );
+};
 
 export class BaseService {
   constructor(
@@ -50,14 +76,25 @@ export class BaseService {
 
       if (!response.ok) {
         let errorMessage: string;
+        let errorDetails: unknown;
+        let errorCode: string | undefined;
         try {
           const errorData = await response.json();
+          errorDetails = errorData;
+          errorCode = typeof errorData?.code === "string" ? errorData.code : undefined;
           errorMessage =
             errorData.message || errorData.error || `HTTP error! status: ${response.status}`;
         } catch {
           errorMessage = `HTTP error! status: ${response.status}`;
         }
-        throw new HyperbrowserError(errorMessage, response.status);
+        throw new HyperbrowserError(errorMessage, {
+          statusCode: response.status,
+          code: errorCode,
+          requestId: getRequestId(response),
+          retryable: RETRYABLE_STATUS_CODES.has(response.status),
+          service: "control",
+          details: errorDetails,
+        });
       }
 
       if (response.headers.get("content-length") === "0") {
@@ -67,7 +104,12 @@ export class BaseService {
       try {
         return (await response.json()) as T;
       } catch {
-        throw new HyperbrowserError("Failed to parse JSON response", response.status);
+        throw new HyperbrowserError("Failed to parse JSON response", {
+          statusCode: response.status,
+          requestId: getRequestId(response),
+          retryable: false,
+          service: "control",
+        });
       }
     } catch (error) {
       if (error instanceof HyperbrowserError) {
@@ -76,7 +118,11 @@ export class BaseService {
 
       throw new HyperbrowserError(
         error instanceof Error ? error.message : "Unknown error occurred",
-        undefined
+        {
+          retryable: isRetryableNetworkError(error),
+          service: "control",
+          cause: error,
+        }
       );
     }
   }
