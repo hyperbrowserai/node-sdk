@@ -309,12 +309,6 @@ export class SandboxProcessesApi {
         },
       }
     );
-    if (process.env.DEBUG_SANDBOX_EXEC_RESPONSE === "1") {
-      console.error(
-        "DEBUG_SANDBOX_EXEC_RESPONSE",
-        JSON.stringify(response, null, 2)
-      );
-    }
 
     return normalizeProcessResult(response.result);
   }
