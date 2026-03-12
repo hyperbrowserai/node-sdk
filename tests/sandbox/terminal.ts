@@ -1,6 +1,6 @@
 import "../load-env";
 import { Hyperbrowser, HyperbrowserError } from "../../src";
-import type { SandboxTerminalConnection } from "../../src/runtime/terminal";
+import type { SandboxTerminalConnection } from "../../src/sandbox/terminal";
 import type { CreateSandboxParams } from "../../src/types";
 import { DEFAULT_IMAGE_NAME } from "../helpers/config";
 

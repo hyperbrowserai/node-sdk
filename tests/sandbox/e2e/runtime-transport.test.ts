@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "vitest";
 import {
   resolveRuntimeTransportTarget,
   toWebSocketUrl,
-} from "../../../src/runtime/ws";
+} from "../../../src/sandbox/ws";
 
 const ORIGINAL_REGIONAL_PROXY_DEV_HOST = process.env.REGIONAL_PROXY_DEV_HOST;
 

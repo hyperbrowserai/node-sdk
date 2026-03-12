@@ -5,7 +5,7 @@
 
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import type { SandboxHandle } from "../../../src/services/sandboxes";
-import type { SandboxTerminalConnection } from "../../../src/runtime/terminal";
+import type { SandboxTerminalConnection } from "../../../src/sandbox/terminal";
 import type { SandboxTerminalStatus } from "../../../src/types/sandbox";
 import { createClient } from "../../helpers/config";
 import { expectHyperbrowserError } from "../../helpers/errors";
