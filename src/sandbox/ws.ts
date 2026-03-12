@@ -126,11 +126,7 @@ export const toWebSocketUrl = (
   path: string,
   runtimeProxyOverride?: string
 ): RuntimeTransportTarget => {
-  const target = resolveRuntimeTransportTarget(
-    baseUrl,
-    path,
-    runtimeProxyOverride
-  );
+  const target = resolveRuntimeTransportTarget(baseUrl, path, runtimeProxyOverride);
   const url = new URL(target.url);
   if (url.protocol === "https:") {
     url.protocol = "wss:";
@@ -164,18 +160,14 @@ const normalizeWebSocketError = (error: unknown): HyperbrowserError => {
   return new HyperbrowserError(
     error instanceof Error ? error.message : "Unknown runtime websocket error",
     {
-      retryable: Boolean(
-        networkError?.code && RETRYABLE_NETWORK_CODES.has(networkError.code)
-      ),
+      retryable: Boolean(networkError?.code && RETRYABLE_NETWORK_CODES.has(networkError.code)),
       service: "runtime",
       cause: error,
     }
   );
 };
 
-const buildHandshakeError = async (
-  response: IncomingMessage
-): Promise<HyperbrowserError> => {
+const buildHandshakeError = async (response: IncomingMessage): Promise<HyperbrowserError> => {
   const rawText = await readIncomingMessageBody(response);
   let message = `Runtime websocket request failed: ${response.statusCode ?? 0}`;
   let code: string | undefined;
@@ -207,9 +199,7 @@ const buildHandshakeError = async (
       (typeof response.headers["request-id"] === "string"
         ? response.headers["request-id"]
         : undefined),
-    retryable: Boolean(
-      response.statusCode && RETRYABLE_STATUS_CODES.has(response.statusCode)
-    ),
+    retryable: Boolean(response.statusCode && RETRYABLE_STATUS_CODES.has(response.statusCode)),
     service: "runtime",
     details,
   });

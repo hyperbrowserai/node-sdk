@@ -27,11 +27,7 @@ const RETRYABLE_NETWORK_CODES = new Set([
 ]);
 
 const getRequestId = (response: Response): string | undefined => {
-  return (
-    response.headers.get("x-request-id") ||
-    response.headers.get("request-id") ||
-    undefined
-  );
+  return response.headers.get("x-request-id") || response.headers.get("request-id") || undefined;
 };
 
 const isRetryableNetworkError = (error: unknown): boolean => {
@@ -49,18 +45,12 @@ const isRetryableNetworkError = (error: unknown): boolean => {
 
 export class RuntimeTransport {
   constructor(
-    private readonly resolveConnection: (
-      forceRefresh?: boolean
-    ) => Promise<RuntimeConnection>,
+    private readonly resolveConnection: (forceRefresh?: boolean) => Promise<RuntimeConnection>,
     private readonly timeout: number = 30000,
     private readonly runtimeProxyOverride?: string
   ) {}
 
-  async requestJSON<T>(
-    path: string,
-    init?: RequestInit,
-    params?: RuntimeParams
-  ): Promise<T> {
+  async requestJSON<T>(path: string, init?: RequestInit, params?: RuntimeParams): Promise<T> {
     const response = await this.fetchWithAuth(path, init, params);
     if (response.headers.get("content-length") === "0") {
       return {} as T;
@@ -78,19 +68,12 @@ export class RuntimeTransport {
     }
   }
 
-  async requestBuffer(
-    path: string,
-    init?: RequestInit,
-    params?: RuntimeParams
-  ): Promise<Buffer> {
+  async requestBuffer(path: string, init?: RequestInit, params?: RuntimeParams): Promise<Buffer> {
     const response = await this.fetchWithAuth(path, init, params);
     return response.buffer();
   }
 
-  async *streamSSE(
-    path: string,
-    params?: RuntimeParams
-  ): AsyncGenerator<RuntimeSSEEvent> {
+  async *streamSSE(path: string, params?: RuntimeParams): AsyncGenerator<RuntimeSSEEvent> {
     const response = await this.fetchWithAuth(
       path,
       {
@@ -168,8 +151,7 @@ export class RuntimeTransport {
 
         const separator = line.indexOf(":");
         const field = separator === -1 ? line : line.slice(0, separator);
-        const value =
-          separator === -1 ? "" : line.slice(separator + 1).replace(/^ /, "");
+        const value = separator === -1 ? "" : line.slice(separator + 1).replace(/^ /, "");
 
         switch (field) {
           case "event":
@@ -204,12 +186,7 @@ export class RuntimeTransport {
 
     if (response.status === 401 && allowRefresh) {
       const refreshed = await this.resolveConnection(true);
-      const retryResponse = await this.fetchForConnection(
-        refreshed,
-        path,
-        init,
-        params
-      );
+      const retryResponse = await this.fetchForConnection(refreshed, path, init, params);
       return this.assertResponse(retryResponse);
     }
 
@@ -236,11 +213,7 @@ export class RuntimeTransport {
       `${url.pathname}${url.search}`,
       this.runtimeProxyOverride
     );
-    const headers = this.buildHeaders(
-      connection,
-      init?.headers,
-      target.hostHeader
-    );
+    const headers = this.buildHeaders(connection, init?.headers, target.hostHeader);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 

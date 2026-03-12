@@ -142,13 +142,7 @@ export interface SandboxProcessWaitParams {
   timeoutSec?: number;
 }
 
-export type SandboxProcessSignal =
-  | "TERM"
-  | "KILL"
-  | "INT"
-  | "HUP"
-  | "QUIT"
-  | string;
+export type SandboxProcessSignal = "TERM" | "KILL" | "INT" | "HUP" | "QUIT" | string;
 
 export interface SandboxProcessStdinParams {
   data?: string | Uint8Array;
@@ -258,12 +252,7 @@ export interface SandboxFileChownParams {
   recursive?: boolean;
 }
 
-export type SandboxFileSystemEventType =
-  | "chmod"
-  | "create"
-  | "remove"
-  | "rename"
-  | "write";
+export type SandboxFileSystemEventType = "chmod" | "create" | "remove" | "rename" | "write";
 
 export interface SandboxFileSystemEvent {
   name: string;

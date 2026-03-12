@@ -36,15 +36,11 @@ export class HyperbrowserError extends Error {
   public readonly details?: unknown;
   public readonly cause?: unknown;
 
-  constructor(
-    message: string,
-    options: number | HyperbrowserErrorOptions = {}
-  ) {
+  constructor(message: string, options: number | HyperbrowserErrorOptions = {}) {
     super(`[Hyperbrowser]: ${message}`);
     this.name = "HyperbrowserError";
 
-    const normalized =
-      typeof options === "number" ? { statusCode: options } : options;
+    const normalized = typeof options === "number" ? { statusCode: options } : options;
 
     this.statusCode = normalized.statusCode;
     this.code = normalized.code;
@@ -95,12 +91,7 @@ export class HyperbrowserClient {
     this.web = new WebService(apiKey, baseUrl, timeout);
     this.team = new TeamService(apiKey, baseUrl, timeout);
     this.computerAction = new ComputerActionService(apiKey, baseUrl, timeout);
-    this.sandboxes = new SandboxesService(
-      apiKey,
-      baseUrl,
-      timeout,
-      runtimeProxyOverride
-    );
+    this.sandboxes = new SandboxesService(apiKey, baseUrl, timeout, runtimeProxyOverride);
 
     this.agents = {
       browserUse: new BrowserUseService(apiKey, baseUrl, timeout),

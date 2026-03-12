@@ -57,9 +57,7 @@ interface StartProcessResponse {
 
 const DEFAULT_PROCESS_KILL_WAIT_MS = 5_000;
 
-const normalizeProcessSummary = (
-  process: RawProcessSummary
-): SandboxProcessSummary => ({
+const normalizeProcessSummary = (process: RawProcessSummary): SandboxProcessSummary => ({
   id: process.id,
   status: process.status,
   command: process.command,
@@ -71,9 +69,7 @@ const normalizeProcessSummary = (
   completedAt: process.completed_at,
 });
 
-const normalizeProcessResult = (
-  result: RawProcessResult
-): SandboxProcessResult => ({
+const normalizeProcessResult = (result: RawProcessResult): SandboxProcessResult => ({
   id: result.id,
   status: result.status,
   exitCode: result.exit_code,
@@ -84,9 +80,7 @@ const normalizeProcessResult = (
   error: result.error,
 });
 
-const normalizeResultToSummary = (
-  result: SandboxProcessResult
-): SandboxProcessSummary => ({
+const normalizeResultToSummary = (result: SandboxProcessResult): SandboxProcessSummary => ({
   id: result.id,
   status: result.status,
   command: "",
@@ -96,9 +90,7 @@ const normalizeResultToSummary = (
   completedAt: result.completedAt,
 });
 
-const normalizeStreamEvent = (
-  event: RuntimeSSEEvent
-): SandboxProcessStreamEvent | null => {
+const normalizeStreamEvent = (event: RuntimeSSEEvent): SandboxProcessStreamEvent | null => {
   if (event.event === "output") {
     const payload = event.data as {
       seq: number;
@@ -183,9 +175,7 @@ export class SandboxProcessHandle {
     return this;
   }
 
-  async wait(
-    params: SandboxProcessWaitParams = {}
-  ): Promise<SandboxProcessResult> {
+  async wait(params: SandboxProcessWaitParams = {}): Promise<SandboxProcessResult> {
     const response = await this.transport.requestJSON<ProcessResultResponse>(
       `/sandbox/processes/${this.id}/wait`,
       {
@@ -225,9 +215,7 @@ export class SandboxProcessHandle {
     this.summary = normalizeProcessSummary(response.process);
   }
 
-  async kill(
-    params: SandboxProcessWaitParams = {}
-  ): Promise<SandboxProcessResult> {
+  async kill(params: SandboxProcessWaitParams = {}): Promise<SandboxProcessResult> {
     const response = await this.transport.requestJSON<ProcessSummaryResponse>(
       `/sandbox/processes/${this.id}`,
       {
@@ -259,16 +247,13 @@ export class SandboxProcessHandle {
         ? encodeStdinPayload({ data: input })
         : encodeStdinPayload(input);
 
-    await this.transport.requestJSON<{ success: boolean }>(
-      `/sandbox/processes/${this.id}/stdin`,
-      {
-        method: "POST",
-        body: JSON.stringify(payload),
-        headers: {
-          "content-type": "application/json",
-        },
-      }
-    );
+    await this.transport.requestJSON<{ success: boolean }>(`/sandbox/processes/${this.id}/stdin`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: {
+        "content-type": "application/json",
+      },
+    });
   }
 
   async *stream(fromSeq?: number): AsyncGenerator<SandboxProcessStreamEvent> {
@@ -299,36 +284,27 @@ export class SandboxProcessesApi {
   constructor(private readonly transport: RuntimeTransport) {}
 
   async exec(input: SandboxExecParams): Promise<SandboxProcessResult> {
-    const response = await this.transport.requestJSON<ExecResponse>(
-      "/sandbox/exec",
-      {
-        method: "POST",
-        body: JSON.stringify(buildProcessPayload(input)),
-        headers: {
-          "content-type": "application/json",
-        },
-      }
-    );
+    const response = await this.transport.requestJSON<ExecResponse>("/sandbox/exec", {
+      method: "POST",
+      body: JSON.stringify(buildProcessPayload(input)),
+      headers: {
+        "content-type": "application/json",
+      },
+    });
 
     return normalizeProcessResult(response.result);
   }
 
   async start(input: SandboxExecParams): Promise<SandboxProcessHandle> {
-    const response = await this.transport.requestJSON<StartProcessResponse>(
-      "/sandbox/processes",
-      {
-        method: "POST",
-        body: JSON.stringify(buildProcessPayload(input)),
-        headers: {
-          "content-type": "application/json",
-        },
-      }
-    );
+    const response = await this.transport.requestJSON<StartProcessResponse>("/sandbox/processes", {
+      method: "POST",
+      body: JSON.stringify(buildProcessPayload(input)),
+      headers: {
+        "content-type": "application/json",
+      },
+    });
 
-    return new SandboxProcessHandle(
-      this.transport,
-      normalizeProcessSummary(response.process)
-    );
+    return new SandboxProcessHandle(this.transport, normalizeProcessSummary(response.process));
   }
 
   async get(processId: string): Promise<SandboxProcessHandle> {
@@ -336,15 +312,10 @@ export class SandboxProcessesApi {
       `/sandbox/processes/${processId}`
     );
 
-    return new SandboxProcessHandle(
-      this.transport,
-      normalizeProcessSummary(response.process)
-    );
+    return new SandboxProcessHandle(this.transport, normalizeProcessSummary(response.process));
   }
 
-  async list(
-    params: SandboxProcessListParams = {}
-  ): Promise<SandboxProcessListResponse> {
+  async list(params: SandboxProcessListParams = {}): Promise<SandboxProcessListResponse> {
     const status = Array.isArray(params.status)
       ? params.status.length > 0
         ? params.status.join(",")

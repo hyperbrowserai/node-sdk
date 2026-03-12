@@ -28,10 +28,7 @@ type SandboxRuntimeState = {
   runtime: SandboxDetail["runtime"];
 };
 
-const buildSandboxExposedUrl = (
-  runtime: SandboxRuntimeTarget,
-  port: number
-): string => {
+const buildSandboxExposedUrl = (runtime: SandboxRuntimeTarget, port: number): string => {
   const url = new URL(runtime.baseUrl);
   url.hostname = `${port}-${url.hostname}`;
   return url.toString().replace(/\/$/, "");
@@ -135,9 +132,7 @@ export class SandboxHandle {
     return buildSandboxExposedUrl(this.runtime, port);
   }
 
-  async exec(
-    input: string | SandboxExecParams
-  ): Promise<SandboxProcessResult> {
+  async exec(input: string | SandboxExecParams): Promise<SandboxProcessResult> {
     const params =
       typeof input === "string"
         ? {
@@ -194,16 +189,10 @@ export class SandboxHandle {
     return expiresAt - Date.now() <= RUNTIME_SESSION_REFRESH_BUFFER_MS;
   }
 
-  private async ensureRuntimeSession(
-    forceRefresh: boolean = false
-  ): Promise<SandboxRuntimeState> {
+  private async ensureRuntimeSession(forceRefresh: boolean = false): Promise<SandboxRuntimeState> {
     this.assertRuntimeAvailable();
 
-    if (
-      !forceRefresh &&
-      this.runtimeSession &&
-      !this.isRuntimeSessionExpiring()
-    ) {
+    if (!forceRefresh && this.runtimeSession && !this.isRuntimeSessionExpiring()) {
       return { ...this.runtimeSession };
     }
 
@@ -255,9 +244,7 @@ export class SandboxHandle {
     }
   }
 
-  private static toRuntimeSession(
-    detail: SandboxDetail
-  ): SandboxRuntimeState | null {
+  private static toRuntimeSession(detail: SandboxDetail): SandboxRuntimeState | null {
     if (!detail.token) {
       return null;
     }
@@ -277,12 +264,7 @@ export class SandboxesService extends BaseService {
   public readonly runtimeTimeout: number;
   public readonly runtimeProxyOverride?: string;
 
-  constructor(
-    apiKey: string,
-    baseUrl: string,
-    timeout: number,
-    runtimeProxyOverride?: string
-  ) {
+  constructor(apiKey: string, baseUrl: string, timeout: number, runtimeProxyOverride?: string) {
     super(apiKey, baseUrl, timeout);
     this.runtimeTimeout = timeout;
     this.runtimeProxyOverride = runtimeProxyOverride;
@@ -337,21 +319,15 @@ export class SandboxesService extends BaseService {
     params: SandboxMemorySnapshotParams = {}
   ): Promise<SandboxMemorySnapshotResult> {
     try {
-      return await this.request<SandboxMemorySnapshotResult>(
-        `/sandbox/${id}/snapshot`,
-        {
-          method: "POST",
-          body: JSON.stringify(params),
-        }
-      );
+      return await this.request<SandboxMemorySnapshotResult>(`/sandbox/${id}/snapshot`, {
+        method: "POST",
+        body: JSON.stringify(params),
+      });
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
       }
-      throw new HyperbrowserError(
-        `Failed to create memory snapshot for sandbox ${id}`,
-        undefined
-      );
+      throw new HyperbrowserError(`Failed to create memory snapshot for sandbox ${id}`, undefined);
     }
   }
 

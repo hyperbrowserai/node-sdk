@@ -123,22 +123,17 @@ const normalizeFileInfo = (entry: RawSandboxFileInfo): SandboxFileInfo => ({
   permissions: entry.permissions,
   owner: entry.owner,
   group: entry.group,
-  modifiedTime:
-    entry.modifiedTime === undefined ? undefined : new Date(entry.modifiedTime),
+  modifiedTime: entry.modifiedTime === undefined ? undefined : new Date(entry.modifiedTime),
   symlinkTarget: entry.symlinkTarget,
 });
 
-const normalizeWriteInfo = (
-  entry: RawSandboxFileWriteInfo
-): SandboxFileWriteInfo => ({
+const normalizeWriteInfo = (entry: RawSandboxFileWriteInfo): SandboxFileWriteInfo => ({
   path: entry.path,
   name: entry.name,
   type: normalizeFileType(entry.type),
 });
 
-const normalizeEventType = (
-  operation: string
-): SandboxFileSystemEventType | null => {
+const normalizeEventType = (operation: string): SandboxFileSystemEventType | null => {
   const lower = operation.toLowerCase();
   if (lower.includes("chmod")) {
     return "chmod";
@@ -166,9 +161,7 @@ const relativeWatchName = (root: string, absolutePath: string): string => {
   return relative.split(nodePath.sep).join("/");
 };
 
-const isReadableStreamLike = (
-  value: SandboxFileWriteData
-): value is ReadableStream<Uint8Array> => {
+const isReadableStreamLike = (value: SandboxFileWriteData): value is ReadableStream<Uint8Array> => {
   return (
     typeof value === "object" &&
     value !== null &&
@@ -185,9 +178,7 @@ const toReadableStream = (buffer: Buffer): ReadableStream<Uint8Array> => {
   });
 };
 
-const bufferFromReadableStream = async (
-  stream: ReadableStream<Uint8Array>
-): Promise<Buffer> => {
+const bufferFromReadableStream = async (stream: ReadableStream<Uint8Array>): Promise<Buffer> => {
   const reader = stream.getReader();
   const chunks: Buffer[] = [];
   while (true) {
@@ -333,10 +324,7 @@ class RuntimeFileWatchHandle {
         yield event;
       }
     } finally {
-      if (
-        ws.readyState !== WebSocket.CLOSING &&
-        ws.readyState !== WebSocket.CLOSED
-      ) {
+      if (ws.readyState !== WebSocket.CLOSING && ws.readyState !== WebSocket.CLOSED) {
         await new Promise<void>((resolve) => {
           ws.once("close", () => resolve());
           ws.close();
@@ -425,10 +413,7 @@ export class SandboxFilesApi {
       if (error instanceof HyperbrowserError && error.statusCode === 404) {
         return false;
       }
-      if (
-        error instanceof Error &&
-        /not found|no such file|does not exist/i.test(error.message)
-      ) {
+      if (error instanceof Error && /not found|no such file|does not exist/i.test(error.message)) {
         return false;
       }
       throw error;
@@ -444,10 +429,7 @@ export class SandboxFilesApi {
     return normalizeFileInfo(response.file);
   }
 
-  async list(
-    path: string,
-    options: SandboxFileListOptions = {}
-  ): Promise<SandboxFileInfo[]> {
+  async list(path: string, options: SandboxFileListOptions = {}): Promise<SandboxFileInfo[]> {
     if (options.depth !== undefined && options.depth < 1) {
       throw new Error("depth should be at least one");
     }
@@ -464,18 +446,9 @@ export class SandboxFilesApi {
     return response.entries.map(normalizeFileInfo);
   }
 
-  async read(
-    path: string,
-    options?: SandboxFileReadOptions & { format?: "text" }
-  ): Promise<string>;
-  async read(
-    path: string,
-    options: SandboxFileReadOptions & { format: "bytes" }
-  ): Promise<Buffer>;
-  async read(
-    path: string,
-    options: SandboxFileReadOptions & { format: "blob" }
-  ): Promise<Blob>;
+  async read(path: string, options?: SandboxFileReadOptions & { format?: "text" }): Promise<string>;
+  async read(path: string, options: SandboxFileReadOptions & { format: "bytes" }): Promise<Buffer>;
+  async read(path: string, options: SandboxFileReadOptions & { format: "blob" }): Promise<Blob>;
   async read(
     path: string,
     options: SandboxFileReadOptions & { format: "stream" }
@@ -503,11 +476,17 @@ export class SandboxFilesApi {
     return toReadableStream(bytes);
   }
 
-  async readText(path: string, options: Omit<SandboxFileReadOptions, "format"> = {}): Promise<string> {
+  async readText(
+    path: string,
+    options: Omit<SandboxFileReadOptions, "format"> = {}
+  ): Promise<string> {
     return this.read(path, { ...options, format: "text" });
   }
 
-  async readBytes(path: string, options: Omit<SandboxFileReadOptions, "format"> = {}): Promise<Buffer> {
+  async readBytes(
+    path: string,
+    options: Omit<SandboxFileReadOptions, "format"> = {}
+  ): Promise<Buffer> {
     return this.read(path, { ...options, format: "bytes" });
   }
 
@@ -574,20 +553,14 @@ export class SandboxFilesApi {
     data: Uint8Array,
     options: SandboxFileBytesWriteOptions = {}
   ): Promise<SandboxFileWriteInfo> {
-    return this.writeSingle(
-      path,
-      Buffer.from(data).toString("base64"),
-      "base64",
-      options
-    );
+    return this.writeSingle(path, Buffer.from(data).toString("base64"), "base64", options);
   }
 
   async upload(
     path: string,
     data: Buffer | Uint8Array | string
   ): Promise<SandboxFileTransferResult> {
-    const body =
-      typeof data === "string" ? Buffer.from(data, "utf8") : Buffer.from(data);
+    const body = typeof data === "string" ? Buffer.from(data, "utf8") : Buffer.from(data);
 
     const response = await this.transport.requestJSON<{
       bytesWritten: number;
@@ -613,10 +586,7 @@ export class SandboxFilesApi {
     });
   }
 
-  async makeDir(
-    path: string,
-    options: SandboxFileMakeDirOptions = {}
-  ): Promise<boolean> {
+  async makeDir(path: string, options: SandboxFileMakeDirOptions = {}): Promise<boolean> {
     const response = await this.transport.requestJSON<FileMutationWireResponse>(
       "/sandbox/files/mkdir",
       {
@@ -653,23 +623,17 @@ export class SandboxFilesApi {
     return normalizeFileInfo(response.entry);
   }
 
-  async remove(
-    path: string,
-    options: { recursive?: boolean } = {}
-  ): Promise<void> {
-    await this.transport.requestJSON<FileMutationWireResponse>(
-      "/sandbox/files/delete",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          path,
-          recursive: options.recursive,
-        }),
-        headers: {
-          "content-type": "application/json",
-        },
-      }
-    );
+  async remove(path: string, options: { recursive?: boolean } = {}): Promise<void> {
+    await this.transport.requestJSON<FileMutationWireResponse>("/sandbox/files/delete", {
+      method: "POST",
+      body: JSON.stringify({
+        path,
+        recursive: options.recursive,
+      }),
+      headers: {
+        "content-type": "application/json",
+      },
+    });
   }
 
   async copy(params: SandboxFileCopyParams): Promise<SandboxFileInfo> {
@@ -693,29 +657,23 @@ export class SandboxFilesApi {
   }
 
   async chmod(params: SandboxFileChmodParams): Promise<void> {
-    await this.transport.requestJSON<{ success: boolean }>(
-      "/sandbox/files/chmod",
-      {
-        method: "POST",
-        body: JSON.stringify(params),
-        headers: {
-          "content-type": "application/json",
-        },
-      }
-    );
+    await this.transport.requestJSON<{ success: boolean }>("/sandbox/files/chmod", {
+      method: "POST",
+      body: JSON.stringify(params),
+      headers: {
+        "content-type": "application/json",
+      },
+    });
   }
 
   async chown(params: SandboxFileChownParams): Promise<void> {
-    await this.transport.requestJSON<{ success: boolean }>(
-      "/sandbox/files/chown",
-      {
-        method: "POST",
-        body: JSON.stringify(params),
-        headers: {
-          "content-type": "application/json",
-        },
-      }
-    );
+    await this.transport.requestJSON<{ success: boolean }>("/sandbox/files/chown", {
+      method: "POST",
+      body: JSON.stringify(params),
+      headers: {
+        "content-type": "application/json",
+      },
+    });
   }
 
   async watchDir(
@@ -744,46 +702,41 @@ export class SandboxFilesApi {
       this.runtimeProxyOverride
     );
 
-    return new SandboxWatchDirHandle(
-      watch,
-      onEvent,
-      options.onExit,
-      options.timeoutMs
-    );
+    return new SandboxWatchDirHandle(watch, onEvent, options.onExit, options.timeoutMs);
   }
 
-  async uploadUrl(path: string, options: Omit<SandboxPresignFileParams, "path"> = {}): Promise<SandboxPresignedUrl> {
-    return this.transport.requestJSON<SandboxPresignedUrl>(
-      "/sandbox/files/presign-upload",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          path,
-          expiresInSeconds: options.expiresInSeconds,
-          oneTime: options.oneTime,
-        }),
-        headers: {
-          "content-type": "application/json",
-        },
-      }
-    );
+  async uploadUrl(
+    path: string,
+    options: Omit<SandboxPresignFileParams, "path"> = {}
+  ): Promise<SandboxPresignedUrl> {
+    return this.transport.requestJSON<SandboxPresignedUrl>("/sandbox/files/presign-upload", {
+      method: "POST",
+      body: JSON.stringify({
+        path,
+        expiresInSeconds: options.expiresInSeconds,
+        oneTime: options.oneTime,
+      }),
+      headers: {
+        "content-type": "application/json",
+      },
+    });
   }
 
-  async downloadUrl(path: string, options: Omit<SandboxPresignFileParams, "path"> = {}): Promise<SandboxPresignedUrl> {
-    return this.transport.requestJSON<SandboxPresignedUrl>(
-      "/sandbox/files/presign-download",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          path,
-          expiresInSeconds: options.expiresInSeconds,
-          oneTime: options.oneTime,
-        }),
-        headers: {
-          "content-type": "application/json",
-        },
-      }
-    );
+  async downloadUrl(
+    path: string,
+    options: Omit<SandboxPresignFileParams, "path"> = {}
+  ): Promise<SandboxPresignedUrl> {
+    return this.transport.requestJSON<SandboxPresignedUrl>("/sandbox/files/presign-download", {
+      method: "POST",
+      body: JSON.stringify({
+        path,
+        expiresInSeconds: options.expiresInSeconds,
+        oneTime: options.oneTime,
+      }),
+      headers: {
+        "content-type": "application/json",
+      },
+    });
   }
 
   private async readWire(
@@ -791,21 +744,18 @@ export class SandboxFilesApi {
     options: Omit<SandboxFileReadOptions, "format">,
     encoding: "utf8" | "base64"
   ): Promise<FileReadWireResponse> {
-    return this.transport.requestJSON<FileReadWireResponse>(
-      "/sandbox/files/read",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          path,
-          offset: options.offset,
-          length: options.length,
-          encoding,
-        }),
-        headers: {
-          "content-type": "application/json",
-        },
-      }
-    );
+    return this.transport.requestJSON<FileReadWireResponse>("/sandbox/files/read", {
+      method: "POST",
+      body: JSON.stringify({
+        path,
+        offset: options.offset,
+        length: options.length,
+        encoding,
+      }),
+      headers: {
+        "content-type": "application/json",
+      },
+    });
   }
 
   private async writeSingle(

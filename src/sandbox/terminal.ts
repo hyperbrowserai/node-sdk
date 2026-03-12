@@ -45,9 +45,7 @@ interface RuntimeConnectionInfo {
 
 const DEFAULT_TERMINAL_KILL_WAIT_MS = 5_000;
 
-const normalizeTerminalOutputChunk = (
-  output: RawPTYOutput
-): SandboxTerminalOutputChunk => {
+const normalizeTerminalOutputChunk = (output: RawPTYOutput): SandboxTerminalOutputChunk => {
   const raw = Buffer.from(output.data, "base64");
   return {
     seq: output.seq,
@@ -57,9 +55,7 @@ const normalizeTerminalOutputChunk = (
   };
 };
 
-const cloneTerminalStatus = (
-  status: SandboxTerminalStatus
-): SandboxTerminalStatus => ({
+const cloneTerminalStatus = (status: SandboxTerminalStatus): SandboxTerminalStatus => ({
   ...status,
   output: status.output?.map((chunk) => ({
     ...chunk,
@@ -158,10 +154,7 @@ export class SandboxTerminalConnection {
   }
 
   async close(): Promise<void> {
-    if (
-      this.ws.readyState === WebSocket.CLOSING ||
-      this.ws.readyState === WebSocket.CLOSED
-    ) {
+    if (this.ws.readyState === WebSocket.CLOSING || this.ws.readyState === WebSocket.CLOSED) {
       return;
     }
 
@@ -214,9 +207,7 @@ export class SandboxTerminalHandle {
     return this;
   }
 
-  async wait(
-    params: SandboxTerminalWaitParams = {}
-  ): Promise<SandboxTerminalStatus> {
+  async wait(params: SandboxTerminalWaitParams = {}): Promise<SandboxTerminalStatus> {
     const response = await this.transport.requestJSON<PTYStatusResponse>(
       `/sandbox/pty/${this.id}/wait`,
       {
@@ -252,13 +243,8 @@ export class SandboxTerminalHandle {
   async kill(): Promise<SandboxTerminalStatus>;
   async kill(signal: string): Promise<SandboxTerminalStatus>;
   async kill(params: SandboxTerminalKillParams): Promise<SandboxTerminalStatus>;
-  async kill(
-    input?: string | SandboxTerminalKillParams
-  ): Promise<SandboxTerminalStatus> {
-    const params =
-      typeof input === "string"
-        ? { signal: input }
-        : input ?? {};
+  async kill(input?: string | SandboxTerminalKillParams): Promise<SandboxTerminalStatus> {
+    const params = typeof input === "string" ? { signal: input } : (input ?? {});
 
     await this.signal(params.signal);
     return this.wait({
@@ -285,9 +271,7 @@ export class SandboxTerminalHandle {
     const connectionInfo = await this.getConnectionInfo();
     const target = toWebSocketUrl(
       connectionInfo.baseUrl,
-      `/sandbox/pty/${this.id}/ws?sessionId=${encodeURIComponent(
-        connectionInfo.sandboxId
-      )}`,
+      `/sandbox/pty/${this.id}/ws?sessionId=${encodeURIComponent(connectionInfo.sandboxId)}`,
       this.runtimeProxyOverride
     );
 
@@ -311,19 +295,14 @@ export class SandboxTerminalApi {
     private readonly runtimeProxyOverride?: string
   ) {}
 
-  async create(
-    params: SandboxTerminalCreateParams
-  ): Promise<SandboxTerminalHandle> {
-    const response = await this.transport.requestJSON<PTYStatusResponse>(
-      "/sandbox/pty",
-      {
-        method: "POST",
-        body: JSON.stringify(params),
-        headers: {
-          "content-type": "application/json",
-        },
-      }
-    );
+  async create(params: SandboxTerminalCreateParams): Promise<SandboxTerminalHandle> {
+    const response = await this.transport.requestJSON<PTYStatusResponse>("/sandbox/pty", {
+      method: "POST",
+      body: JSON.stringify(params),
+      headers: {
+        "content-type": "application/json",
+      },
+    });
 
     return new SandboxTerminalHandle(
       this.transport,

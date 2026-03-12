@@ -11,11 +11,7 @@ const RETRYABLE_NETWORK_CODES = new Set([
 ]);
 
 const getRequestId = (response: Response): string | undefined => {
-  return (
-    response.headers.get("x-request-id") ||
-    response.headers.get("request-id") ||
-    undefined
-  );
+  return response.headers.get("x-request-id") || response.headers.get("request-id") || undefined;
 };
 
 const isRetryableNetworkError = (error: unknown): boolean => {
@@ -85,8 +81,7 @@ export class BaseService {
         try {
           const errorData = await response.json();
           errorDetails = errorData;
-          errorCode =
-            typeof errorData?.code === "string" ? errorData.code : undefined;
+          errorCode = typeof errorData?.code === "string" ? errorData.code : undefined;
           errorMessage =
             errorData.message || errorData.error || `HTTP error! status: ${response.status}`;
         } catch {
