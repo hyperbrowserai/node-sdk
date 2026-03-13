@@ -58,6 +58,66 @@ export type CreateSandboxParams =
       imageId?: string;
     });
 
+export interface SandboxListParams {
+  status?: SandboxStatus;
+  page?: number;
+  limit?: number;
+}
+
+export interface SandboxListResponse {
+  sandboxes: Sandbox[];
+  totalCount: number;
+  page: number;
+  perPage: number;
+}
+
+export interface SandboxImageSummary {
+  id: string;
+  imageName: string;
+  namespace: string;
+  uploaded: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SandboxImageListResponse {
+  images: SandboxImageSummary[];
+  // TODO: add pagination metadata when /api/images supports it.
+  // totalCount?: number;
+  // page?: number;
+  // perPage?: number;
+}
+
+export type SandboxSnapshotStatus = "creating" | "created" | "failed";
+
+export interface SandboxSnapshotSummary {
+  id: string;
+  snapshotName: string;
+  namespace: string;
+  imageNamespace: string;
+  imageName: string;
+  imageId: string;
+  status: SandboxSnapshotStatus;
+  compatibilityTag: string;
+  metadata: Record<string, unknown>;
+  uploaded: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SandboxSnapshotListParams {
+  status?: SandboxSnapshotStatus;
+  limit?: number;
+}
+
+export interface SandboxSnapshotListResponse {
+  snapshots: SandboxSnapshotSummary[];
+  // TODO: add pagination metadata when /api/snapshots supports it.
+  // totalCount?: number;
+  // page?: number;
+  // perPage?: number;
+}
+
 export interface SandboxMemorySnapshotParams {
   snapshotName?: string;
 }
