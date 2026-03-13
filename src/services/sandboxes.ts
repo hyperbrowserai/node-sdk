@@ -10,7 +10,7 @@ import {
   SandboxExposeParams,
   SandboxExposeResult,
   SandboxExecParams,
-  SandboxImageSummary,
+  SandboxImageListResponse,
   SandboxListParams,
   SandboxListResponse,
   SandboxMemorySnapshotParams,
@@ -18,7 +18,7 @@ import {
   SandboxProcessResult,
   SandboxRuntimeTarget,
   SandboxSnapshotListParams,
-  SandboxSnapshotSummary,
+  SandboxSnapshotListResponse,
 } from "../types/sandbox";
 import { BaseService } from "./base";
 
@@ -306,10 +306,9 @@ export class SandboxesService extends BaseService {
     }
   }
 
-  async listImages(): Promise<SandboxImageSummary[]> {
+  async listImages(): Promise<SandboxImageListResponse> {
     try {
-      const response = await this.request<{ images: SandboxImageSummary[] }>("/images");
-      return response.images;
+      return await this.request<SandboxImageListResponse>("/images");
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
@@ -320,9 +319,9 @@ export class SandboxesService extends BaseService {
 
   async listSnapshots(
     params: SandboxSnapshotListParams = {}
-  ): Promise<SandboxSnapshotSummary[]> {
+  ): Promise<SandboxSnapshotListResponse> {
     try {
-      const response = await this.request<{ snapshots: SandboxSnapshotSummary[] }>(
+      return await this.request<SandboxSnapshotListResponse>(
         "/snapshots",
         undefined,
         {
@@ -330,7 +329,6 @@ export class SandboxesService extends BaseService {
           limit: params.limit,
         }
       );
-      return response.snapshots;
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
