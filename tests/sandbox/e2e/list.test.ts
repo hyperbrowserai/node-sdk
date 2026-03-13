@@ -59,10 +59,10 @@ async function waitForCreatedSnapshot(snapshotId: string): Promise<SandboxSnapsh
   const deadline = Date.now() + LIST_POLL_TIMEOUT_MS;
 
   while (Date.now() < deadline) {
-    const snapshots = await client.sandboxes.listSnapshots({
+    const response = await client.sandboxes.listSnapshots({
       limit: SNAPSHOT_LIST_LIMIT,
     });
-    const match = snapshots.find((entry) => entry.id === snapshotId);
+    const match = response.snapshots.find((entry) => entry.id === snapshotId);
 
     if (match?.status === "created") {
       return match;
@@ -108,8 +108,8 @@ describe.sequential("sandbox list e2e", () => {
   test("listImages returns the backing image metadata", async () => {
     expect(memorySnapshot).toBeTruthy();
 
-    const images = await client.sandboxes.listImages();
-    const listedImage = images.find((entry) => entry.id === memorySnapshot!.imageId);
+    const response = await client.sandboxes.listImages();
+    const listedImage = response.images.find((entry) => entry.id === memorySnapshot!.imageId);
 
     expect(listedImage).toBeTruthy();
     expect(listedImage!.imageName).toBe(memorySnapshot!.imageName);
@@ -135,6 +135,8 @@ describe.sequential("sandbox list e2e", () => {
       limit: SNAPSHOT_LIST_LIMIT,
     });
 
-    expect(createdSnapshots.some((entry) => entry.id === listedSnapshot.id)).toBe(true);
+    expect(createdSnapshots.snapshots.some((entry) => entry.id === listedSnapshot.id)).toBe(
+      true
+    );
   });
 });
