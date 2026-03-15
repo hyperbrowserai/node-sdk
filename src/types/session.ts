@@ -220,3 +220,15 @@ export interface UpdateSessionProfileParams {
   persistChanges?: boolean;
   persistNetworkCache?: boolean;
 }
+
+export interface UpdateSessionProxyLocationParams {
+  country?: Country;
+  state?: State;
+  city?: string;
+}
+
+export interface UpdateSessionProxyParams {
+  enabled: boolean;
+  staticIpId?: string;
+  location?: UpdateSessionProxyLocationParams;
+}

@@ -18,6 +18,7 @@ import {
   SessionEventLogListParams,
   SessionEventLogListResponse,
   UpdateSessionProfileParams,
+  UpdateSessionProxyParams,
   SessionGetParams,
 } from "../types/session";
 import { BaseService } from "./base";
@@ -379,6 +380,23 @@ export class SessionsService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError(`Failed to update profile for session ${id}`, undefined);
+    }
+  }
+
+  async updateProxyParams(
+    id: string,
+    params: UpdateSessionProxyParams
+  ): Promise<BasicResponse> {
+    try {
+      return await this.request<BasicResponse>(`/session/${id}/update`, {
+        method: "PUT",
+        body: JSON.stringify({ type: "proxy", params }),
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to update proxy for session ${id}`, undefined);
     }
   }
 
