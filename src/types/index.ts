@@ -114,6 +114,8 @@ export {
   SessionProfile,
   SessionLaunchState,
   UpdateSessionProfileParams,
+  UpdateSessionProxyLocationParams,
+  UpdateSessionProxyParams,
 } from "./session";
 export {
   SandboxStatus,
