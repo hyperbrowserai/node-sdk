@@ -113,6 +113,7 @@ export {
   SessionEventLog,
   SessionProfile,
   SessionLaunchState,
+  SessionCreditBreakdown,
   UpdateSessionProfileParams,
   UpdateSessionProxyLocationParams,
   UpdateSessionProxyParams,
