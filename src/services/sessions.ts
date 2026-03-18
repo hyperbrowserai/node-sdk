@@ -383,10 +383,7 @@ export class SessionsService extends BaseService {
     }
   }
 
-  async updateProxyParams(
-    id: string,
-    params: UpdateSessionProxyParams
-  ): Promise<BasicResponse> {
+  async updateProxyParams(id: string, params: UpdateSessionProxyParams): Promise<BasicResponse> {
     try {
       return await this.request<BasicResponse>(`/session/${id}/update`, {
         method: "PUT",

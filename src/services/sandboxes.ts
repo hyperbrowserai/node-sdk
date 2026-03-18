@@ -321,14 +321,10 @@ export class SandboxesService extends BaseService {
     params: SandboxSnapshotListParams = {}
   ): Promise<SandboxSnapshotListResponse> {
     try {
-      return await this.request<SandboxSnapshotListResponse>(
-        "/snapshots",
-        undefined,
-        {
-          status: params.status,
-          limit: params.limit,
-        }
-      );
+      return await this.request<SandboxSnapshotListResponse>("/snapshots", undefined, {
+        status: params.status,
+        limit: params.limit,
+      });
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
