@@ -48,6 +48,12 @@ export interface SessionLaunchState {
   disablePostQuantumKeyAgreement?: boolean;
 }
 
+export interface SessionCreditBreakdown {
+  creditsUsed: number | null;
+  browserTimeCreditsUsed: number | null;
+  proxyDataCreditsUsed: number | null;
+}
+
 export interface Session {
   id: string;
   teamId: string;
@@ -59,6 +65,7 @@ export interface Session {
   sessionUrl: string;
   launchState?: SessionLaunchState | null;
   creditsUsed: number | null;
+  creditBreakdown: SessionCreditBreakdown;
 }
 
 export interface SessionDetail extends Session {
