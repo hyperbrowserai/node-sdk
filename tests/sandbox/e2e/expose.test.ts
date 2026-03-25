@@ -123,6 +123,7 @@ describe.sequential("sandbox exposed ports e2e", () => {
     expect(exposure.port).toBe(HTTP_PORT);
     expect(exposure.auth).toBe(false);
     expect(exposure.url).toBe(sandbox!.getExposedUrl(HTTP_PORT));
+    expect(exposure.browserUrl).toBe(exposure.url);
 
     const response = await waitForHttpResponse(
       exposure.url,
@@ -137,6 +138,8 @@ describe.sequential("sandbox exposed ports e2e", () => {
   test("auth-protected expose requires the sandbox runtime bearer", async () => {
     const exposure = await sandbox!.expose({ port: HTTP_PORT, auth: true });
     expect(exposure.auth).toBe(true);
+    expect(exposure.browserUrl).toContain("/_hb/auth");
+    expect(exposure.browserUrlExpiresAt).toBeTruthy();
 
     const unauthorized = await waitForHttpResponse(
       exposure.url,
@@ -160,5 +163,22 @@ describe.sequential("sandbox exposed ports e2e", () => {
     );
     expect(authorized.status).toBe(200);
     expect(authorized.body).toContain("sdk-exposed:GET:/");
+  });
+
+  test("unexpose removes the public route", async () => {
+    const exposure = await sandbox!.expose({ port: HTTP_PORT, auth: false });
+    const removed = await sandbox!.unexpose(HTTP_PORT);
+
+    expect(removed).toEqual({
+      port: HTTP_PORT,
+      exposed: false,
+    });
+
+    const blocked = await waitForHttpResponse(
+      exposure.url,
+      {},
+      (status) => status === 403
+    );
+    expect(blocked.status).toBe(403);
   });
 });

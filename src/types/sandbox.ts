@@ -31,6 +31,7 @@ export interface Sandbox {
   duration: number;
   proxyBytesUsed: number;
   runtime: SandboxRuntimeTarget;
+  exposedPorts: SandboxExposeResult[];
 }
 
 export interface SandboxDetail extends Sandbox {
@@ -41,6 +42,7 @@ export interface SandboxDetail extends Sandbox {
 interface SandboxCreateCommonParams {
   region?: SessionRegion;
   enableRecording?: boolean;
+  exposedPorts?: SandboxExposeParams[];
   timeoutMinutes?: number;
 }
 
@@ -60,6 +62,9 @@ export type CreateSandboxParams =
 
 export interface SandboxListParams {
   status?: SandboxStatus;
+  start?: number;
+  end?: number;
+  search?: string;
   page?: number;
   limit?: number;
 }
@@ -107,6 +112,7 @@ export interface SandboxSnapshotSummary {
 
 export interface SandboxSnapshotListParams {
   status?: SandboxSnapshotStatus;
+  imageName?: string;
   limit?: number;
 }
 
@@ -141,6 +147,13 @@ export interface SandboxExposeResult {
   port: number;
   auth: boolean;
   url: string;
+  browserUrl?: string;
+  browserUrlExpiresAt?: string | null;
+}
+
+export interface SandboxUnexposeResult {
+  port: number;
+  exposed: boolean;
 }
 
 export type SandboxProcessStatus =
@@ -266,6 +279,9 @@ export type SandboxFileWriteData =
 export interface SandboxFileWriteEntry {
   path: string;
   data: SandboxFileWriteData;
+  encoding?: "utf8" | "base64";
+  append?: boolean;
+  mode?: string;
 }
 
 export interface SandboxFileTextWriteOptions {

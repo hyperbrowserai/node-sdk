@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from "vitest";
 import { SandboxesService } from "../../../src/services/sandboxes";
 
 describe("sandbox control list contract", () => {
-  test("list forwards status, page, and limit to the control API", async () => {
+  test("list forwards status, start, end, search, page, and limit to the control API", async () => {
     const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
     const payload = {
       sandboxes: [
@@ -30,6 +30,15 @@ describe("sandbox control list contract", () => {
             host: "runtime.example.com",
             baseUrl: "https://runtime.example.com",
           },
+          exposedPorts: [
+            {
+              port: 3000,
+              auth: true,
+              url: "https://3000-runtime.example.com/",
+              browserUrl: "https://3000-runtime.example.com/_hb/auth?grant=token&next=%2F",
+              browserUrlExpiresAt: "2026-03-12T00:00:01Z",
+            },
+          ],
         },
       ],
       totalCount: 1,
@@ -43,12 +52,18 @@ describe("sandbox control list contract", () => {
 
     const response = await service.list({
       status: "active",
+      start: 1,
+      end: 2,
+      search: "sbx_123",
       page: 2,
       limit: 5,
     });
 
     expect(requestSpy).toHaveBeenCalledWith("/sandboxes", undefined, {
       status: "active",
+      start: 1,
+      end: 2,
+      search: "sbx_123",
       page: 2,
       limit: 5,
     });
@@ -103,11 +118,13 @@ describe("sandbox control list contract", () => {
 
     const response = await service.listSnapshots({
       status: "created",
+      imageName: "node",
       limit: 10,
     });
 
     expect(requestSpy).toHaveBeenCalledWith("/snapshots", undefined, {
       status: "created",
+      imageName: "node",
       limit: 10,
     });
     expect(response).toEqual(payload);
