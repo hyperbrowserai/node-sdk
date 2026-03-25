@@ -234,3 +234,77 @@ await sandbox.stop();
 ```
 
 `connect()` refreshes runtime auth and throws if the sandbox is no longer running.
+
+Create a sandbox with pre-exposed ports:
+
+```typescript
+const sandbox = await client.sandboxes.create({
+  imageName: "node",
+  exposedPorts: [{ port: 3000, auth: true }],
+});
+
+console.log(sandbox.exposedPorts[0].browserUrl);
+```
+
+List sandboxes with time-range and search filters:
+
+```typescript
+const sandboxes = await client.sandboxes.list({
+  status: "active",
+  start: Date.now() - 60 * 60 * 1000,
+  end: Date.now(),
+  search: "sbx_",
+  limit: 25,
+});
+```
+
+List snapshots for a specific image:
+
+```typescript
+const snapshots = await client.sandboxes.listSnapshots({
+  imageName: "node",
+  status: "created",
+  limit: 10,
+});
+```
+
+Expose and unexpose ports:
+
+```typescript
+const sandbox = await client.sandboxes.create({ imageName: "node" });
+
+const exposure = await sandbox.expose({ port: 8080, auth: true });
+console.log(exposure.url, exposure.browserUrl, exposure.browserUrlExpiresAt);
+
+await sandbox.unexpose(8080);
+```
+
+Write batch files with per-entry options:
+
+```typescript
+await sandbox.files.write([
+  {
+    path: "/tmp/hello.txt",
+    data: "hello",
+    append: true,
+    mode: "600",
+  },
+  {
+    path: "/tmp/payload.bin",
+    data: Buffer.from([1, 2, 3]).toString("base64"),
+    encoding: "base64",
+  },
+]);
+```
+
+Resume a PTY attach from a cursor:
+
+```typescript
+const terminal = await sandbox.terminal.create({
+  command: "bash",
+  rows: 24,
+  cols: 80,
+});
+
+const connection = await terminal.attach(10);
+```

@@ -136,6 +136,7 @@ export {
   SandboxMemorySnapshotResult,
   SandboxExposeParams,
   SandboxExposeResult,
+  SandboxUnexposeResult,
   SandboxProcessStatus,
   SandboxExecParams,
   SandboxProcessSummary,

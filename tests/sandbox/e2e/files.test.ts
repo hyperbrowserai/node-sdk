@@ -52,6 +52,21 @@ const waitForEvent = <T>() => {
   return { promise, resolve, reject };
 };
 
+const WATCH_TIMEOUT_MS = 10_000;
+
+const isCreateOrWriteEvent = (type: string): boolean => {
+  return type === "create" || type === "write";
+};
+
+const rejectOnUnexpectedWatchExit = (
+  pending: { reject: (error: unknown) => void },
+  label: string
+) => {
+  return async (error?: Error) => {
+    pending.reject(error ?? new Error(`${label} watch exited before the expected event`));
+  };
+};
+
 const createParentSymlinkEscapeFixture = async (
   sandbox: SandboxHandle,
   baseDir: string,
@@ -536,11 +551,18 @@ describe.sequential("sandbox filesystem e2e", () => {
     expect(entries.map((entry) => entry.path)).toEqual([`${outsideDir}/secret.txt`]);
 
     const seen = waitForEvent<string>();
-    const handle = await sandbox!.files.watchDir(linkDir, async (event) => {
-      if (event.type === "write" && event.name === "fresh.txt") {
-        seen.resolve(event.name);
+    const handle = await sandbox!.files.watchDir(
+      linkDir,
+      async (event) => {
+        if (isCreateOrWriteEvent(event.type) && event.name === "fresh.txt") {
+          seen.resolve(event.name);
+        }
+      },
+      {
+        onExit: rejectOnUnexpectedWatchExit(seen, "parent symlink"),
+        timeoutMs: WATCH_TIMEOUT_MS,
       }
-    });
+    );
 
     try {
       await sandbox!.files.writeText(`${outsideDir}/fresh.txt`, "watch parent link");
@@ -608,11 +630,18 @@ describe.sequential("sandbox filesystem e2e", () => {
     expect(entries.map((entry) => entry.path)).toEqual([targetFile]);
 
     const seen = waitForEvent<string>();
-    const handle = await sandbox!.files.watchDir(link, async (event) => {
-      if (event.type === "write" && event.name === "file.txt") {
-        seen.resolve(event.name);
+    const handle = await sandbox!.files.watchDir(
+      link,
+      async (event) => {
+        if (isCreateOrWriteEvent(event.type) && event.name === "file.txt") {
+          seen.resolve(event.name);
+        }
+      },
+      {
+        onExit: rejectOnUnexpectedWatchExit(seen, "symlinked directory"),
+        timeoutMs: WATCH_TIMEOUT_MS,
       }
-    });
+    );
 
     try {
       await sandbox!.files.writeText(`${targetDir}/file.txt`, "watch through link");
@@ -629,21 +658,30 @@ describe.sequential("sandbox filesystem e2e", () => {
     const directEvent = waitForEvent<string>();
     const recursiveEvent = waitForEvent<string>();
 
-    const directHandle = await sandbox!.files.watchDir(dir, async (event) => {
-      if (event.type === "write" && event.name === "direct.txt") {
-        directEvent.resolve(event.name);
+    const directHandle = await sandbox!.files.watchDir(
+      dir,
+      async (event) => {
+        if (isCreateOrWriteEvent(event.type) && event.name === "direct.txt") {
+          directEvent.resolve(event.name);
+        }
+      },
+      {
+        onExit: rejectOnUnexpectedWatchExit(directEvent, "direct watch"),
+        timeoutMs: WATCH_TIMEOUT_MS,
       }
-    });
+    );
 
     const recursiveHandle = await sandbox!.files.watchDir(
       dir,
       async (event) => {
-        if (event.type === "write" && event.name === "nested/recursive.txt") {
+        if (isCreateOrWriteEvent(event.type) && event.name === "nested/recursive.txt") {
           recursiveEvent.resolve(event.name);
         }
       },
       {
         recursive: true,
+        onExit: rejectOnUnexpectedWatchExit(recursiveEvent, "recursive watch"),
+        timeoutMs: WATCH_TIMEOUT_MS,
       }
     );
 

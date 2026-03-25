@@ -4,17 +4,17 @@
 
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import type { SandboxHandle } from "../../../src/services/sandboxes";
-import type { Sandbox, SandboxSnapshotSummary } from "../../../src/types";
+import type { Sandbox } from "../../../src/types";
 import { createClient, testName } from "../../helpers/config";
 import {
   defaultSandboxParams,
   stopSandboxIfRunning,
+  waitForCreatedSnapshot,
   waitForRuntimeReady,
 } from "../../helpers/sandbox";
 
 const client = createClient();
 const SANDBOX_PAGE_LIMIT = 50;
-const SNAPSHOT_LIST_LIMIT = 200;
 const LIST_POLL_DELAY_MS = 500;
 const LIST_POLL_TIMEOUT_MS = 90_000;
 
@@ -55,25 +55,6 @@ async function waitForSandboxInList(sandboxId: string): Promise<Sandbox> {
   throw new Error(`sandbox ${sandboxId} did not appear in list()`);
 }
 
-async function waitForCreatedSnapshot(snapshotId: string): Promise<SandboxSnapshotSummary> {
-  const deadline = Date.now() + LIST_POLL_TIMEOUT_MS;
-
-  while (Date.now() < deadline) {
-    const response = await client.sandboxes.listSnapshots({
-      limit: SNAPSHOT_LIST_LIMIT,
-    });
-    const match = response.snapshots.find((entry) => entry.id === snapshotId);
-
-    if (match?.status === "created") {
-      return match;
-    }
-
-    await sleep(LIST_POLL_DELAY_MS);
-  }
-
-  throw new Error(`snapshot ${snapshotId} did not appear as created in listSnapshots()`);
-}
-
 describe.sequential("sandbox list e2e", () => {
   let sandbox: SandboxHandle | null = null;
   let memorySnapshot:
@@ -105,6 +86,21 @@ describe.sequential("sandbox list e2e", () => {
     expect(listed.runtime.baseUrl).toBe(sandbox!.runtime.baseUrl);
   });
 
+  test("list forwards start, end, and search filters", async () => {
+    expect(sandbox).toBeTruthy();
+
+    const createdAt = Date.parse(sandbox!.toJSON().createdAt);
+    const response = await client.sandboxes.list({
+      status: "active",
+      start: createdAt - 60_000,
+      end: createdAt + 60_000,
+      search: sandbox!.id,
+      limit: SANDBOX_PAGE_LIMIT,
+    });
+
+    expect(response.sandboxes.some((entry) => entry.id === sandbox!.id)).toBe(true);
+  });
+
   test("listImages returns the backing image metadata", async () => {
     expect(memorySnapshot).toBeTruthy();
 
@@ -120,7 +116,7 @@ describe.sequential("sandbox list e2e", () => {
   test("listSnapshots returns the created memory snapshot and supports status filtering", async () => {
     expect(memorySnapshot).toBeTruthy();
 
-    const listedSnapshot = await waitForCreatedSnapshot(memorySnapshot!.snapshotId);
+    const listedSnapshot = await waitForCreatedSnapshot(client, memorySnapshot!.snapshotId);
 
     expect(listedSnapshot.id).toBe(memorySnapshot!.snapshotId);
     expect(listedSnapshot.snapshotName).toBe(snapshotName);
@@ -132,7 +128,8 @@ describe.sequential("sandbox list e2e", () => {
 
     const createdSnapshots = await client.sandboxes.listSnapshots({
       status: "created",
-      limit: SNAPSHOT_LIST_LIMIT,
+      imageName: memorySnapshot!.imageName,
+      limit: 200,
     });
 
     expect(createdSnapshots.snapshots.some((entry) => entry.id === listedSnapshot.id)).toBe(

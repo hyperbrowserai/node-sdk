@@ -1,7 +1,11 @@
 import { HyperbrowserError } from "../../src/client";
 import type { SandboxHandle } from "../../src/services/sandboxes";
-import type { CreateSandboxParams } from "../../src/types";
+import type { CreateSandboxParams, SandboxSnapshotSummary } from "../../src/types";
 import { DEFAULT_IMAGE_NAME } from "./config";
+
+const SNAPSHOT_LIST_LIMIT = 200;
+const LIST_POLL_DELAY_MS = 500;
+const LIST_POLL_TIMEOUT_MS = 90_000;
 
 export function defaultSandboxParams(prefix: string): CreateSandboxParams {
   return {
@@ -69,4 +73,36 @@ export async function waitForRuntimeReady(
   throw lastError instanceof Error
     ? lastError
     : new Error("sandbox runtime did not become ready");
+}
+
+export async function waitForCreatedSnapshot(
+  client: {
+    sandboxes: {
+      listSnapshots(params: {
+        limit?: number;
+      }): Promise<{ snapshots: SandboxSnapshotSummary[] }>;
+    };
+  },
+  snapshotId: string,
+  options: {
+    limit?: number;
+    delayMs?: number;
+    timeoutMs?: number;
+  } = {}
+): Promise<SandboxSnapshotSummary> {
+  const limit = options.limit ?? SNAPSHOT_LIST_LIMIT;
+  const delayMs = options.delayMs ?? LIST_POLL_DELAY_MS;
+  const deadline = Date.now() + (options.timeoutMs ?? LIST_POLL_TIMEOUT_MS);
+
+  while (Date.now() < deadline) {
+    const response = await client.sandboxes.listSnapshots({ limit });
+    const match = response.snapshots.find((entry) => entry.id === snapshotId);
+    if (match?.status === "created") {
+      return match;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
+  throw new Error(`snapshot ${snapshotId} did not appear as created in listSnapshots()`);
 }

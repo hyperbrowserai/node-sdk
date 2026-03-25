@@ -193,49 +193,53 @@ const bufferFromReadableStream = async (stream: ReadableStream<Uint8Array>): Pro
   return Buffer.concat(chunks);
 };
 
+const encodeBufferData = (
+  buffer: Buffer,
+  encoding: "utf8" | "base64"
+): { data: string; encoding: "utf8" | "base64" } => {
+  if (encoding === "utf8") {
+    return {
+      data: buffer.toString("utf8"),
+      encoding,
+    };
+  }
+
+  return {
+    data: buffer.toString("base64"),
+    encoding,
+  };
+};
+
 const encodeWriteData = async (
-  data: SandboxFileWriteData
+  data: SandboxFileWriteData,
+  encoding?: "utf8" | "base64"
 ): Promise<{ data: string; encoding: "utf8" | "base64" }> => {
   if (typeof data === "string") {
+    const resolvedEncoding = encoding ?? "utf8";
     return {
       data,
-      encoding: "utf8",
+      encoding: resolvedEncoding,
     };
   }
 
   if (Buffer.isBuffer(data)) {
-    return {
-      data: data.toString("base64"),
-      encoding: "base64",
-    };
+    return encodeBufferData(data, encoding ?? "base64");
   }
 
   if (data instanceof Uint8Array) {
-    return {
-      data: Buffer.from(data).toString("base64"),
-      encoding: "base64",
-    };
+    return encodeBufferData(Buffer.from(data), encoding ?? "base64");
   }
 
   if (data instanceof ArrayBuffer) {
-    return {
-      data: Buffer.from(data).toString("base64"),
-      encoding: "base64",
-    };
+    return encodeBufferData(Buffer.from(data), encoding ?? "base64");
   }
 
   if (data instanceof Blob) {
-    return {
-      data: Buffer.from(await data.arrayBuffer()).toString("base64"),
-      encoding: "base64",
-    };
+    return encodeBufferData(Buffer.from(await data.arrayBuffer()), encoding ?? "base64");
   }
 
   if (isReadableStreamLike(data)) {
-    return {
-      data: (await bufferFromReadableStream(data)).toString("base64"),
-      encoding: "base64",
-    };
+    return encodeBufferData(await bufferFromReadableStream(data), encoding ?? "base64");
   }
 
   throw new Error("Unsupported write data type");
@@ -520,7 +524,9 @@ export class SandboxFilesApi {
         }
         return {
           path: file.path,
-          ...(await encodeWriteData(file.data)),
+          ...(await encodeWriteData(file.data, file.encoding)),
+          append: file.append,
+          mode: file.mode,
         };
       })
     );

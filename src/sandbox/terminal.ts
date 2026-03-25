@@ -267,11 +267,17 @@ export class SandboxTerminalHandle {
     return this.current;
   }
 
-  async attach(): Promise<SandboxTerminalConnection> {
+  async attach(cursor?: number | string): Promise<SandboxTerminalConnection> {
     const connectionInfo = await this.getConnectionInfo();
+    const query = new URLSearchParams({
+      sessionId: connectionInfo.sandboxId,
+    });
+    if (cursor !== undefined) {
+      query.set("cursor", String(cursor));
+    }
     const target = toWebSocketUrl(
       connectionInfo.baseUrl,
-      `/sandbox/pty/${this.id}/ws?sessionId=${encodeURIComponent(connectionInfo.sandboxId)}`,
+      `/sandbox/pty/${this.id}/ws?${query.toString()}`,
       this.runtimeProxyOverride
     );
 

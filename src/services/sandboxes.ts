@@ -16,9 +16,9 @@ import {
   SandboxMemorySnapshotParams,
   SandboxMemorySnapshotResult,
   SandboxProcessResult,
-  SandboxRuntimeTarget,
   SandboxSnapshotListParams,
   SandboxSnapshotListResponse,
+  SandboxUnexposeResult,
 } from "../types/sandbox";
 import { BaseService } from "./base";
 
@@ -33,11 +33,24 @@ type SandboxRuntimeState = {
   runtime: SandboxDetail["runtime"];
 };
 
-const buildSandboxExposedUrl = (runtime: SandboxRuntimeTarget, port: number): string => {
-  const url = new URL(runtime.baseUrl);
-  url.hostname = `${port}-${url.hostname}`;
-  return url.toString().replace(/\/$/, "");
+const buildSandboxExposedUrl = (
+  runtime: SandboxDetail["runtime"],
+  port: number
+): string => {
+  const baseUrl = new URL(runtime.baseUrl);
+  const authority = baseUrl.port
+    ? `${port}-${runtime.host}:${baseUrl.port}`
+    : `${port}-${runtime.host}`;
+  return new URL("/", `${baseUrl.protocol}//${authority}`).toString();
 };
+
+const upsertExposedPort = (
+  exposedPorts: SandboxExposeResult[],
+  updated: SandboxExposeResult
+): SandboxExposeResult[] =>
+  [...exposedPorts.filter((entry) => entry.port !== updated.port), updated].sort(
+    (left, right) => left.port - right.port
+  );
 
 export class SandboxHandle {
   public readonly processes: SandboxProcessesApi;
@@ -97,6 +110,10 @@ export class SandboxHandle {
     return this.detail.sessionUrl;
   }
 
+  get exposedPorts(): SandboxExposeResult[] {
+    return (this.detail.exposedPorts ?? []).map((entry) => ({ ...entry }));
+  }
+
   toJSON(): SandboxDetail {
     return { ...this.detail };
   }
@@ -130,7 +147,21 @@ export class SandboxHandle {
   }
 
   async expose(params: SandboxExposeParams): Promise<SandboxExposeResult> {
-    return this.service.expose(this.id, params, this.runtime);
+    const exposure = await this.service.expose(this.id, params);
+    this.detail = {
+      ...this.detail,
+      exposedPorts: upsertExposedPort(this.detail.exposedPorts ?? [], exposure),
+    };
+    return exposure;
+  }
+
+  async unexpose(port: number): Promise<SandboxUnexposeResult> {
+    const response = await this.service.unexpose(this.id, port);
+    this.detail = {
+      ...this.detail,
+      exposedPorts: (this.detail.exposedPorts ?? []).filter((entry) => entry.port !== port),
+    };
+    return response;
   }
 
   getExposedUrl(port: number): string {
@@ -295,6 +326,9 @@ export class SandboxesService extends BaseService {
     try {
       return await this.request<SandboxListResponse>("/sandboxes", undefined, {
         status: params.status,
+        start: params.start,
+        end: params.end,
+        search: params.search,
         page: params.page,
         limit: params.limit,
       });
@@ -323,6 +357,7 @@ export class SandboxesService extends BaseService {
     try {
       return await this.request<SandboxSnapshotListResponse>("/snapshots", undefined, {
         status: params.status,
+        imageName: params.imageName,
         limit: params.limit,
       });
     } catch (error) {
@@ -380,29 +415,32 @@ export class SandboxesService extends BaseService {
 
   async expose(
     id: string,
-    params: SandboxExposeParams,
-    runtime?: SandboxRuntimeTarget
+    params: SandboxExposeParams
   ): Promise<SandboxExposeResult> {
     try {
-      const response = await this.request<{
-        port: number;
-        auth: boolean;
-      }>(`/sandbox/${id}/expose`, {
+      return await this.request<SandboxExposeResult>(`/sandbox/${id}/expose`, {
         method: "POST",
         body: JSON.stringify(params),
       });
-
-      const targetRuntime = runtime ?? (await this.getDetail(id)).runtime;
-      return {
-        port: response.port,
-        auth: response.auth,
-        url: buildSandboxExposedUrl(targetRuntime, response.port),
-      };
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
       }
       throw new HyperbrowserError(`Failed to expose port ${params.port} for sandbox ${id}`);
+    }
+  }
+
+  async unexpose(id: string, port: number): Promise<SandboxUnexposeResult> {
+    try {
+      return await this.request<SandboxUnexposeResult>(`/sandbox/${id}/unexpose`, {
+        method: "POST",
+        body: JSON.stringify({ port }),
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to unexpose port ${port} for sandbox ${id}`);
     }
   }
 
