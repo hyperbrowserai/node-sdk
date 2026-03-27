@@ -3,6 +3,14 @@
   "version": "0.88.1",
   "description": "Node SDK for Hyperbrowser API",
   "author": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hyperbrowserai/node-sdk"
+  },
+  "homepage": "https://github.com/hyperbrowserai/node-sdk#readme",
+  "bugs": {
+    "url": "https://github.com/hyperbrowserai/node-sdk/issues"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "commonjs",
