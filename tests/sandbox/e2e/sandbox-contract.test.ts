@@ -3,9 +3,9 @@ import { SandboxFilesApi } from "../../../src/sandbox/files";
 import { SandboxTerminalHandle } from "../../../src/sandbox/terminal";
 import * as wsModule from "../../../src/sandbox/ws";
 import { SandboxesService } from "../../../src/services/sandboxes";
-import type { SandboxDetail } from "../../../src/types";
+import type { SandboxExposeResult } from "../../../src/types";
 
-const sandboxDetail = (overrides: Partial<SandboxDetail> = {}): SandboxDetail => ({
+const wireSandboxDetail = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   id: "sbx_123",
   teamId: "team_1",
   status: "active",
@@ -24,6 +24,9 @@ const sandboxDetail = (overrides: Partial<SandboxDetail> = {}): SandboxDetail =>
   sessionUrl: "https://example.com/session",
   duration: 10,
   proxyBytesUsed: 3,
+  vcpus: 2,
+  memMiB: 2048,
+  diskSizeMiB: 8192,
   runtime: {
     transport: "regional_proxy",
     host: "runtime.example.com",
@@ -42,7 +45,7 @@ afterEach(() => {
 describe("sandbox control and runtime contract", () => {
   test("create forwards exposedPorts and hydrates handle exposed ports", async () => {
     const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
-    const payload = sandboxDetail({
+    const payload = wireSandboxDetail({
       exposedPorts: [
         {
           port: 3000,
@@ -57,17 +60,31 @@ describe("sandbox control and runtime contract", () => {
 
     const sandbox = await service.create({
       imageName: "node",
+      cpu: 8,
+      memoryMiB: 8192,
+      diskMiB: 10240,
       exposedPorts: [{ port: 3000, auth: true }],
     });
 
-    expect(requestSpy).toHaveBeenCalledWith("/sandbox", {
-      method: "POST",
-      body: JSON.stringify({
-        imageName: "node",
-        exposedPorts: [{ port: 3000, auth: true }],
-      }),
+    expect(requestSpy).toHaveBeenCalledWith(
+      "/sandbox",
+      expect.objectContaining({
+        method: "POST",
+      })
+    );
+    expect(JSON.parse(requestSpy.mock.calls[0][1].body)).toEqual({
+      imageName: "node",
+      exposedPorts: [{ port: 3000, auth: true }],
+      vcpus: 8,
+      memMiB: 8192,
+      diskSizeMiB: 10240,
     });
-    expect(sandbox.exposedPorts).toEqual(payload.exposedPorts);
+    expect(sandbox.exposedPorts).toEqual(payload.exposedPorts as SandboxExposeResult[]);
+    expect(sandbox.toJSON()).toMatchObject({
+      cpu: 2,
+      memoryMiB: 2048,
+      diskMiB: 8192,
+    });
     expect(sandbox.getExposedUrl(3000)).toBe("https://3000-runtime.example.com/");
   });
 
@@ -75,7 +92,7 @@ describe("sandbox control and runtime contract", () => {
     const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
     const requestSpy = vi.spyOn(service as any, "request");
     requestSpy
-      .mockResolvedValueOnce(sandboxDetail())
+      .mockResolvedValueOnce(wireSandboxDetail())
       .mockResolvedValueOnce({
         port: 3000,
         auth: true,
@@ -109,18 +126,74 @@ describe("sandbox control and runtime contract", () => {
     });
   });
 
+  test("list normalizes sandbox sizing to cpu memoryMiB and diskMiB", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    vi.spyOn(service as any, "request").mockResolvedValue({
+      sandboxes: [
+        {
+          id: "sbx_123",
+          teamId: "team_1",
+          status: "active",
+          endTime: null,
+          startTime: 123,
+          createdAt: "2026-03-12T00:00:00Z",
+          updatedAt: "2026-03-12T00:00:01Z",
+          closeReason: null,
+          dataConsumed: 1,
+          proxyDataConsumed: 2,
+          usageType: "sandbox",
+          jobId: null,
+          launchState: null,
+          creditsUsed: 0.1,
+          region: "us",
+          sessionUrl: "https://example.com/session",
+          duration: 10,
+          proxyBytesUsed: 3,
+          vcpus: 2,
+          memMiB: 2048,
+          diskSizeMiB: 8192,
+          runtime: {
+            transport: "regional_proxy",
+            host: "runtime.example.com",
+            baseUrl: "https://runtime.example.com",
+          },
+          exposedPorts: [],
+        },
+      ],
+      totalCount: 1,
+      page: 1,
+      perPage: 10,
+    });
+
+    const response = await service.list();
+
+    expect(response.sandboxes[0]).toMatchObject({
+      cpu: 2,
+      memoryMiB: 2048,
+      diskMiB: 8192,
+    });
+  });
+
+  test("create rejects cpu memoryMiB and diskMiB for snapshot launches", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+
+    await expect(
+      service.create({
+        snapshotName: "snap",
+        cpu: 2,
+      } as any)
+    ).rejects.toThrow("cpu, memoryMiB, and diskMiB are only supported for image launches");
+  });
+
   test("batch file writes forward encoding, append, and mode per entry", async () => {
     const requestJSON = vi.fn().mockResolvedValue({
       files: [{ path: "/tmp/hello.txt", name: "hello.txt", type: "file" }],
     });
-    const files = new SandboxFilesApi(
-      { requestJSON } as any,
-      async () => ({
-        sandboxId: "sbx_123",
-        baseUrl: "https://runtime.example.com",
-        token: "runtime-token",
-      })
-    );
+    const files = new SandboxFilesApi({ requestJSON } as any, async () => ({
+      sandboxId: "sbx_123",
+      baseUrl: "https://runtime.example.com",
+      token: "runtime-token",
+    }));
 
     await files.write([
       {

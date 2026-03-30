@@ -6,6 +6,7 @@ import { SandboxTerminalApi } from "../sandbox/terminal";
 import { BasicResponse } from "../types/session";
 import {
   CreateSandboxParams,
+  Sandbox,
   SandboxDetail,
   SandboxExposeParams,
   SandboxExposeResult,
@@ -24,6 +25,104 @@ import { BaseService } from "./base";
 
 const RUNTIME_SESSION_REFRESH_BUFFER_MS = 60_000;
 
+type WireSandbox = Omit<Sandbox, "cpu" | "memoryMiB" | "diskMiB"> & {
+  vcpus?: number | null;
+  memMiB?: number | null;
+  diskSizeMiB?: number | null;
+};
+
+type WireSandboxDetail = Omit<SandboxDetail, "cpu" | "memoryMiB" | "diskMiB"> & {
+  vcpus?: number | null;
+  memMiB?: number | null;
+  diskSizeMiB?: number | null;
+};
+
+type WireSandboxListResponse = Omit<SandboxListResponse, "sandboxes"> & {
+  sandboxes: WireSandbox[];
+};
+
+const validateOptionalPositiveInteger = (
+  value: number | undefined,
+  fieldName: "cpu" | "memoryMiB" | "diskMiB"
+) => {
+  if (value === undefined) {
+    return;
+  }
+  if (!Number.isInteger(value) || value < 1) {
+    throw new HyperbrowserError(`${fieldName} must be a positive integer`, undefined);
+  }
+};
+
+const normalizeSandbox = (sandbox: WireSandbox): Sandbox => {
+  const { vcpus, memMiB, diskSizeMiB, ...rest } = sandbox;
+  return {
+    ...rest,
+    cpu: vcpus,
+    memoryMiB: memMiB,
+    diskMiB: diskSizeMiB,
+  };
+};
+
+const normalizeSandboxDetail = (detail: WireSandboxDetail): SandboxDetail => {
+  const { token, tokenExpiresAt, ...sandbox } = detail;
+  return {
+    ...normalizeSandbox(sandbox),
+    token,
+    tokenExpiresAt,
+  };
+};
+
+const normalizeSandboxListResponse = (response: WireSandboxListResponse): SandboxListResponse => ({
+  ...response,
+  sandboxes: response.sandboxes.map(normalizeSandbox),
+});
+
+const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<string, unknown> => {
+  if ("imageName" in params) {
+    validateOptionalPositiveInteger(params.cpu, "cpu");
+    validateOptionalPositiveInteger(params.memoryMiB, "memoryMiB");
+    validateOptionalPositiveInteger(params.diskMiB, "diskMiB");
+
+    return {
+      imageName: params.imageName,
+      imageId: params.imageId,
+      region: params.region,
+      enableRecording: params.enableRecording,
+      exposedPorts: params.exposedPorts,
+      timeoutMinutes: params.timeoutMinutes,
+      vcpus: params.cpu,
+      memMiB: params.memoryMiB,
+      diskSizeMiB: params.diskMiB,
+    };
+  }
+
+  const snapshotParams = params as CreateSandboxParams & {
+    cpu?: number;
+    memoryMiB?: number;
+    diskMiB?: number;
+  };
+
+  if (
+    snapshotParams.cpu !== undefined ||
+    snapshotParams.memoryMiB !== undefined ||
+    snapshotParams.diskMiB !== undefined
+  ) {
+    throw new HyperbrowserError(
+      "cpu, memoryMiB, and diskMiB are only supported for image launches",
+      undefined
+    );
+  }
+
+  return {
+    snapshotName: snapshotParams.snapshotName,
+    snapshotId: snapshotParams.snapshotId,
+    region: snapshotParams.region,
+    enableRecording: snapshotParams.enableRecording,
+    exposedPorts: snapshotParams.exposedPorts,
+    timeoutMinutes: snapshotParams.timeoutMinutes,
+  };
+};
+
 type SandboxRuntimeState = {
   sandboxId: string;
   status: SandboxDetail["status"];
@@ -33,10 +132,7 @@ type SandboxRuntimeState = {
   runtime: SandboxDetail["runtime"];
 };
 
-const buildSandboxExposedUrl = (
-  runtime: SandboxDetail["runtime"],
-  port: number
-): string => {
+const buildSandboxExposedUrl = (runtime: SandboxDetail["runtime"], port: number): string => {
   const baseUrl = new URL(runtime.baseUrl);
   const authority = baseUrl.port
     ? `${port}-${runtime.host}:${baseUrl.port}`
@@ -108,6 +204,18 @@ export class SandboxHandle {
 
   get sessionUrl(): string {
     return this.detail.sessionUrl;
+  }
+
+  get cpu(): number | null | undefined {
+    return this.detail.cpu;
+  }
+
+  get memoryMiB(): number | null | undefined {
+    return this.detail.memoryMiB;
+  }
+
+  get diskMiB(): number | null | undefined {
+    return this.detail.diskMiB;
   }
 
   get exposedPorts(): SandboxExposeResult[] {
@@ -324,7 +432,7 @@ export class SandboxesService extends BaseService {
 
   async list(params: SandboxListParams = {}): Promise<SandboxListResponse> {
     try {
-      return await this.request<SandboxListResponse>("/sandboxes", undefined, {
+      const response = await this.request<WireSandboxListResponse>("/sandboxes", undefined, {
         status: params.status,
         start: params.start,
         end: params.end,
@@ -332,6 +440,7 @@ export class SandboxesService extends BaseService {
         page: params.page,
         limit: params.limit,
       });
+      return normalizeSandboxListResponse(response);
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
@@ -383,7 +492,8 @@ export class SandboxesService extends BaseService {
 
   async getDetail(id: string): Promise<SandboxDetail> {
     try {
-      return await this.request<SandboxDetail>(`/sandbox/${id}`);
+      const detail = await this.request<WireSandboxDetail>(`/sandbox/${id}`);
+      return normalizeSandboxDetail(detail);
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
@@ -413,10 +523,7 @@ export class SandboxesService extends BaseService {
     }
   }
 
-  async expose(
-    id: string,
-    params: SandboxExposeParams
-  ): Promise<SandboxExposeResult> {
+  async expose(id: string, params: SandboxExposeParams): Promise<SandboxExposeResult> {
     try {
       return await this.request<SandboxExposeResult>(`/sandbox/${id}/expose`, {
         method: "POST",
@@ -446,10 +553,11 @@ export class SandboxesService extends BaseService {
 
   private async createDetail(params: CreateSandboxParams): Promise<SandboxDetail> {
     try {
-      return await this.request<SandboxDetail>("/sandbox", {
+      const detail = await this.request<WireSandboxDetail>("/sandbox", {
         method: "POST",
-        body: JSON.stringify(params),
+        body: JSON.stringify(serializeCreateSandboxParams(params)),
       });
+      return normalizeSandboxDetail(detail);
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;

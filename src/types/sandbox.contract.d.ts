@@ -11,7 +11,32 @@ type SnapshotSourceAllowed = { snapshotName: "snapshot" } extends CreateSandboxP
   : false;
 
 type ImageSourceAllowed = { imageName: "image" } extends CreateSandboxParams ? true : false;
+type ImageCpuAllowed = { imageName: "image"; cpu: 2 } extends CreateSandboxParams ? true : false;
+type ImageMemoryAllowed = { imageName: "image"; memoryMiB: 2048 } extends CreateSandboxParams
+  ? true
+  : false;
+type ImageDiskAllowed = { imageName: "image"; diskMiB: 8192 } extends CreateSandboxParams
+  ? true
+  : false;
+type SnapshotCpuAllowed = { snapshotName: "snapshot"; cpu: 2 } extends CreateSandboxParams
+  ? true
+  : false;
+type SnapshotMemoryAllowed = {
+  snapshotName: "snapshot";
+  memoryMiB: 2048;
+} extends CreateSandboxParams
+  ? true
+  : false;
+type SnapshotDiskAllowed = { snapshotName: "snapshot"; diskMiB: 8192 } extends CreateSandboxParams
+  ? true
+  : false;
 
 type _NoSandboxNameSource = Assert<HasSandboxNameSource extends false ? true : false>;
 type _SnapshotSourceAllowed = Assert<SnapshotSourceAllowed>;
 type _ImageSourceAllowed = Assert<ImageSourceAllowed>;
+type _ImageCpuAllowed = Assert<ImageCpuAllowed>;
+type _ImageMemoryAllowed = Assert<ImageMemoryAllowed>;
+type _ImageDiskAllowed = Assert<ImageDiskAllowed>;
+type _SnapshotCpuDisallowed = Assert<SnapshotCpuAllowed extends false ? true : false>;
+type _SnapshotMemoryDisallowed = Assert<SnapshotMemoryAllowed extends false ? true : false>;
+type _SnapshotDiskDisallowed = Assert<SnapshotDiskAllowed extends false ? true : false>;
