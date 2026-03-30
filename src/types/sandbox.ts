@@ -30,6 +30,9 @@ export interface Sandbox {
   sessionUrl: string;
   duration: number;
   proxyBytesUsed: number;
+  cpu?: number | null;
+  memory?: number | null;
+  disk?: number | null;
   runtime: SandboxRuntimeTarget;
   exposedPorts: SandboxExposeResult[];
 }
@@ -52,12 +55,18 @@ export type CreateSandboxParams =
       snapshotId?: string;
       imageName?: never;
       imageId?: never;
+      cpu?: never;
+      memory?: never;
+      disk?: never;
     })
   | (SandboxCreateCommonParams & {
       snapshotName?: never;
       snapshotId?: never;
       imageName: string;
       imageId?: string;
+      cpu?: number;
+      memory?: number;
+      disk?: number;
     });
 
 export interface SandboxListParams {

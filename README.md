@@ -159,11 +159,16 @@ const main = async () => {
   const sandbox = await client.sandboxes.create({
     imageName: "ubuntu-24-node",
     region: "us-west",
+    cpu: 4,
+    memory: 4096,
+    disk: 8192,
   });
 
   // Provide exactly one launch source:
   // snapshotName or imageName.
   // snapshotId requires snapshotName and imageId requires imageName.
+  // cpu, memory, and disk are only available for image launches.
+  // memory and disk are specified in MiB.
 
   const version = await sandbox.exec("node -v");
   console.log(version.stdout.trim());
@@ -240,6 +245,9 @@ Create a sandbox with pre-exposed ports:
 ```typescript
 const sandbox = await client.sandboxes.create({
   imageName: "node",
+  cpu: 2,
+  memory: 2048,
+  disk: 8192,
   exposedPorts: [{ port: 3000, auth: true }],
 });
 
