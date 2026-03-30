@@ -21,30 +21,30 @@ async function execInteger(sandbox: SandboxHandle, command: string): Promise<num
 }
 
 describe.sequential("sandbox resource config e2e", () => {
-  test("image launch applies cpu memory and disk sizing", async () => {
+  test("image launch applies cpu memoryMiB and diskMiB sizing", async () => {
     let sandbox: SandboxHandle | null = null;
 
     try {
       sandbox = await client.sandboxes.create({
         imageName: DEFAULT_IMAGE_NAME,
         cpu: REQUESTED_CPU,
-        memory: REQUESTED_MEMORY_MIB,
-        disk: REQUESTED_DISK_MIB,
+        memoryMiB: REQUESTED_MEMORY_MIB,
+        diskMiB: REQUESTED_DISK_MIB,
       });
 
       expect(sandbox.cpu).toBe(REQUESTED_CPU);
-      expect(sandbox.memory).toBe(REQUESTED_MEMORY_MIB);
-      expect(sandbox.disk).toBe(REQUESTED_DISK_MIB);
+      expect(sandbox.memoryMiB).toBe(REQUESTED_MEMORY_MIB);
+      expect(sandbox.diskMiB).toBe(REQUESTED_DISK_MIB);
 
       const detail = await sandbox.info();
       expect(detail.cpu).toBe(REQUESTED_CPU);
-      expect(detail.memory).toBe(REQUESTED_MEMORY_MIB);
-      expect(detail.disk).toBe(REQUESTED_DISK_MIB);
+      expect(detail.memoryMiB).toBe(REQUESTED_MEMORY_MIB);
+      expect(detail.diskMiB).toBe(REQUESTED_DISK_MIB);
 
       const reloaded = await client.sandboxes.get(sandbox.id);
       expect(reloaded.cpu).toBe(REQUESTED_CPU);
-      expect(reloaded.memory).toBe(REQUESTED_MEMORY_MIB);
-      expect(reloaded.disk).toBe(REQUESTED_DISK_MIB);
+      expect(reloaded.memoryMiB).toBe(REQUESTED_MEMORY_MIB);
+      expect(reloaded.diskMiB).toBe(REQUESTED_DISK_MIB);
 
       await waitForRuntimeReady(sandbox);
 

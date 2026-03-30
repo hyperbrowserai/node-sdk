@@ -12,19 +12,22 @@ type SnapshotSourceAllowed = { snapshotName: "snapshot" } extends CreateSandboxP
 
 type ImageSourceAllowed = { imageName: "image" } extends CreateSandboxParams ? true : false;
 type ImageCpuAllowed = { imageName: "image"; cpu: 2 } extends CreateSandboxParams ? true : false;
-type ImageMemoryAllowed = { imageName: "image"; memory: 2048 } extends CreateSandboxParams
+type ImageMemoryAllowed = { imageName: "image"; memoryMiB: 2048 } extends CreateSandboxParams
   ? true
   : false;
-type ImageDiskAllowed = { imageName: "image"; disk: 8192 } extends CreateSandboxParams
+type ImageDiskAllowed = { imageName: "image"; diskMiB: 8192 } extends CreateSandboxParams
   ? true
   : false;
 type SnapshotCpuAllowed = { snapshotName: "snapshot"; cpu: 2 } extends CreateSandboxParams
   ? true
   : false;
-type SnapshotMemoryAllowed = { snapshotName: "snapshot"; memory: 2048 } extends CreateSandboxParams
+type SnapshotMemoryAllowed = {
+  snapshotName: "snapshot";
+  memoryMiB: 2048;
+} extends CreateSandboxParams
   ? true
   : false;
-type SnapshotDiskAllowed = { snapshotName: "snapshot"; disk: 8192 } extends CreateSandboxParams
+type SnapshotDiskAllowed = { snapshotName: "snapshot"; diskMiB: 8192 } extends CreateSandboxParams
   ? true
   : false;
 

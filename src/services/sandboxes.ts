@@ -25,13 +25,13 @@ import { BaseService } from "./base";
 
 const RUNTIME_SESSION_REFRESH_BUFFER_MS = 60_000;
 
-type WireSandbox = Omit<Sandbox, "cpu" | "memory" | "disk"> & {
+type WireSandbox = Omit<Sandbox, "cpu" | "memoryMiB" | "diskMiB"> & {
   vcpus?: number | null;
   memMiB?: number | null;
   diskSizeMiB?: number | null;
 };
 
-type WireSandboxDetail = Omit<SandboxDetail, "cpu" | "memory" | "disk"> & {
+type WireSandboxDetail = Omit<SandboxDetail, "cpu" | "memoryMiB" | "diskMiB"> & {
   vcpus?: number | null;
   memMiB?: number | null;
   diskSizeMiB?: number | null;
@@ -43,7 +43,7 @@ type WireSandboxListResponse = Omit<SandboxListResponse, "sandboxes"> & {
 
 const validateOptionalPositiveInteger = (
   value: number | undefined,
-  fieldName: "cpu" | "memory" | "disk"
+  fieldName: "cpu" | "memoryMiB" | "diskMiB"
 ) => {
   if (value === undefined) {
     return;
@@ -58,8 +58,8 @@ const normalizeSandbox = (sandbox: WireSandbox): Sandbox => {
   return {
     ...rest,
     cpu: vcpus,
-    memory: memMiB,
-    disk: diskSizeMiB,
+    memoryMiB: memMiB,
+    diskMiB: diskSizeMiB,
   };
 };
 
@@ -80,8 +80,8 @@ const normalizeSandboxListResponse = (response: WireSandboxListResponse): Sandbo
 const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<string, unknown> => {
   if ("imageName" in params) {
     validateOptionalPositiveInteger(params.cpu, "cpu");
-    validateOptionalPositiveInteger(params.memory, "memory");
-    validateOptionalPositiveInteger(params.disk, "disk");
+    validateOptionalPositiveInteger(params.memoryMiB, "memoryMiB");
+    validateOptionalPositiveInteger(params.diskMiB, "diskMiB");
 
     return {
       imageName: params.imageName,
@@ -91,24 +91,24 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
       exposedPorts: params.exposedPorts,
       timeoutMinutes: params.timeoutMinutes,
       vcpus: params.cpu,
-      memMiB: params.memory,
-      diskSizeMiB: params.disk,
+      memMiB: params.memoryMiB,
+      diskSizeMiB: params.diskMiB,
     };
   }
 
   const snapshotParams = params as CreateSandboxParams & {
     cpu?: number;
-    memory?: number;
-    disk?: number;
+    memoryMiB?: number;
+    diskMiB?: number;
   };
 
   if (
     snapshotParams.cpu !== undefined ||
-    snapshotParams.memory !== undefined ||
-    snapshotParams.disk !== undefined
+    snapshotParams.memoryMiB !== undefined ||
+    snapshotParams.diskMiB !== undefined
   ) {
     throw new HyperbrowserError(
-      "cpu, memory, and disk are only supported for image launches",
+      "cpu, memoryMiB, and diskMiB are only supported for image launches",
       undefined
     );
   }
@@ -210,12 +210,12 @@ export class SandboxHandle {
     return this.detail.cpu;
   }
 
-  get memory(): number | null | undefined {
-    return this.detail.memory;
+  get memoryMiB(): number | null | undefined {
+    return this.detail.memoryMiB;
   }
 
-  get disk(): number | null | undefined {
-    return this.detail.disk;
+  get diskMiB(): number | null | undefined {
+    return this.detail.diskMiB;
   }
 
   get exposedPorts(): SandboxExposeResult[] {

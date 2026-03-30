@@ -5,9 +5,7 @@ import * as wsModule from "../../../src/sandbox/ws";
 import { SandboxesService } from "../../../src/services/sandboxes";
 import type { SandboxExposeResult } from "../../../src/types";
 
-const wireSandboxDetail = (
-  overrides: Record<string, unknown> = {}
-): Record<string, unknown> => ({
+const wireSandboxDetail = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   id: "sbx_123",
   teamId: "team_1",
   status: "active",
@@ -63,8 +61,8 @@ describe("sandbox control and runtime contract", () => {
     const sandbox = await service.create({
       imageName: "node",
       cpu: 8,
-      memory: 8192,
-      disk: 10240,
+      memoryMiB: 8192,
+      diskMiB: 10240,
       exposedPorts: [{ port: 3000, auth: true }],
     });
 
@@ -84,8 +82,8 @@ describe("sandbox control and runtime contract", () => {
     expect(sandbox.exposedPorts).toEqual(payload.exposedPorts as SandboxExposeResult[]);
     expect(sandbox.toJSON()).toMatchObject({
       cpu: 2,
-      memory: 2048,
-      disk: 8192,
+      memoryMiB: 2048,
+      diskMiB: 8192,
     });
     expect(sandbox.getExposedUrl(3000)).toBe("https://3000-runtime.example.com/");
   });
@@ -128,7 +126,7 @@ describe("sandbox control and runtime contract", () => {
     });
   });
 
-  test("list normalizes sandbox sizing to cpu memory and disk", async () => {
+  test("list normalizes sandbox sizing to cpu memoryMiB and diskMiB", async () => {
     const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
     vi.spyOn(service as any, "request").mockResolvedValue({
       sandboxes: [
@@ -171,12 +169,12 @@ describe("sandbox control and runtime contract", () => {
 
     expect(response.sandboxes[0]).toMatchObject({
       cpu: 2,
-      memory: 2048,
-      disk: 8192,
+      memoryMiB: 2048,
+      diskMiB: 8192,
     });
   });
 
-  test("create rejects cpu memory and disk for snapshot launches", async () => {
+  test("create rejects cpu memoryMiB and diskMiB for snapshot launches", async () => {
     const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
 
     await expect(
@@ -184,21 +182,18 @@ describe("sandbox control and runtime contract", () => {
         snapshotName: "snap",
         cpu: 2,
       } as any)
-    ).rejects.toThrow("cpu, memory, and disk are only supported for image launches");
+    ).rejects.toThrow("cpu, memoryMiB, and diskMiB are only supported for image launches");
   });
 
   test("batch file writes forward encoding, append, and mode per entry", async () => {
     const requestJSON = vi.fn().mockResolvedValue({
       files: [{ path: "/tmp/hello.txt", name: "hello.txt", type: "file" }],
     });
-    const files = new SandboxFilesApi(
-      { requestJSON } as any,
-      async () => ({
-        sandboxId: "sbx_123",
-        baseUrl: "https://runtime.example.com",
-        token: "runtime-token",
-      })
-    );
+    const files = new SandboxFilesApi({ requestJSON } as any, async () => ({
+      sandboxId: "sbx_123",
+      baseUrl: "https://runtime.example.com",
+      token: "runtime-token",
+    }));
 
     await files.write([
       {
