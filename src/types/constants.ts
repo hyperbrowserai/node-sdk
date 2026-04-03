@@ -76,7 +76,9 @@ export type HyperAgentLlm =
   | "gemini-2.5-flash"
   | "gemini-3-flash-preview";
 
-export type GeminiComputerUseLlm = "gemini-2.5-computer-use-preview-10-2025";
+export type GeminiComputerUseLlm =
+  | "gemini-3-flash-preview"
+  | "gemini-2.5-computer-use-preview-10-2025";
 
 export type SessionRegion =
   | "us-central"
