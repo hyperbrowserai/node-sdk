@@ -48,7 +48,7 @@ export interface ScrapeJobStatusResponse {
 }
 
 export interface ScrapeJobData {
-  metadata?: Record<string, string | string[]>;
+  metadata?: Record<string, unknown>;
   markdown?: string;
   html?: string;
   links?: string[];
@@ -72,7 +72,7 @@ export interface ScrapedPage {
   url: string;
   status: ScrapePageStatus;
   error?: string | null;
-  metadata?: Record<string, string | string[]>;
+  metadata?: Record<string, unknown>;
   markdown?: string;
   html?: string;
   links?: string[];

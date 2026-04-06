@@ -26,7 +26,7 @@ export interface CrawledPage {
   url: string;
   status: CrawlPageStatus;
   error?: string | null;
-  metadata?: Record<string, string | string[]>;
+  metadata?: Record<string, unknown>;
   markdown?: string;
   html?: string;
   links?: string[];

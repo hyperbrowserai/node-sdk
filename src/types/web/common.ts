@@ -30,7 +30,7 @@ export interface PageData {
   url: string;
   status: PageStatus;
   error?: string;
-  metadata?: Record<string, string | string[]>;
+  metadata?: Record<string, unknown>;
   markdown?: string;
   html?: string;
   links?: string[];
@@ -85,7 +85,7 @@ export interface FetchOutputOptions {
 export interface FetchBrowserOptions {
   screen?: ScreenConfig;
   profileId?: string;
-  solveCaptchas?: string;
+  solveCaptchas?: boolean;
   location?: FetchBrowserLocationOptions;
 }
 
