@@ -18,7 +18,7 @@ export interface FetchParams {
 }
 
 export interface FetchResponseData {
-  metadata?: Record<string, string | string[]>;
+  metadata?: Record<string, unknown>;
   html?: string;
   markdown?: string;
   links?: string[];
