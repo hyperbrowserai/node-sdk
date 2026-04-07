@@ -11,6 +11,7 @@ import {
   SandboxExposeParams,
   SandboxExposeResult,
   SandboxExecParams,
+  SandboxExecOptions,
   SandboxImageListResponse,
   SandboxListParams,
   SandboxListResponse,
@@ -276,15 +277,17 @@ export class SandboxHandle {
     return buildSandboxExposedUrl(this.runtime, port);
   }
 
-  async exec(input: string | SandboxExecParams): Promise<SandboxProcessResult> {
-    const params =
-      typeof input === "string"
-        ? {
-            command: input,
-          }
-        : input;
+  async exec(input: string, options?: SandboxExecOptions): Promise<SandboxProcessResult>;
+  async exec(input: SandboxExecParams): Promise<SandboxProcessResult>;
+  async exec(
+    input: string | SandboxExecParams,
+    options?: SandboxExecOptions
+  ): Promise<SandboxProcessResult> {
+    if (typeof input === "string") {
+      return this.processes.exec(input, options);
+    }
 
-    return this.processes.exec(params);
+    return this.processes.exec(input);
   }
 
   async getProcess(processId: string): Promise<SandboxProcessHandle> {

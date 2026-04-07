@@ -180,8 +180,11 @@ export interface SandboxExecParams {
   env?: Record<string, string>;
   timeoutMs?: number;
   timeoutSec?: number;
+  runAs?: string;
   useShell?: boolean;
 }
+
+export type SandboxExecOptions = Omit<SandboxExecParams, "command">;
 
 export interface SandboxProcessSummary {
   id: string;

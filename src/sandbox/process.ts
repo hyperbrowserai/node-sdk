@@ -1,6 +1,7 @@
 import { RuntimeSSEEvent, RuntimeTransport } from "./base";
 import {
   SandboxExecParams,
+  SandboxExecOptions,
   SandboxProcessListParams,
   SandboxProcessListResponse,
   SandboxProcessResult,
@@ -124,8 +125,20 @@ const buildProcessPayload = (input: SandboxExecParams) => ({
   env: input.env,
   timeoutMs: input.timeoutMs,
   timeout_sec: input.timeoutSec,
+  runAs: input.runAs,
   useShell: input.useShell,
 });
+
+const normalizeExecParams = (
+  input: string | SandboxExecParams,
+  options?: SandboxExecOptions
+): SandboxExecParams =>
+  typeof input === "string"
+    ? {
+        command: input,
+        ...options,
+      }
+    : input;
 
 const encodeStdinPayload = (input: SandboxProcessStdinParams) => {
   if (input.data === undefined) {
@@ -283,10 +296,16 @@ export class SandboxProcessHandle {
 export class SandboxProcessesApi {
   constructor(private readonly transport: RuntimeTransport) {}
 
-  async exec(input: SandboxExecParams): Promise<SandboxProcessResult> {
+  async exec(command: string, options?: SandboxExecOptions): Promise<SandboxProcessResult>;
+  async exec(input: SandboxExecParams): Promise<SandboxProcessResult>;
+  async exec(
+    input: string | SandboxExecParams,
+    options?: SandboxExecOptions
+  ): Promise<SandboxProcessResult> {
+    const params = normalizeExecParams(input, options);
     const response = await this.transport.requestJSON<ExecResponse>("/sandbox/exec", {
       method: "POST",
-      body: JSON.stringify(buildProcessPayload(input)),
+      body: JSON.stringify(buildProcessPayload(params)),
       headers: {
         "content-type": "application/json",
       },
@@ -295,10 +314,16 @@ export class SandboxProcessesApi {
     return normalizeProcessResult(response.result);
   }
 
-  async start(input: SandboxExecParams): Promise<SandboxProcessHandle> {
+  async start(command: string, options?: SandboxExecOptions): Promise<SandboxProcessHandle>;
+  async start(input: SandboxExecParams): Promise<SandboxProcessHandle>;
+  async start(
+    input: string | SandboxExecParams,
+    options?: SandboxExecOptions
+  ): Promise<SandboxProcessHandle> {
+    const params = normalizeExecParams(input, options);
     const response = await this.transport.requestJSON<StartProcessResponse>("/sandbox/processes", {
       method: "POST",
-      body: JSON.stringify(buildProcessPayload(input)),
+      body: JSON.stringify(buildProcessPayload(params)),
       headers: {
         "content-type": "application/json",
       },
