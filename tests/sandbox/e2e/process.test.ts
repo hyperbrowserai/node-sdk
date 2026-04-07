@@ -47,6 +47,16 @@ describe.sequential("sandbox process e2e", () => {
     expect(result.stdout).toContain("process-exec-ok");
   });
 
+  test("legacy useShell process input is ignored and still executes", async () => {
+    const result = await sandbox!.exec({
+      command: "echo process-use-shell-ignored",
+      useShell: false,
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("process-use-shell-ignored");
+  });
+
   test("exec returns non-zero results without throwing", async () => {
     const result = await sandbox!.exec({
       command: "bash",

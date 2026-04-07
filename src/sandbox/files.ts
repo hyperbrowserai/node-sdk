@@ -406,8 +406,19 @@ export class SandboxFilesApi {
   constructor(
     private readonly transport: RuntimeTransport,
     private readonly getConnectionInfo: () => Promise<RuntimeConnectionInfo>,
-    private readonly runtimeProxyOverride?: string
+    private readonly runtimeProxyOverride?: string,
+    private readonly defaultRunAs?: string
   ) {}
+
+  withRunAs(runAs?: string): SandboxFilesApi {
+    const normalized = runAs?.trim();
+    return new SandboxFilesApi(
+      this.transport,
+      this.getConnectionInfo,
+      this.runtimeProxyOverride,
+      normalized ? normalized : undefined
+    );
+  }
 
   async exists(path: string): Promise<boolean> {
     try {
@@ -428,7 +439,7 @@ export class SandboxFilesApi {
     const response = await this.transport.requestJSON<FileStatWireResponse>(
       "/sandbox/files/stat",
       undefined,
-      { path }
+      this.withRunAsQuery({ path })
     );
     return normalizeFileInfo(response.file);
   }
@@ -441,10 +452,10 @@ export class SandboxFilesApi {
     const response = await this.transport.requestJSON<FileListWireResponse>(
       "/sandbox/files",
       undefined,
-      {
+      this.withRunAsQuery({
         path,
         depth: options.depth ?? 1,
-      }
+      })
     );
 
     return response.entries.map(normalizeFileInfo);
@@ -535,7 +546,7 @@ export class SandboxFilesApi {
       "/sandbox/files/write",
       {
         method: "POST",
-        body: JSON.stringify({ files: encodedFiles }),
+        body: this.withRunAsBody({ files: encodedFiles }),
         headers: {
           "content-type": "application/json",
         },
@@ -577,7 +588,7 @@ export class SandboxFilesApi {
         method: "PUT",
         body,
       },
-      { path }
+      this.withRunAsQuery({ path })
     );
 
     return {
@@ -588,7 +599,7 @@ export class SandboxFilesApi {
 
   async download(path: string): Promise<Buffer> {
     return this.transport.requestBuffer("/sandbox/files/download", undefined, {
-      path,
+      ...this.withRunAsQuery({ path }),
     });
   }
 
@@ -597,7 +608,7 @@ export class SandboxFilesApi {
       "/sandbox/files/mkdir",
       {
         method: "POST",
-        body: JSON.stringify({
+        body: this.withRunAsBody({
           path,
           parents: options.parents,
           mode: options.mode,
@@ -616,7 +627,7 @@ export class SandboxFilesApi {
       "/sandbox/files/move",
       {
         method: "POST",
-        body: JSON.stringify({
+        body: this.withRunAsBody({
           from: oldPath,
           to: newPath,
         }),
@@ -632,7 +643,7 @@ export class SandboxFilesApi {
   async remove(path: string, options: { recursive?: boolean } = {}): Promise<void> {
     await this.transport.requestJSON<FileMutationWireResponse>("/sandbox/files/delete", {
       method: "POST",
-      body: JSON.stringify({
+      body: this.withRunAsBody({
         path,
         recursive: options.recursive,
       }),
@@ -647,7 +658,7 @@ export class SandboxFilesApi {
       "/sandbox/files/copy",
       {
         method: "POST",
-        body: JSON.stringify({
+        body: this.withRunAsBody({
           from: params.source,
           to: params.destination,
           recursive: params.recursive,
@@ -665,7 +676,7 @@ export class SandboxFilesApi {
   async chmod(params: SandboxFileChmodParams): Promise<void> {
     await this.transport.requestJSON<{ success: boolean }>("/sandbox/files/chmod", {
       method: "POST",
-      body: JSON.stringify(params),
+      body: this.withRunAsBody(params),
       headers: {
         "content-type": "application/json",
       },
@@ -675,7 +686,7 @@ export class SandboxFilesApi {
   async chown(params: SandboxFileChownParams): Promise<void> {
     await this.transport.requestJSON<{ success: boolean }>("/sandbox/files/chown", {
       method: "POST",
-      body: JSON.stringify(params),
+      body: this.withRunAsBody(params),
       headers: {
         "content-type": "application/json",
       },
@@ -691,7 +702,7 @@ export class SandboxFilesApi {
       "/sandbox/files/watch",
       {
         method: "POST",
-        body: JSON.stringify({
+        body: this.withRunAsBody({
           path,
           recursive: options.recursive,
         }),
@@ -717,7 +728,7 @@ export class SandboxFilesApi {
   ): Promise<SandboxPresignedUrl> {
     return this.transport.requestJSON<SandboxPresignedUrl>("/sandbox/files/presign-upload", {
       method: "POST",
-      body: JSON.stringify({
+      body: this.withRunAsBody({
         path,
         expiresInSeconds: options.expiresInSeconds,
         oneTime: options.oneTime,
@@ -734,7 +745,7 @@ export class SandboxFilesApi {
   ): Promise<SandboxPresignedUrl> {
     return this.transport.requestJSON<SandboxPresignedUrl>("/sandbox/files/presign-download", {
       method: "POST",
-      body: JSON.stringify({
+      body: this.withRunAsBody({
         path,
         expiresInSeconds: options.expiresInSeconds,
         oneTime: options.oneTime,
@@ -752,7 +763,7 @@ export class SandboxFilesApi {
   ): Promise<FileReadWireResponse> {
     return this.transport.requestJSON<FileReadWireResponse>("/sandbox/files/read", {
       method: "POST",
-      body: JSON.stringify({
+      body: this.withRunAsBody({
         path,
         offset: options.offset,
         length: options.length,
@@ -774,7 +785,7 @@ export class SandboxFilesApi {
       "/sandbox/files/write",
       {
         method: "POST",
-        body: JSON.stringify({
+        body: this.withRunAsBody({
           path,
           data,
           encoding,
@@ -788,5 +799,27 @@ export class SandboxFilesApi {
     );
 
     return normalizeWriteInfo(response.files[0]!);
+  }
+
+  private withRunAsQuery<T extends Record<string, string | number | boolean | undefined>>(
+    params: T
+  ): T & { runAs?: string } {
+    if (!this.defaultRunAs) {
+      return params;
+    }
+    return {
+      ...params,
+      runAs: this.defaultRunAs,
+    };
+  }
+
+  private withRunAsBody<T extends object>(body: T): string {
+    if (!this.defaultRunAs) {
+      return JSON.stringify(body);
+    }
+    return JSON.stringify({
+      ...body,
+      runAs: this.defaultRunAs,
+    });
   }
 }

@@ -6,6 +6,7 @@
 import { randomUUID } from "crypto";
 import fetch from "node-fetch";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { HyperbrowserError } from "../../../src/client";
 import type { SandboxHandle } from "../../../src/services/sandboxes";
 import {
   API_KEY,
@@ -23,7 +24,43 @@ import {
 
 const client = createClient();
 const CUSTOM_IMAGE_NAME = "node";
-const SNAPSHOT_CREATE_TEST_TIMEOUT_MS = 90_000;
+const SNAPSHOT_CREATE_TEST_TIMEOUT_MS = 300_000;
+const SNAPSHOT_SETTLE_DELAY_MS = 30_000;
+const SNAPSHOT_CREATE_RETRY_TIMEOUT_MS = 120_000;
+const SNAPSHOT_CREATE_RETRY_DELAY_MS = 5_000;
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+const isSnapshotNotReadyError = (error: unknown): boolean => {
+  if (!(error instanceof HyperbrowserError)) {
+    return false;
+  }
+  if (error.statusCode !== 404) {
+    return false;
+  }
+  return /snapshot not found/i.test(error.message);
+};
+
+const createFromSnapshotEventually = async (
+  snapshotName: string,
+  snapshotId: string
+): Promise<SandboxHandle> => {
+  const deadline = Date.now() + SNAPSHOT_CREATE_RETRY_TIMEOUT_MS;
+  while (true) {
+    try {
+      return await client.sandboxes.create({
+        snapshotName,
+        snapshotId,
+      });
+    } catch (error) {
+      if (!isSnapshotNotReadyError(error) || Date.now() >= deadline) {
+        throw error;
+      }
+      await sleep(SNAPSHOT_CREATE_RETRY_DELAY_MS);
+    }
+  }
+};
 
 type ListedFirecrackerImage = {
   id: string;
@@ -236,13 +273,14 @@ describe.sequential("sandbox lifecycle e2e", () => {
   test(
     "create from an image-backed memory snapshot succeeds",
     async () => {
-    expect(customImageMemorySnapshot).toBeTruthy();
+      expect(customImageMemorySnapshot).toBeTruthy();
 
       await waitForCreatedSnapshot(client, customImageMemorySnapshot!.snapshotId);
-      customSnapshotSandbox = await client.sandboxes.create({
-        snapshotName: customImageMemorySnapshot!.snapshotName,
-        snapshotId: customImageMemorySnapshot!.snapshotId,
-      });
+      await sleep(SNAPSHOT_SETTLE_DELAY_MS);
+      customSnapshotSandbox = await createFromSnapshotEventually(
+        customImageMemorySnapshot!.snapshotName,
+        customImageMemorySnapshot!.snapshotId
+      );
 
       expect(customSnapshotSandbox.id).toBeTruthy();
       expect(customSnapshotSandbox.status).toBe("active");
@@ -382,10 +420,11 @@ describe.sequential("sandbox lifecycle e2e", () => {
       expect(memorySnapshot).toBeTruthy();
 
       await waitForCreatedSnapshot(client, memorySnapshot!.snapshotId);
-      secondary = await client.sandboxes.create({
-        snapshotName: memorySnapshot!.snapshotName,
-        snapshotId: memorySnapshot!.snapshotId,
-      });
+      await sleep(SNAPSHOT_SETTLE_DELAY_MS);
+      secondary = await createFromSnapshotEventually(
+        memorySnapshot!.snapshotName,
+        memorySnapshot!.snapshotId
+      );
 
       const response = await secondary.stop();
       expect(response.success).toBe(true);

@@ -57,6 +57,7 @@ interface StartProcessResponse {
 }
 
 const DEFAULT_PROCESS_KILL_WAIT_MS = 5_000;
+const SHELL_SAFE_TOKEN_PATTERN = /^[A-Za-z0-9_@%+=:,./-]+$/;
 
 const normalizeProcessSummary = (process: RawProcessSummary): SandboxProcessSummary => ({
   id: process.id,
@@ -118,15 +119,38 @@ const normalizeStreamEvent = (event: RuntimeSSEEvent): SandboxProcessStreamEvent
   return null;
 };
 
+const quoteShellToken = (token: string): string => {
+  if (token.length === 0) {
+    return "''";
+  }
+
+  return SHELL_SAFE_TOKEN_PATTERN.test(token)
+    ? token
+    : `'${token.replace(/'/g, `'\"'\"'`)}'`;
+};
+
+const buildShellCommand = (command: string, args?: string[]): string => {
+  if (!args || args.length === 0) {
+    return command;
+  }
+
+  return [command, ...args].map((token) => quoteShellToken(token)).join(" ");
+};
+
+const normalizeLegacyProcessParams = (input: SandboxExecParams): SandboxExecParams => ({
+  ...input,
+  command: buildShellCommand(input.command, input.args),
+  args: undefined,
+  useShell: undefined,
+});
+
 const buildProcessPayload = (input: SandboxExecParams) => ({
   command: input.command,
-  args: input.args,
   cwd: input.cwd,
   env: input.env,
   timeoutMs: input.timeoutMs,
   timeout_sec: input.timeoutSec,
   runAs: input.runAs,
-  useShell: input.useShell,
 });
 
 const normalizeExecParams = (
@@ -134,11 +158,11 @@ const normalizeExecParams = (
   options?: SandboxExecOptions
 ): SandboxExecParams =>
   typeof input === "string"
-    ? {
+    ? normalizeLegacyProcessParams({
         command: input,
         ...options,
-      }
-    : input;
+      })
+    : normalizeLegacyProcessParams(input);
 
 const encodeStdinPayload = (input: SandboxProcessStdinParams) => {
   if (input.data === undefined) {

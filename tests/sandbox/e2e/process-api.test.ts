@@ -101,6 +101,46 @@ describe("sandbox process api", () => {
     );
   });
 
+  test("legacy args and useShell are normalized out of process payloads", async () => {
+    const requestJSON = vi
+      .fn()
+      .mockResolvedValueOnce(execResponse)
+      .mockResolvedValueOnce(startResponse);
+    const transport = {
+      requestJSON,
+    } as unknown as RuntimeTransport;
+    const api = new SandboxProcessesApi(transport);
+
+    await api.exec({
+      command: "/bin/echo",
+      args: ["legacy args value"],
+      useShell: false,
+      runAs: "root",
+    });
+    await api.start({
+      command: "bash",
+      args: ["-lc", "echo process-started"],
+      useShell: true,
+      cwd: "/tmp",
+    });
+
+    const execPayload = JSON.parse(requestJSON.mock.calls[0][1].body);
+    expect(execPayload).toEqual({
+      command: "/bin/echo 'legacy args value'",
+      runAs: "root",
+    });
+    expect(execPayload).not.toHaveProperty("args");
+    expect(execPayload).not.toHaveProperty("useShell");
+
+    const startPayload = JSON.parse(requestJSON.mock.calls[1][1].body);
+    expect(startPayload).toEqual({
+      command: "bash -lc 'echo process-started'",
+      cwd: "/tmp",
+    });
+    expect(startPayload).not.toHaveProperty("args");
+    expect(startPayload).not.toHaveProperty("useShell");
+  });
+
   test("sandbox handle exec forwards string options to processes.exec", async () => {
     const exec = vi.fn().mockResolvedValue(execResponse.result);
 
