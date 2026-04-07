@@ -1,6 +1,7 @@
 import { RuntimeSSEEvent, RuntimeTransport } from "./base";
 import {
   SandboxExecParams,
+  SandboxExecOptions,
   SandboxProcessListParams,
   SandboxProcessListResponse,
   SandboxProcessResult,
@@ -56,6 +57,7 @@ interface StartProcessResponse {
 }
 
 const DEFAULT_PROCESS_KILL_WAIT_MS = 5_000;
+const SHELL_SAFE_TOKEN_PATTERN = /^[A-Za-z0-9_@%+=:,./-]+$/;
 
 const normalizeProcessSummary = (process: RawProcessSummary): SandboxProcessSummary => ({
   id: process.id,
@@ -117,15 +119,50 @@ const normalizeStreamEvent = (event: RuntimeSSEEvent): SandboxProcessStreamEvent
   return null;
 };
 
+const quoteShellToken = (token: string): string => {
+  if (token.length === 0) {
+    return "''";
+  }
+
+  return SHELL_SAFE_TOKEN_PATTERN.test(token)
+    ? token
+    : `'${token.replace(/'/g, `'\"'\"'`)}'`;
+};
+
+const buildShellCommand = (command: string, args?: string[]): string => {
+  if (!args || args.length === 0) {
+    return command;
+  }
+
+  return [command, ...args].map((token) => quoteShellToken(token)).join(" ");
+};
+
+const normalizeLegacyProcessParams = (input: SandboxExecParams): SandboxExecParams => ({
+  ...input,
+  command: buildShellCommand(input.command, input.args),
+  args: undefined,
+  useShell: undefined,
+});
+
 const buildProcessPayload = (input: SandboxExecParams) => ({
   command: input.command,
-  args: input.args,
   cwd: input.cwd,
   env: input.env,
   timeoutMs: input.timeoutMs,
   timeout_sec: input.timeoutSec,
-  useShell: input.useShell,
+  runAs: input.runAs,
 });
+
+const normalizeExecParams = (
+  input: string | SandboxExecParams,
+  options?: SandboxExecOptions
+): SandboxExecParams =>
+  typeof input === "string"
+    ? normalizeLegacyProcessParams({
+        command: input,
+        ...options,
+      })
+    : normalizeLegacyProcessParams(input);
 
 const encodeStdinPayload = (input: SandboxProcessStdinParams) => {
   if (input.data === undefined) {
@@ -283,10 +320,16 @@ export class SandboxProcessHandle {
 export class SandboxProcessesApi {
   constructor(private readonly transport: RuntimeTransport) {}
 
-  async exec(input: SandboxExecParams): Promise<SandboxProcessResult> {
+  async exec(command: string, options?: SandboxExecOptions): Promise<SandboxProcessResult>;
+  async exec(input: SandboxExecParams): Promise<SandboxProcessResult>;
+  async exec(
+    input: string | SandboxExecParams,
+    options?: SandboxExecOptions
+  ): Promise<SandboxProcessResult> {
+    const params = normalizeExecParams(input, options);
     const response = await this.transport.requestJSON<ExecResponse>("/sandbox/exec", {
       method: "POST",
-      body: JSON.stringify(buildProcessPayload(input)),
+      body: JSON.stringify(buildProcessPayload(params)),
       headers: {
         "content-type": "application/json",
       },
@@ -295,10 +338,16 @@ export class SandboxProcessesApi {
     return normalizeProcessResult(response.result);
   }
 
-  async start(input: SandboxExecParams): Promise<SandboxProcessHandle> {
+  async start(command: string, options?: SandboxExecOptions): Promise<SandboxProcessHandle>;
+  async start(input: SandboxExecParams): Promise<SandboxProcessHandle>;
+  async start(
+    input: string | SandboxExecParams,
+    options?: SandboxExecOptions
+  ): Promise<SandboxProcessHandle> {
+    const params = normalizeExecParams(input, options);
     const response = await this.transport.requestJSON<StartProcessResponse>("/sandbox/processes", {
       method: "POST",
-      body: JSON.stringify(buildProcessPayload(input)),
+      body: JSON.stringify(buildProcessPayload(params)),
       headers: {
         "content-type": "application/json",
       },

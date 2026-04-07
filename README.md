@@ -192,9 +192,11 @@ const main = async () => {
   await sandbox.files.writeText("/tmp/watch-demo.txt", "watch me");
   await watch.stop();
 
-  const proc = await sandbox.processes.start({
-    command: "bash",
-    args: ["-lc", "echo process-started && sleep 1 && echo process-finished"],
+  const proc = await sandbox.processes.start(
+    "echo process-started && sleep 1 && echo process-finished",
+    {
+      runAs: "root",
+    }
   });
 
   for await (const event of proc.stream()) {

@@ -5,3 +5,8 @@ dotenv.config({
   path: path.resolve(__dirname, ".env"),
   quiet: true,
 });
+
+dotenv.config({
+  path: path.resolve(__dirname, "..", ".env"),
+  quiet: true,
+});

@@ -175,13 +175,18 @@ export type SandboxProcessStatus =
 
 export interface SandboxExecParams {
   command: string;
+  /** @deprecated Legacy compatibility only. Converted into a single shell command string. */
   args?: string[];
   cwd?: string;
   env?: Record<string, string>;
   timeoutMs?: number;
   timeoutSec?: number;
+  runAs?: string;
+  /** @deprecated Ignored for process APIs. Commands always execute via `/bin/sh -lc` server-side. */
   useShell?: boolean;
 }
+
+export type SandboxExecOptions = Omit<SandboxExecParams, "command">;
 
 export interface SandboxProcessSummary {
   id: string;
