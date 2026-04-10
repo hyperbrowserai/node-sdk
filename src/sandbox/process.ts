@@ -124,9 +124,7 @@ const quoteShellToken = (token: string): string => {
     return "''";
   }
 
-  return SHELL_SAFE_TOKEN_PATTERN.test(token)
-    ? token
-    : `'${token.replace(/'/g, `'\"'\"'`)}'`;
+  return SHELL_SAFE_TOKEN_PATTERN.test(token) ? token : `'${token.replace(/'/g, `'"'"'`)}'`;
 };
 
 const buildShellCommand = (command: string, args?: string[]): string => {
