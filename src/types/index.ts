@@ -123,6 +123,8 @@ export {
   SandboxRuntimeTarget,
   Sandbox,
   SandboxDetail,
+  SandboxVolumeMountType,
+  SandboxVolumeMount,
   SandboxListParams,
   SandboxListResponse,
   SandboxImageSummary,
@@ -175,6 +177,7 @@ export {
   SandboxTerminalKillParams,
   SandboxTerminalEvent,
 } from "./sandbox";
+export { CreateVolumeParams, Volume, VolumeListResponse } from "./volume";
 export {
   CreateProfileParams,
   ProfileResponse,

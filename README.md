@@ -255,6 +255,27 @@ const sandbox = await client.sandboxes.create({
 console.log(sandbox.exposedPorts[0].browserUrl);
 ```
 
+Manage volumes and mount them into a sandbox:
+
+```typescript
+const volume = await client.volumes.create({ name: "project-cache" });
+const volumes = await client.volumes.list();
+const sameVolume = await client.volumes.get(volume.id);
+
+const sandbox = await client.sandboxes.create({
+  imageName: "node",
+  mounts: {
+    "/workspace/cache": {
+      id: sameVolume.id,
+      type: "rw",
+      shared: true,
+    },
+  },
+});
+
+await sandbox.stop();
+```
+
 List sandboxes with time-range and search filters:
 
 ```typescript

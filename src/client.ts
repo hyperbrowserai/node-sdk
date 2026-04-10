@@ -14,6 +14,7 @@ import { ComputerActionService } from "./services/computer-action";
 import { GeminiComputerUseService } from "./services/agents/gemini-computer-use";
 import { WebService } from "./services/web";
 import { SandboxesService } from "./services/sandboxes";
+import { VolumesService } from "./services/volumes";
 
 export type HyperbrowserService = "control" | "runtime";
 
@@ -70,6 +71,7 @@ export class HyperbrowserClient {
   public readonly team: TeamService;
   public readonly computerAction: ComputerActionService;
   public readonly sandboxes: SandboxesService;
+  public readonly volumes: VolumesService;
 
   constructor(config: HyperbrowserConfig = {}) {
     const apiKey = config.apiKey || process.env["HYPERBROWSER_API_KEY"];
@@ -92,6 +94,7 @@ export class HyperbrowserClient {
     this.team = new TeamService(apiKey, baseUrl, timeout);
     this.computerAction = new ComputerActionService(apiKey, baseUrl, timeout);
     this.sandboxes = new SandboxesService(apiKey, baseUrl, timeout, runtimeProxyOverride);
+    this.volumes = new VolumesService(apiKey, baseUrl, timeout);
 
     this.agents = {
       browserUse: new BrowserUseService(apiKey, baseUrl, timeout),
