@@ -42,10 +42,19 @@ export interface SandboxDetail extends Sandbox {
   tokenExpiresAt: string | null;
 }
 
+export type SandboxVolumeMountType = "rw" | "ro";
+
+export interface SandboxVolumeMount {
+  id: string;
+  type?: SandboxVolumeMountType;
+  shared?: boolean;
+}
+
 interface SandboxCreateCommonParams {
   region?: SessionRegion;
   enableRecording?: boolean;
   exposedPorts?: SandboxExposeParams[];
+  mounts?: Record<string, SandboxVolumeMount>;
   timeoutMinutes?: number;
 }
 

@@ -90,6 +90,7 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
       region: params.region,
       enableRecording: params.enableRecording,
       exposedPorts: params.exposedPorts,
+      mounts: params.mounts,
       timeoutMinutes: params.timeoutMinutes,
       vcpus: params.cpu,
       memMiB: params.memoryMiB,
@@ -120,6 +121,7 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
     region: snapshotParams.region,
     enableRecording: snapshotParams.enableRecording,
     exposedPorts: snapshotParams.exposedPorts,
+    mounts: snapshotParams.mounts,
     timeoutMinutes: snapshotParams.timeoutMinutes,
   };
 };

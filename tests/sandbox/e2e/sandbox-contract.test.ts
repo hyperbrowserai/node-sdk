@@ -43,7 +43,7 @@ afterEach(() => {
 });
 
 describe("sandbox control and runtime contract", () => {
-  test("create forwards exposedPorts and hydrates handle exposed ports", async () => {
+  test("create forwards exposedPorts and mounts, then hydrates handle exposed ports", async () => {
     const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
     const payload = wireSandboxDetail({
       exposedPorts: [
@@ -64,6 +64,13 @@ describe("sandbox control and runtime contract", () => {
       memoryMiB: 8192,
       diskMiB: 10240,
       exposedPorts: [{ port: 3000, auth: true }],
+      mounts: {
+        "/workspace/cache": {
+          id: "2d6f01cf-c5d7-4c61-ae9e-0264f1c8063d",
+          type: "rw",
+          shared: true,
+        },
+      },
     });
 
     expect(requestSpy).toHaveBeenCalledWith(
@@ -75,6 +82,13 @@ describe("sandbox control and runtime contract", () => {
     expect(JSON.parse(requestSpy.mock.calls[0][1].body)).toEqual({
       imageName: "node",
       exposedPorts: [{ port: 3000, auth: true }],
+      mounts: {
+        "/workspace/cache": {
+          id: "2d6f01cf-c5d7-4c61-ae9e-0264f1c8063d",
+          type: "rw",
+          shared: true,
+        },
+      },
       vcpus: 8,
       memMiB: 8192,
       diskSizeMiB: 10240,
@@ -86,6 +100,37 @@ describe("sandbox control and runtime contract", () => {
       diskMiB: 8192,
     });
     expect(sandbox.getExposedUrl(3000)).toBe("https://3000-runtime.example.com/");
+  });
+
+  test("create forwards mounts for snapshot launches", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue(wireSandboxDetail());
+
+    await service.create({
+      snapshotName: "snapshot-1",
+      mounts: {
+        "/workspace/readonly": {
+          id: "2d6f01cf-c5d7-4c61-ae9e-0264f1c8063d",
+          type: "ro",
+        },
+      },
+    });
+
+    expect(requestSpy).toHaveBeenCalledWith(
+      "/sandbox",
+      expect.objectContaining({
+        method: "POST",
+      })
+    );
+    expect(JSON.parse(requestSpy.mock.calls[0][1].body)).toEqual({
+      snapshotName: "snapshot-1",
+      mounts: {
+        "/workspace/readonly": {
+          id: "2d6f01cf-c5d7-4c61-ae9e-0264f1c8063d",
+          type: "ro",
+        },
+      },
+    });
   });
 
   test("expose and unexpose preserve server fields and update cached exposed ports", async () => {
