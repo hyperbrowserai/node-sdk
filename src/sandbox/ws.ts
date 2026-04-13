@@ -90,12 +90,23 @@ const RETRYABLE_NETWORK_CODES = new Set([
 
 const hasScheme = (value: string): boolean => /^[a-z][a-z0-9+.-]*:\/\//i.test(value);
 
+const normalizeRuntimeRelativePath = (path: string): string => {
+  const trimmed = path.trim();
+  if (!trimmed) {
+    return "";
+  }
+  return trimmed.replace(/^\/+/, "");
+};
+
 export const resolveRuntimeTransportTarget = (
   baseUrl: string,
   path: string,
   runtimeProxyOverride?: string
 ): RuntimeTransportTarget => {
-  const url = new URL(path, baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`);
+  const url = new URL(
+    normalizeRuntimeRelativePath(path),
+    baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`
+  );
 
   if (!runtimeProxyOverride) {
     return {

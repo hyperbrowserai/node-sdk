@@ -199,18 +199,9 @@ export class RuntimeTransport {
     init?: RequestInit,
     params?: RuntimeParams
   ): Promise<Response> {
-    const url = new URL(path, this.normalizeBaseUrl(connection.baseUrl));
-    if (params) {
-      for (const [key, value] of Object.entries(params)) {
-        if (value !== undefined) {
-          url.searchParams.append(key, String(value));
-        }
-      }
-    }
-
     const target = resolveRuntimeTransportTarget(
       connection.baseUrl,
-      `${url.pathname}${url.search}`,
+      this.buildRequestPath(path, params),
       this.runtimeProxyOverride
     );
     const headers = this.buildHeaders(connection, init?.headers, target.hostHeader);
@@ -307,7 +298,20 @@ export class RuntimeTransport {
     return headers;
   }
 
-  private normalizeBaseUrl(baseUrl: string): string {
-    return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  private buildRequestPath(path: string, params?: RuntimeParams): string {
+    const trimmed = path.trim();
+    const [rawPath, rawQuery = ""] = trimmed.split("?", 2);
+    const queryParams = new URLSearchParams(rawQuery);
+
+    if (params) {
+      for (const [key, value] of Object.entries(params)) {
+        if (value !== undefined) {
+          queryParams.append(key, String(value));
+        }
+      }
+    }
+
+    const query = queryParams.toString();
+    return query ? `${rawPath}?${query}` : rawPath;
   }
 }

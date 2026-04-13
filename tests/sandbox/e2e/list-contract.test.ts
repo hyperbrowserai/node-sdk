@@ -27,15 +27,15 @@ describe("sandbox control list contract", () => {
           proxyBytesUsed: 3,
           runtime: {
             transport: "regional_proxy" as const,
-            host: "runtime.example.com",
-            baseUrl: "https://runtime.example.com",
+            host: "https://runtime.example.com/sandbox/sbx_123",
+            baseUrl: "https://runtime.example.com/sandbox/sbx_123",
           },
           exposedPorts: [
             {
               port: 3000,
               auth: true,
-              url: "https://3000-runtime.example.com/",
-              browserUrl: "https://3000-runtime.example.com/_hb/auth?grant=token&next=%2F",
+              url: "https://3000-sbx_123.runtime.example.com/",
+              browserUrl: "https://3000-sbx_123.runtime.example.com/_hb/auth?grant=token&next=%2F",
               browserUrlExpiresAt: "2026-03-12T00:00:01Z",
             },
           ],

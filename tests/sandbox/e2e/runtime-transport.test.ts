@@ -53,4 +53,28 @@ describe("sandbox runtime transport target", () => {
       hostHeader: "session.example.dev:8443",
     });
   });
+
+  test("preserves runtime base path prefixes", () => {
+    const target = resolveRuntimeTransportTarget(
+      "https://region.example.dev/sandbox/sbx_123",
+      "/sandbox/exec?foo=bar"
+    );
+
+    expect(target).toEqual({
+      url: "https://region.example.dev/sandbox/sbx_123/sandbox/exec?foo=bar",
+    });
+  });
+
+  test("preserves runtime base path prefixes for websocket targets with overrides", () => {
+    const target = toWebSocketUrl(
+      "https://region.example.dev/sandbox/sbx_123",
+      "/sandbox/pty/pty_123/ws?sessionId=sandbox_123",
+      "http://127.0.0.1:8090"
+    );
+
+    expect(target).toEqual({
+      url: "ws://127.0.0.1:8090/sandbox/sbx_123/sandbox/pty/pty_123/ws?sessionId=sandbox_123",
+      hostHeader: "region.example.dev",
+    });
+  });
 });

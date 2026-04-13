@@ -135,11 +135,52 @@ type SandboxRuntimeState = {
   runtime: SandboxDetail["runtime"];
 };
 
+const runtimeSessionIdFromPath = (rawPath: string): string | null => {
+  const segments = rawPath
+    .trim()
+    .replace(/^\/+|\/+$/g, "")
+    .split("/")
+    .filter(Boolean);
+  if (segments.length < 2 || segments[0] !== "sandbox" || !segments[1]) {
+    return null;
+  }
+  return segments[1];
+};
+
+const resolveSandboxRuntimeSessionHost = (
+  runtime: SandboxDetail["runtime"],
+  baseUrl: URL
+): string => {
+  const sessionIdFromBasePath = runtimeSessionIdFromPath(baseUrl.pathname);
+  if (sessionIdFromBasePath && baseUrl.hostname) {
+    return `${sessionIdFromBasePath}.${baseUrl.hostname}`;
+  }
+
+  const runtimeHost = runtime.host?.trim() || "";
+  if (runtimeHost) {
+    try {
+      const parsedHost = new URL(runtimeHost);
+      const sessionIdFromHostPath = runtimeSessionIdFromPath(parsedHost.pathname);
+      if (sessionIdFromHostPath && parsedHost.hostname) {
+        return `${sessionIdFromHostPath}.${parsedHost.hostname}`;
+      }
+      if (parsedHost.hostname) {
+        return parsedHost.hostname;
+      }
+    } catch {
+      return runtimeHost;
+    }
+  }
+
+  return baseUrl.hostname;
+};
+
 const buildSandboxExposedUrl = (runtime: SandboxDetail["runtime"], port: number): string => {
   const baseUrl = new URL(runtime.baseUrl);
+  const sessionHost = resolveSandboxRuntimeSessionHost(runtime, baseUrl);
   const authority = baseUrl.port
-    ? `${port}-${runtime.host}:${baseUrl.port}`
-    : `${port}-${runtime.host}`;
+    ? `${port}-${sessionHost}:${baseUrl.port}`
+    : `${port}-${sessionHost}`;
   return new URL("/", `${baseUrl.protocol}//${authority}`).toString();
 };
 
