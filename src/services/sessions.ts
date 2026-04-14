@@ -21,6 +21,7 @@ import {
   UpdateSessionProxyParams,
   SessionGetParams,
 } from "../types/session";
+import { ControlPlaneAuthManager } from "../control-auth";
 import { BaseService } from "./base";
 import { HyperbrowserError } from "../client";
 
@@ -58,9 +59,9 @@ class SessionEventLogsService extends BaseService {
 export class SessionsService extends BaseService {
   public readonly eventLogs: SessionEventLogsService;
 
-  constructor(apiKey: string, baseUrl: string, timeout: number) {
-    super(apiKey, baseUrl, timeout);
-    this.eventLogs = new SessionEventLogsService(apiKey, baseUrl, timeout);
+  constructor(auth: ControlPlaneAuthManager, baseUrl: string, timeout: number) {
+    super(auth, baseUrl, timeout);
+    this.eventLogs = new SessionEventLogsService(auth, baseUrl, timeout);
   }
 
   /**

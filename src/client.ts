@@ -1,4 +1,5 @@
 import { HyperbrowserConfig } from "./types/config";
+import { ControlAuthError, resolveControlPlaneConfig } from "./control-auth";
 import { SessionsService } from "./services/sessions";
 import { ScrapeService } from "./services/scrape";
 import { CrawlService } from "./services/crawl";
@@ -74,34 +75,46 @@ export class HyperbrowserClient {
   public readonly volumes: VolumesService;
 
   constructor(config: HyperbrowserConfig = {}) {
-    const apiKey = config.apiKey || process.env["HYPERBROWSER_API_KEY"];
-    const baseUrl = config.baseUrl || "https://api.hyperbrowser.ai";
+    let authManager: ReturnType<typeof resolveControlPlaneConfig>["authManager"];
+    let baseUrl = "";
+    try {
+      const resolved = resolveControlPlaneConfig(config);
+      authManager = resolved.authManager;
+      baseUrl = resolved.baseUrl;
+    } catch (error) {
+      if (error instanceof ControlAuthError) {
+        throw new HyperbrowserError(error.message, {
+          statusCode: error.statusCode,
+          code: error.code,
+          retryable: error.retryable,
+          service: "control",
+          details: error.details,
+          cause: error.cause ?? error,
+        });
+      }
+      throw error;
+    }
     const timeout = config.timeout || 30000;
     const runtimeProxyOverride = config.runtimeProxyOverride?.trim() || undefined;
-    if (!apiKey) {
-      throw new HyperbrowserError(
-        "API key is required - either pass it in config or set HYPERBROWSER_API_KEY environment variable"
-      );
-    }
 
-    this.sessions = new SessionsService(apiKey, baseUrl, timeout);
-    this.scrape = new ScrapeService(apiKey, baseUrl, timeout);
-    this.crawl = new CrawlService(apiKey, baseUrl, timeout);
-    this.extract = new ExtractService(apiKey, baseUrl, timeout);
-    this.profiles = new ProfilesService(apiKey, baseUrl, timeout);
-    this.extensions = new ExtensionService(apiKey, baseUrl, timeout);
-    this.web = new WebService(apiKey, baseUrl, timeout);
-    this.team = new TeamService(apiKey, baseUrl, timeout);
-    this.computerAction = new ComputerActionService(apiKey, baseUrl, timeout);
-    this.sandboxes = new SandboxesService(apiKey, baseUrl, timeout, runtimeProxyOverride);
-    this.volumes = new VolumesService(apiKey, baseUrl, timeout);
+    this.sessions = new SessionsService(authManager, baseUrl, timeout);
+    this.scrape = new ScrapeService(authManager, baseUrl, timeout);
+    this.crawl = new CrawlService(authManager, baseUrl, timeout);
+    this.extract = new ExtractService(authManager, baseUrl, timeout);
+    this.profiles = new ProfilesService(authManager, baseUrl, timeout);
+    this.extensions = new ExtensionService(authManager, baseUrl, timeout);
+    this.web = new WebService(authManager, baseUrl, timeout);
+    this.team = new TeamService(authManager, baseUrl, timeout);
+    this.computerAction = new ComputerActionService(authManager, baseUrl, timeout);
+    this.sandboxes = new SandboxesService(authManager, baseUrl, timeout, runtimeProxyOverride);
+    this.volumes = new VolumesService(authManager, baseUrl, timeout);
 
     this.agents = {
-      browserUse: new BrowserUseService(apiKey, baseUrl, timeout),
-      claudeComputerUse: new ClaudeComputerUseService(apiKey, baseUrl, timeout),
-      cua: new CuaService(apiKey, baseUrl, timeout),
-      hyperAgent: new HyperAgentService(apiKey, baseUrl, timeout),
-      geminiComputerUse: new GeminiComputerUseService(apiKey, baseUrl, timeout),
+      browserUse: new BrowserUseService(authManager, baseUrl, timeout),
+      claudeComputerUse: new ClaudeComputerUseService(authManager, baseUrl, timeout),
+      cua: new CuaService(authManager, baseUrl, timeout),
+      hyperAgent: new HyperAgentService(authManager, baseUrl, timeout),
+      geminiComputerUse: new GeminiComputerUseService(authManager, baseUrl, timeout),
     };
   }
 }

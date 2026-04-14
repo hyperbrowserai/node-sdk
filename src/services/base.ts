@@ -1,4 +1,5 @@
-import fetch, { HeadersInit, RequestInit, Response } from "node-fetch";
+import { HeadersInit, RequestInit, Response } from "node-fetch";
+import { ControlAuthError, ControlPlaneAuthManager } from "../control-auth";
 import { HyperbrowserError } from "../client";
 
 const RETRYABLE_STATUS_CODES = new Set([429, 502, 503, 504]);
@@ -27,9 +28,30 @@ const isRetryableNetworkError = (error: unknown): boolean => {
   );
 };
 
+const toHeaderMap = (headers?: HeadersInit): Record<string, string> => {
+  if (!headers) {
+    return {};
+  }
+  if (Array.isArray(headers)) {
+    return Object.fromEntries(headers.map(([key, value]) => [key, String(value)]));
+  }
+  if (typeof (headers as { forEach?: unknown }).forEach === "function") {
+    const values: Record<string, string> = {};
+    (headers as { forEach: (callback: (value: string, key: string) => void) => void }).forEach(
+      (value, key) => {
+        values[key] = value;
+      }
+    );
+    return values;
+  }
+  return Object.fromEntries(
+    Object.entries(headers).map(([key, value]) => [key, value === undefined ? "" : String(value)])
+  );
+};
+
 export class BaseService {
   constructor(
-    protected readonly apiKey: string,
+    protected readonly auth: ControlPlaneAuthManager,
     protected readonly baseUrl: string,
     protected readonly timeout: number = 30000
   ) {}
@@ -57,22 +79,21 @@ export class BaseService {
         });
       }
 
-      const headerKeys = Object.keys(init?.headers || {});
-      const contentTypeKey = headerKeys.find(
-        (key) => key.toLowerCase() === "content-type"
-      ) as keyof HeadersInit;
-
-      const response = await fetch(url.toString(), {
-        ...init,
-        timeout: this.timeout,
-        headers: {
-          "x-api-key": this.apiKey,
-          ...(contentTypeKey && init?.headers
-            ? { "content-type": init.headers[contentTypeKey] as string }
-            : { "content-type": "application/json" }),
-          ...init?.headers,
+      const requestHeaders = toHeaderMap(init?.headers);
+      const response = await this.auth.fetch(
+        url.toString(),
+        {
+          ...init,
+          headers: {
+            "content-type":
+              requestHeaders["content-type"] ||
+              requestHeaders["Content-Type"] ||
+              "application/json",
+            ...requestHeaders,
+          },
         },
-      });
+        this.timeout
+      );
 
       if (!response.ok) {
         let errorMessage: string;
@@ -114,6 +135,16 @@ export class BaseService {
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
+      }
+      if (error instanceof ControlAuthError) {
+        throw new HyperbrowserError(error.message, {
+          statusCode: error.statusCode,
+          code: error.code,
+          retryable: error.retryable,
+          service: "control",
+          details: error.details,
+          cause: error.cause ?? error,
+        });
       }
 
       throw new HyperbrowserError(

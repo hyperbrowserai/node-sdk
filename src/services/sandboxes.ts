@@ -1,4 +1,5 @@
 import { HyperbrowserError } from "../client";
+import { ControlPlaneAuthManager } from "../control-auth";
 import { SandboxFilesApi } from "../sandbox/files";
 import { RuntimeConnection, RuntimeTransport } from "../sandbox/base";
 import { runtimeSessionIdFromPath } from "../sandbox/runtime-path";
@@ -443,8 +444,13 @@ export class SandboxesService extends BaseService {
   public readonly runtimeTimeout: number;
   public readonly runtimeProxyOverride?: string;
 
-  constructor(apiKey: string, baseUrl: string, timeout: number, runtimeProxyOverride?: string) {
-    super(apiKey, baseUrl, timeout);
+  constructor(
+    auth: ControlPlaneAuthManager,
+    baseUrl: string,
+    timeout: number,
+    runtimeProxyOverride?: string
+  ) {
+    super(auth, baseUrl, timeout);
     this.runtimeTimeout = timeout;
     this.runtimeProxyOverride = runtimeProxyOverride;
   }
