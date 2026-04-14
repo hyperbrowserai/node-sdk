@@ -29,8 +29,8 @@ const wireSandboxDetail = (overrides: Record<string, unknown> = {}): Record<stri
   diskSizeMiB: 8192,
   runtime: {
     transport: "regional_proxy",
-    host: "runtime.example.com",
-    baseUrl: "https://runtime.example.com",
+    host: "https://runtime.example.com",
+    baseUrl: "https://runtime.example.com/sandbox/sbx_123",
   },
   exposedPorts: [],
   token: "runtime-token",
@@ -50,8 +50,8 @@ describe("sandbox control and runtime contract", () => {
         {
           port: 3000,
           auth: true,
-          url: "https://3000-runtime.example.com/",
-          browserUrl: "https://3000-runtime.example.com/_hb/auth?grant=token&next=%2F",
+          url: "https://3000-sbx_123.runtime.example.com/",
+          browserUrl: "https://3000-sbx_123.runtime.example.com/_hb/auth?grant=token&next=%2F",
           browserUrlExpiresAt: "2026-03-12T13:00:00Z",
         },
       ],
@@ -99,7 +99,7 @@ describe("sandbox control and runtime contract", () => {
       memoryMiB: 2048,
       diskMiB: 8192,
     });
-    expect(sandbox.getExposedUrl(3000)).toBe("https://3000-runtime.example.com/");
+    expect(sandbox.getExposedUrl(3000)).toBe("https://3000-sbx_123.runtime.example.com/");
   });
 
   test("create forwards mounts for snapshot launches", async () => {
@@ -141,8 +141,8 @@ describe("sandbox control and runtime contract", () => {
       .mockResolvedValueOnce({
         port: 3000,
         auth: true,
-        url: "https://3000-runtime.example.com/",
-        browserUrl: "https://3000-runtime.example.com/_hb/auth?grant=token&next=%2F",
+        url: "https://3000-sbx_123.runtime.example.com/",
+        browserUrl: "https://3000-sbx_123.runtime.example.com/_hb/auth?grant=token&next=%2F",
         browserUrlExpiresAt: "2026-03-12T13:00:00Z",
       })
       .mockResolvedValueOnce({
@@ -199,8 +199,8 @@ describe("sandbox control and runtime contract", () => {
           diskSizeMiB: 8192,
           runtime: {
             transport: "regional_proxy",
-            host: "runtime.example.com",
-            baseUrl: "https://runtime.example.com",
+            host: "https://runtime.example.com",
+            baseUrl: "https://runtime.example.com/sandbox/sbx_123",
           },
           exposedPorts: [],
         },
@@ -236,7 +236,7 @@ describe("sandbox control and runtime contract", () => {
     });
     const files = new SandboxFilesApi({ requestJSON } as any, async () => ({
       sandboxId: "sbx_123",
-      baseUrl: "https://runtime.example.com",
+      baseUrl: "https://runtime.example.com/sandbox/sbx_123",
       token: "runtime-token",
     }));
 
@@ -285,7 +285,7 @@ describe("sandbox control and runtime contract", () => {
       {} as any,
       async () => ({
         sandboxId: "sbx_123",
-        baseUrl: "https://runtime.example.com",
+        baseUrl: "https://runtime.example.com/sandbox/sbx_123",
         token: "runtime-token",
       }),
       {
@@ -302,7 +302,7 @@ describe("sandbox control and runtime contract", () => {
     await terminal.attach(10);
 
     expect(toWebSocketUrlSpy).toHaveBeenCalledWith(
-      "https://runtime.example.com",
+      "https://runtime.example.com/sandbox/sbx_123",
       "/sandbox/pty/pty_123/ws?sessionId=sbx_123&cursor=10",
       undefined
     );

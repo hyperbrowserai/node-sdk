@@ -1,6 +1,7 @@
 import type { IncomingMessage } from "http";
 import WebSocket from "ws";
 import { HyperbrowserError } from "../client";
+import { runtimeBaseUrlSessionId } from "./runtime-path";
 
 export class AsyncEventQueue<T> implements AsyncIterable<T> {
   private readonly values: T[] = [];
@@ -90,12 +91,56 @@ const RETRYABLE_NETWORK_CODES = new Set([
 
 const hasScheme = (value: string): boolean => /^[a-z][a-z0-9+.-]*:\/\//i.test(value);
 
+const shouldPrependSandboxToRuntimeAPI = (runtimeBaseUrl: string): boolean => {
+  return runtimeBaseUrlSessionId(runtimeBaseUrl) === null;
+};
+
+const normalizeRuntimeAPIPath = (pathname: string, prependSandbox: boolean): string => {
+  const trimmed = pathname.trim();
+  if (!trimmed) {
+    return prependSandbox ? "/sandbox" : "/";
+  }
+
+  const absolute = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  if (prependSandbox) {
+    if (absolute === "/sandbox" || absolute.startsWith("/sandbox/")) {
+      return absolute;
+    }
+    return `/sandbox${absolute}`;
+  }
+
+  if (absolute === "/sandbox") {
+    return "/";
+  }
+  if (absolute.startsWith("/sandbox/")) {
+    return `/${absolute.slice("/sandbox/".length)}`;
+  }
+  return absolute;
+};
+
+const normalizeRuntimeRelativePath = (baseUrl: string, path: string): string => {
+  const trimmed = path.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  const parsedPath = new URL(trimmed, "http://runtime.local");
+  const prependSandbox = shouldPrependSandboxToRuntimeAPI(baseUrl);
+  const normalizedPath = normalizeRuntimeAPIPath(parsedPath.pathname, prependSandbox);
+
+  const relativePath = normalizedPath.replace(/^\/+/, "");
+  return `${relativePath}${parsedPath.search}${parsedPath.hash}`;
+};
+
 export const resolveRuntimeTransportTarget = (
   baseUrl: string,
   path: string,
   runtimeProxyOverride?: string
 ): RuntimeTransportTarget => {
-  const url = new URL(path, baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`);
+  const url = new URL(
+    normalizeRuntimeRelativePath(baseUrl, path),
+    baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`
+  );
 
   if (!runtimeProxyOverride) {
     return {

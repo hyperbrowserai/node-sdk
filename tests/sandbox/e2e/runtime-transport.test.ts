@@ -28,6 +28,17 @@ describe("sandbox runtime transport target", () => {
     });
   });
 
+  test("prepends /sandbox for session-host runtimes when callers pass relative runtime paths", () => {
+    const target = resolveRuntimeTransportTarget(
+      "https://session.example.dev:8443",
+      "/exec?foo=bar"
+    );
+
+    expect(target).toEqual({
+      url: "https://session.example.dev:8443/sandbox/exec?foo=bar",
+    });
+  });
+
   test("applies an explicit runtime proxy override and preserves the original host header", () => {
     const target = resolveRuntimeTransportTarget(
       "https://session.example.dev:8443",
@@ -51,6 +62,41 @@ describe("sandbox runtime transport target", () => {
     expect(target).toEqual({
       url: "ws://127.0.0.1:8090/sandbox/pty/pty_123/ws?sessionId=sandbox_123",
       hostHeader: "session.example.dev:8443",
+    });
+  });
+
+  test("preserves runtime base path prefixes", () => {
+    const target = resolveRuntimeTransportTarget(
+      "https://region.example.dev/sandbox/sbx_123",
+      "/sandbox/exec?foo=bar"
+    );
+
+    expect(target).toEqual({
+      url: "https://region.example.dev/sandbox/sbx_123/exec?foo=bar",
+    });
+  });
+
+  test("does not double-prefix /sandbox for region-path runtimes when callers pass relative runtime paths", () => {
+    const target = resolveRuntimeTransportTarget(
+      "https://region.example.dev/sandbox/sbx_123",
+      "/exec?foo=bar"
+    );
+
+    expect(target).toEqual({
+      url: "https://region.example.dev/sandbox/sbx_123/exec?foo=bar",
+    });
+  });
+
+  test("preserves runtime base path prefixes for websocket targets with overrides", () => {
+    const target = toWebSocketUrl(
+      "https://region.example.dev/sandbox/sbx_123",
+      "/sandbox/pty/pty_123/ws?sessionId=sandbox_123",
+      "http://127.0.0.1:8090"
+    );
+
+    expect(target).toEqual({
+      url: "ws://127.0.0.1:8090/sandbox/sbx_123/pty/pty_123/ws?sessionId=sandbox_123",
+      hostHeader: "region.example.dev",
     });
   });
 });
