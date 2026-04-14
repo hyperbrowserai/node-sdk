@@ -1,6 +1,7 @@
 import type { IncomingMessage } from "http";
 import WebSocket from "ws";
 import { HyperbrowserError } from "../client";
+import { runtimeBaseUrlSessionId } from "./runtime-path";
 
 export class AsyncEventQueue<T> implements AsyncIterable<T> {
   private readonly values: T[] = [];
@@ -89,18 +90,6 @@ const RETRYABLE_NETWORK_CODES = new Set([
 ]);
 
 const hasScheme = (value: string): boolean => /^[a-z][a-z0-9+.-]*:\/\//i.test(value);
-
-const runtimeBaseUrlSessionId = (runtimeBaseUrl: string): string | null => {
-  const segments = new URL(runtimeBaseUrl).pathname
-    .trim()
-    .replace(/^\/+|\/+$/g, "")
-    .split("/")
-    .filter(Boolean);
-  if (segments.length < 2 || segments[0] !== "sandbox" || !segments[1]) {
-    return null;
-  }
-  return segments[1];
-};
 
 const shouldPrependSandboxToRuntimeAPI = (
   runtimeBaseUrl: string,

@@ -1,6 +1,7 @@
 import { HyperbrowserError } from "../client";
 import { SandboxFilesApi } from "../sandbox/files";
 import { RuntimeConnection, RuntimeTransport } from "../sandbox/base";
+import { runtimeSessionIdFromPath } from "../sandbox/runtime-path";
 import { SandboxProcessHandle, SandboxProcessesApi } from "../sandbox/process";
 import { SandboxTerminalApi } from "../sandbox/terminal";
 import { BasicResponse } from "../types/session";
@@ -133,18 +134,6 @@ type SandboxRuntimeState = {
   token: string;
   tokenExpiresAt: string | null;
   runtime: SandboxDetail["runtime"];
-};
-
-const runtimeSessionIdFromPath = (rawPath: string): string | null => {
-  const segments = rawPath
-    .trim()
-    .replace(/^\/+|\/+$/g, "")
-    .split("/")
-    .filter(Boolean);
-  if (segments.length < 2 || segments[0] !== "sandbox" || !segments[1]) {
-    return null;
-  }
-  return segments[1];
 };
 
 const resolveSandboxRuntimeSessionHost = (
