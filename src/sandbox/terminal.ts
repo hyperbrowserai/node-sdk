@@ -278,8 +278,7 @@ export class SandboxTerminalHandle {
     const target = toWebSocketUrl(
       connectionInfo.baseUrl,
       `/sandbox/pty/${this.id}/ws?${query.toString()}`,
-      this.runtimeProxyOverride,
-      connectionInfo.sandboxId
+      this.runtimeProxyOverride
     );
 
     const headers: Record<string, string> = {

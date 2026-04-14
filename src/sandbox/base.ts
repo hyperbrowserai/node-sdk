@@ -202,8 +202,7 @@ export class RuntimeTransport {
     const target = resolveRuntimeTransportTarget(
       connection.baseUrl,
       this.buildRequestPath(path, params),
-      this.runtimeProxyOverride,
-      connection.sandboxId
+      this.runtimeProxyOverride
     );
     const headers = this.buildHeaders(connection, init?.headers, target.hostHeader);
     const controller = new AbortController();

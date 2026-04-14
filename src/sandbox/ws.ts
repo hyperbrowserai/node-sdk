@@ -91,19 +91,8 @@ const RETRYABLE_NETWORK_CODES = new Set([
 
 const hasScheme = (value: string): boolean => /^[a-z][a-z0-9+.-]*:\/\//i.test(value);
 
-const shouldPrependSandboxToRuntimeAPI = (
-  runtimeBaseUrl: string,
-  sandboxId?: string
-): boolean => {
-  const pathSessionId = runtimeBaseUrlSessionId(runtimeBaseUrl);
-  if (!pathSessionId) {
-    return true;
-  }
-  if (sandboxId?.trim() && sandboxId.trim() !== pathSessionId) {
-    // Base URL shape is authoritative even if local metadata is stale.
-    return false;
-  }
-  return false;
+const shouldPrependSandboxToRuntimeAPI = (runtimeBaseUrl: string): boolean => {
+  return runtimeBaseUrlSessionId(runtimeBaseUrl) === null;
 };
 
 const normalizeRuntimeAPIPath = (pathname: string, prependSandbox: boolean): string => {
@@ -129,18 +118,14 @@ const normalizeRuntimeAPIPath = (pathname: string, prependSandbox: boolean): str
   return absolute;
 };
 
-const normalizeRuntimeRelativePath = (
-  baseUrl: string,
-  path: string,
-  sandboxId?: string
-): string => {
+const normalizeRuntimeRelativePath = (baseUrl: string, path: string): string => {
   const trimmed = path.trim();
   if (!trimmed) {
     return "";
   }
 
   const parsedPath = new URL(trimmed, "http://runtime.local");
-  const prependSandbox = shouldPrependSandboxToRuntimeAPI(baseUrl, sandboxId);
+  const prependSandbox = shouldPrependSandboxToRuntimeAPI(baseUrl);
   const normalizedPath = normalizeRuntimeAPIPath(parsedPath.pathname, prependSandbox);
 
   const relativePath = normalizedPath.replace(/^\/+/, "");
@@ -150,11 +135,10 @@ const normalizeRuntimeRelativePath = (
 export const resolveRuntimeTransportTarget = (
   baseUrl: string,
   path: string,
-  runtimeProxyOverride?: string,
-  sandboxId?: string
+  runtimeProxyOverride?: string
 ): RuntimeTransportTarget => {
   const url = new URL(
-    normalizeRuntimeRelativePath(baseUrl, path, sandboxId),
+    normalizeRuntimeRelativePath(baseUrl, path),
     baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`
   );
 
@@ -185,10 +169,9 @@ export const resolveRuntimeTransportTarget = (
 export const toWebSocketUrl = (
   baseUrl: string,
   path: string,
-  runtimeProxyOverride?: string,
-  sandboxId?: string
+  runtimeProxyOverride?: string
 ): RuntimeTransportTarget => {
-  const target = resolveRuntimeTransportTarget(baseUrl, path, runtimeProxyOverride, sandboxId);
+  const target = resolveRuntimeTransportTarget(baseUrl, path, runtimeProxyOverride);
   const url = new URL(target.url);
   if (url.protocol === "https:") {
     url.protocol = "wss:";

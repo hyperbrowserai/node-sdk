@@ -304,8 +304,7 @@ describe("sandbox control and runtime contract", () => {
     expect(toWebSocketUrlSpy).toHaveBeenCalledWith(
       "https://runtime.example.com/sandbox/sbx_123",
       "/sandbox/pty/pty_123/ws?sessionId=sbx_123&cursor=10",
-      undefined,
-      "sbx_123"
+      undefined
     );
   });
 });
