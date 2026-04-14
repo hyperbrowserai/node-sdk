@@ -29,7 +29,7 @@ const wireSandboxDetail = (overrides: Record<string, unknown> = {}): Record<stri
   diskSizeMiB: 8192,
   runtime: {
     transport: "regional_proxy",
-    host: "https://runtime.example.com/sandbox/sbx_123",
+    host: "https://runtime.example.com",
     baseUrl: "https://runtime.example.com/sandbox/sbx_123",
   },
   exposedPorts: [],
@@ -199,7 +199,7 @@ describe("sandbox control and runtime contract", () => {
           diskSizeMiB: 8192,
           runtime: {
             transport: "regional_proxy",
-            host: "https://runtime.example.com/sandbox/sbx_123",
+            host: "https://runtime.example.com",
             baseUrl: "https://runtime.example.com/sandbox/sbx_123",
           },
           exposedPorts: [],
@@ -304,7 +304,8 @@ describe("sandbox control and runtime contract", () => {
     expect(toWebSocketUrlSpy).toHaveBeenCalledWith(
       "https://runtime.example.com/sandbox/sbx_123",
       "/sandbox/pty/pty_123/ws?sessionId=sbx_123&cursor=10",
-      undefined
+      undefined,
+      "sbx_123"
     );
   });
 });

@@ -27,7 +27,7 @@ describe("sandbox control list contract", () => {
           proxyBytesUsed: 3,
           runtime: {
             transport: "regional_proxy" as const,
-            host: "https://runtime.example.com/sandbox/sbx_123",
+            host: "https://runtime.example.com",
             baseUrl: "https://runtime.example.com/sandbox/sbx_123",
           },
           exposedPorts: [

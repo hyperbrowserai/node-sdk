@@ -277,7 +277,8 @@ class RuntimeFileWatchHandle {
       `/sandbox/files/watch/${this.status.id}/ws?sessionId=${encodeURIComponent(
         connectionInfo.sandboxId
       )}${cursor !== undefined ? `&cursor=${encodeURIComponent(String(cursor))}` : ""}`,
-      this.runtimeProxyOverride
+      this.runtimeProxyOverride,
+      connectionInfo.sandboxId
     );
 
     const headers: Record<string, string> = {

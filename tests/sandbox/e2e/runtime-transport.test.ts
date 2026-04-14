@@ -28,6 +28,17 @@ describe("sandbox runtime transport target", () => {
     });
   });
 
+  test("prepends /sandbox for session-host runtimes when callers pass relative runtime paths", () => {
+    const target = resolveRuntimeTransportTarget(
+      "https://session.example.dev:8443",
+      "/exec?foo=bar"
+    );
+
+    expect(target).toEqual({
+      url: "https://session.example.dev:8443/sandbox/exec?foo=bar",
+    });
+  });
+
   test("applies an explicit runtime proxy override and preserves the original host header", () => {
     const target = resolveRuntimeTransportTarget(
       "https://session.example.dev:8443",
@@ -58,6 +69,17 @@ describe("sandbox runtime transport target", () => {
     const target = resolveRuntimeTransportTarget(
       "https://region.example.dev/sandbox/sbx_123",
       "/sandbox/exec?foo=bar"
+    );
+
+    expect(target).toEqual({
+      url: "https://region.example.dev/sandbox/sbx_123/exec?foo=bar",
+    });
+  });
+
+  test("does not double-prefix /sandbox for region-path runtimes when callers pass relative runtime paths", () => {
+    const target = resolveRuntimeTransportTarget(
+      "https://region.example.dev/sandbox/sbx_123",
+      "/exec?foo=bar"
     );
 
     expect(target).toEqual({

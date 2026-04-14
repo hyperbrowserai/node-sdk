@@ -90,42 +90,69 @@ const RETRYABLE_NETWORK_CODES = new Set([
 
 const hasScheme = (value: string): boolean => /^[a-z][a-z0-9+.-]*:\/\//i.test(value);
 
-const hasSessionScopedRuntimeBasePath = (pathname: string): boolean => {
-  const segments = pathname
+const runtimeBaseUrlSessionId = (runtimeBaseUrl: string): string | null => {
+  const segments = new URL(runtimeBaseUrl).pathname
     .trim()
     .replace(/^\/+|\/+$/g, "")
     .split("/")
     .filter(Boolean);
-  return segments.length >= 2 && segments[0] === "sandbox" && Boolean(segments[1]);
+  if (segments.length < 2 || segments[0] !== "sandbox" || !segments[1]) {
+    return null;
+  }
+  return segments[1];
 };
 
-const stripRuntimeSandboxPrefix = (pathname: string): string => {
-  if (pathname.startsWith("/sandbox/")) {
-    return `/${pathname.slice("/sandbox/".length)}`;
+const shouldPrependSandboxToRuntimeAPI = (
+  runtimeBaseUrl: string,
+  sandboxId?: string
+): boolean => {
+  const pathSessionId = runtimeBaseUrlSessionId(runtimeBaseUrl);
+  if (!pathSessionId) {
+    return true;
   }
-  if (pathname === "/sandbox") {
+  if (sandboxId?.trim() && sandboxId.trim() !== pathSessionId) {
+    // Base URL shape is authoritative even if local metadata is stale.
+    return false;
+  }
+  return false;
+};
+
+const normalizeRuntimeAPIPath = (pathname: string, prependSandbox: boolean): string => {
+  const trimmed = pathname.trim();
+  if (!trimmed) {
+    return prependSandbox ? "/sandbox" : "/";
+  }
+
+  const absolute = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  if (prependSandbox) {
+    if (absolute === "/sandbox" || absolute.startsWith("/sandbox/")) {
+      return absolute;
+    }
+    return `/sandbox${absolute}`;
+  }
+
+  if (absolute === "/sandbox") {
     return "/";
   }
-  if (pathname.startsWith("sandbox/")) {
-    return pathname.slice("sandbox/".length);
+  if (absolute.startsWith("/sandbox/")) {
+    return `/${absolute.slice("/sandbox/".length)}`;
   }
-  if (pathname === "sandbox") {
-    return "";
-  }
-  return pathname;
+  return absolute;
 };
 
-const normalizeRuntimeRelativePath = (baseUrl: string, path: string): string => {
+const normalizeRuntimeRelativePath = (
+  baseUrl: string,
+  path: string,
+  sandboxId?: string
+): string => {
   const trimmed = path.trim();
   if (!trimmed) {
     return "";
   }
 
   const parsedPath = new URL(trimmed, "http://runtime.local");
-  let normalizedPath = parsedPath.pathname;
-  if (hasSessionScopedRuntimeBasePath(new URL(baseUrl).pathname)) {
-    normalizedPath = stripRuntimeSandboxPrefix(normalizedPath);
-  }
+  const prependSandbox = shouldPrependSandboxToRuntimeAPI(baseUrl, sandboxId);
+  const normalizedPath = normalizeRuntimeAPIPath(parsedPath.pathname, prependSandbox);
 
   const relativePath = normalizedPath.replace(/^\/+/, "");
   return `${relativePath}${parsedPath.search}${parsedPath.hash}`;
@@ -134,10 +161,11 @@ const normalizeRuntimeRelativePath = (baseUrl: string, path: string): string => 
 export const resolveRuntimeTransportTarget = (
   baseUrl: string,
   path: string,
-  runtimeProxyOverride?: string
+  runtimeProxyOverride?: string,
+  sandboxId?: string
 ): RuntimeTransportTarget => {
   const url = new URL(
-    normalizeRuntimeRelativePath(baseUrl, path),
+    normalizeRuntimeRelativePath(baseUrl, path, sandboxId),
     baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`
   );
 
@@ -168,9 +196,10 @@ export const resolveRuntimeTransportTarget = (
 export const toWebSocketUrl = (
   baseUrl: string,
   path: string,
-  runtimeProxyOverride?: string
+  runtimeProxyOverride?: string,
+  sandboxId?: string
 ): RuntimeTransportTarget => {
-  const target = resolveRuntimeTransportTarget(baseUrl, path, runtimeProxyOverride);
+  const target = resolveRuntimeTransportTarget(baseUrl, path, runtimeProxyOverride, sandboxId);
   const url = new URL(target.url);
   if (url.protocol === "https:") {
     url.protocol = "wss:";
