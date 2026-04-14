@@ -61,7 +61,7 @@ describe("sandbox runtime transport target", () => {
     );
 
     expect(target).toEqual({
-      url: "https://region.example.dev/sandbox/sbx_123/sandbox/exec?foo=bar",
+      url: "https://region.example.dev/sandbox/sbx_123/exec?foo=bar",
     });
   });
 
@@ -73,7 +73,7 @@ describe("sandbox runtime transport target", () => {
     );
 
     expect(target).toEqual({
-      url: "ws://127.0.0.1:8090/sandbox/sbx_123/sandbox/pty/pty_123/ws?sessionId=sandbox_123",
+      url: "ws://127.0.0.1:8090/sandbox/sbx_123/pty/pty_123/ws?sessionId=sandbox_123",
       hostHeader: "region.example.dev",
     });
   });

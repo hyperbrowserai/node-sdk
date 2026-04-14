@@ -90,12 +90,45 @@ const RETRYABLE_NETWORK_CODES = new Set([
 
 const hasScheme = (value: string): boolean => /^[a-z][a-z0-9+.-]*:\/\//i.test(value);
 
-const normalizeRuntimeRelativePath = (path: string): string => {
+const hasSessionScopedRuntimeBasePath = (pathname: string): boolean => {
+  const segments = pathname
+    .trim()
+    .replace(/^\/+|\/+$/g, "")
+    .split("/")
+    .filter(Boolean);
+  return segments.length >= 2 && segments[0] === "sandbox" && Boolean(segments[1]);
+};
+
+const stripRuntimeSandboxPrefix = (pathname: string): string => {
+  if (pathname.startsWith("/sandbox/")) {
+    return `/${pathname.slice("/sandbox/".length)}`;
+  }
+  if (pathname === "/sandbox") {
+    return "/";
+  }
+  if (pathname.startsWith("sandbox/")) {
+    return pathname.slice("sandbox/".length);
+  }
+  if (pathname === "sandbox") {
+    return "";
+  }
+  return pathname;
+};
+
+const normalizeRuntimeRelativePath = (baseUrl: string, path: string): string => {
   const trimmed = path.trim();
   if (!trimmed) {
     return "";
   }
-  return trimmed.replace(/^\/+/, "");
+
+  const parsedPath = new URL(trimmed, "http://runtime.local");
+  let normalizedPath = parsedPath.pathname;
+  if (hasSessionScopedRuntimeBasePath(new URL(baseUrl).pathname)) {
+    normalizedPath = stripRuntimeSandboxPrefix(normalizedPath);
+  }
+
+  const relativePath = normalizedPath.replace(/^\/+/, "");
+  return `${relativePath}${parsedPath.search}${parsedPath.hash}`;
 };
 
 export const resolveRuntimeTransportTarget = (
@@ -104,7 +137,7 @@ export const resolveRuntimeTransportTarget = (
   runtimeProxyOverride?: string
 ): RuntimeTransportTarget => {
   const url = new URL(
-    normalizeRuntimeRelativePath(path),
+    normalizeRuntimeRelativePath(baseUrl, path),
     baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`
   );
 
