@@ -1,5 +1,5 @@
 import { HeadersInit, RequestInit, Response } from "node-fetch";
-import { ControlAuthError, ControlPlaneAuthManager } from "../control-auth";
+import { ControlAuthError, ControlPlaneAuthManager, RequestInitFactory } from "../control-auth";
 import { HyperbrowserError } from "../client";
 
 const RETRYABLE_STATUS_CODES = new Set([429, 502, 503, 504]);
@@ -49,6 +49,18 @@ const toHeaderMap = (headers?: HeadersInit): Record<string, string> => {
   );
 };
 
+const normalizeRequestInit = (init?: RequestInit): RequestInit => {
+  const requestHeaders = toHeaderMap(init?.headers);
+  return {
+    ...init,
+    headers: {
+      "content-type":
+        requestHeaders["content-type"] || requestHeaders["Content-Type"] || "application/json",
+      ...requestHeaders,
+    },
+  };
+};
+
 export class BaseService {
   constructor(
     protected readonly auth: ControlPlaneAuthManager,
@@ -58,7 +70,7 @@ export class BaseService {
 
   protected async request<T>(
     path: string,
-    init?: RequestInit,
+    init?: RequestInit | RequestInitFactory,
     params?: Record<string, string | number | string[] | undefined>,
     fullUrl: boolean = false
   ): Promise<T> {
@@ -79,21 +91,11 @@ export class BaseService {
         });
       }
 
-      const requestHeaders = toHeaderMap(init?.headers);
-      const response = await this.auth.fetch(
-        url.toString(),
-        {
-          ...init,
-          headers: {
-            "content-type":
-              requestHeaders["content-type"] ||
-              requestHeaders["Content-Type"] ||
-              "application/json",
-            ...requestHeaders,
-          },
-        },
-        this.timeout
-      );
+      const requestInit =
+        typeof init === "function"
+          ? async () => normalizeRequestInit(await init())
+          : normalizeRequestInit(init);
+      const response = await this.auth.fetch(url.toString(), requestInit, this.timeout);
 
       if (!response.ok) {
         let errorMessage: string;

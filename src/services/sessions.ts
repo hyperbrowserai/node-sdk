@@ -208,7 +208,7 @@ export class SessionsService extends BaseService {
     const { fileInput, fileName } = fileOptions;
 
     try {
-      let fetchOptions: RequestInit;
+      let fetchOptions: RequestInit | (() => Promise<RequestInit> | RequestInit);
 
       if (typeof fileInput === "string") {
         let stats: Stats;
@@ -234,38 +234,29 @@ export class SessionsService extends BaseService {
           throw new HyperbrowserError(`Path is not a file: ${fileInput}`, undefined);
         }
 
-        const formData = new FormData();
-        const fileStream = createReadStream(fileInput);
         const fileBaseName = fileName || path.basename(fileInput);
-
-        fileStream.on("error", (error) => {
-          throw new HyperbrowserError(
-            `Failed to read file ${fileInput}: ${error.message}`,
-            undefined
-          );
-        });
-
-        formData.append("file", fileStream, {
-          filename: fileBaseName,
-        });
-
-        fetchOptions = {
-          method: "POST",
-          body: formData,
-          headers: formData.getHeaders(),
+        fetchOptions = () => {
+          const formData = new FormData();
+          formData.append("file", createReadStream(fileInput), {
+            filename: fileBaseName,
+          });
+          return {
+            method: "POST",
+            body: formData,
+            headers: formData.getHeaders(),
+          };
         };
       } else if (this.isReadableStream(fileInput)) {
-        const formData = new FormData();
-
-        let tmpFileName = fileName || `file-${Date.now()}`;
-        if (fileInput.path && typeof fileInput.path === "string" && !fileName) {
-          tmpFileName = path.basename(fileInput.path);
+        const streamPath = typeof fileInput.path === "string" ? fileInput.path : "";
+        let streamFileName = fileName || `file-${Date.now()}`;
+        if (streamPath && !fileName) {
+          streamFileName = path.basename(streamPath);
         }
 
+        const formData = new FormData();
         formData.append("file", fileInput, {
-          filename: tmpFileName,
+          filename: streamFileName,
         });
-
         fetchOptions = {
           method: "POST",
           body: formData,
@@ -276,15 +267,16 @@ export class SessionsService extends BaseService {
           throw new HyperbrowserError("fileName is required when uploading Buffer data", undefined);
         }
 
-        const formData = new FormData();
-        formData.append("file", fileInput, {
-          filename: fileName,
-        });
-
-        fetchOptions = {
-          method: "POST",
-          body: formData,
-          headers: formData.getHeaders(),
+        fetchOptions = () => {
+          const formData = new FormData();
+          formData.append("file", fileInput, {
+            filename: fileName,
+          });
+          return {
+            method: "POST",
+            body: formData,
+            headers: formData.getHeaders(),
+          };
         };
       } else {
         throw new HyperbrowserError(

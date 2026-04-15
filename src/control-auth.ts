@@ -82,6 +82,8 @@ type AuthorizedHeaders = {
   accessToken?: string;
 };
 
+export type RequestInitFactory = () => RequestInit | Promise<RequestInit>;
+
 export function resolveControlPlaneConfig(
   config: HyperbrowserConfig = {}
 ): ResolvedControlPlaneConfig {
@@ -159,9 +161,17 @@ export class ControlPlaneAuthManager {
     return this.mode.kind === "oauth";
   }
 
-  async fetch(url: string, init: RequestInit = {}, timeout: number): Promise<Response> {
+  async fetch(
+    url: string,
+    init: RequestInit | RequestInitFactory = {},
+    timeout: number
+  ): Promise<Response> {
     const firstAttempt = await this.execute(url, init, timeout, false);
     if (firstAttempt.response.status !== 401 || firstAttempt.accessToken === undefined) {
+      return firstAttempt.response;
+    }
+
+    if (!this.canReplayRequest(init, firstAttempt.init)) {
       return firstAttempt.response;
     }
 
@@ -172,23 +182,35 @@ export class ControlPlaneAuthManager {
 
   private async execute(
     url: string,
-    init: RequestInit,
+    init: RequestInit | RequestInitFactory,
     timeout: number,
     forceRefresh: boolean,
     rejectedAccessToken?: string
-  ): Promise<{ response: Response; accessToken?: string }> {
+  ): Promise<{ response: Response; accessToken?: string; init: RequestInit }> {
+    const requestInit = await resolveRequestInit(init);
     const authorization = await this.getAuthorizedHeaders(forceRefresh, rejectedAccessToken);
     return {
       response: await fetch(url, {
-        ...init,
+        ...requestInit,
         timeout,
         headers: {
-          ...(init.headers as Record<string, string> | undefined),
+          ...(requestInit.headers as Record<string, string> | undefined),
           ...authorization.headers,
         },
       }),
       accessToken: authorization.accessToken,
+      init: requestInit,
     };
+  }
+
+  private canReplayRequest(
+    init: RequestInit | RequestInitFactory,
+    resolvedInit: RequestInit
+  ): boolean {
+    if (typeof init === "function") {
+      return true;
+    }
+    return isReplayableBody(resolvedInit.body);
   }
 
   private async getAuthorizedHeaders(
@@ -378,8 +400,9 @@ export class ControlPlaneAuthManager {
     });
     await fs.chmod(path.dirname(this.mode.lockPath), 0o700).catch(() => undefined);
 
+    let handle: Awaited<ReturnType<typeof fs.open>> | undefined;
     try {
-      const handle = await fs.open(this.mode.lockPath, "wx", 0o600);
+      handle = await fs.open(this.mode.lockPath, "wx", 0o600);
       await handle.writeFile(
         `pid=${process.pid}\ncreated_at=${new Date().toISOString()}\n`,
         "utf8"
@@ -389,6 +412,14 @@ export class ControlPlaneAuthManager {
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "EEXIST") {
         return null;
+      }
+      await handle?.close().catch(() => undefined);
+      if (handle) {
+        await fs
+          .rm(this.mode.lockPath, {
+            force: true,
+          })
+          .catch(() => undefined);
       }
       throw new ControlAuthError("Failed to create OAuth rotation lock", {
         code: "auth_rotation_lock_failed",
@@ -677,4 +708,21 @@ function sleep(durationMs: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, durationMs);
   });
+}
+
+async function resolveRequestInit(init: RequestInit | RequestInitFactory): Promise<RequestInit> {
+  return typeof init === "function" ? await init() : init;
+}
+
+function isReplayableBody(body: RequestInit["body"]): boolean {
+  if (body == null) {
+    return true;
+  }
+  if (typeof body === "string" || Buffer.isBuffer(body) || body instanceof URLSearchParams) {
+    return true;
+  }
+  if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) {
+    return true;
+  }
+  return false;
 }
