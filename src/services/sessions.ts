@@ -28,7 +28,7 @@ import { HyperbrowserError } from "../client";
 
 function wrapFileReadErrors(filePath: string, stream: ReadStream): Readable {
   return Readable.from(
-    (async function*() {
+    (async function* () {
       try {
         for await (const chunk of stream) {
           yield chunk;
@@ -261,6 +261,7 @@ export class SessionsService extends BaseService {
           const formData = new FormData();
           formData.append("file", wrapFileReadErrors(fileInput, createReadStream(fileInput)), {
             filename: fileBaseName,
+            knownLength: stats.size,
           });
           return {
             method: "POST",

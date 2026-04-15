@@ -16,6 +16,7 @@ import {
   normalizePositiveInteger,
   normalizeProfile,
   normalizeText,
+  redactSensitiveDetails,
   resolveOAuthSessionPath,
   resolveOAuthTokenUrl,
 } from "./control-auth-helpers";
@@ -26,11 +27,7 @@ import {
   tryReadSessionMtimeMs,
   type LockHandle,
 } from "./control-auth-lock";
-import {
-  isReplayableBody,
-  RequestInitFactory,
-  resolveRequestInit,
-} from "./control-auth-request";
+import { isReplayableBody, RequestInitFactory, resolveRequestInit } from "./control-auth-request";
 import {
   buildRefreshedOAuthSession,
   isRefreshTokenExpired,
@@ -58,28 +55,27 @@ export type { RequestInitFactory };
 export function resolveControlPlaneConfig(
   config: HyperbrowserConfig = {}
 ): ResolvedControlPlaneConfig {
-  const profile = normalizeProfile(config.profile || process.env[ENV_PROFILE] || "default");
   const explicitApiKey = normalizeText(config.apiKey);
   const envApiKey = normalizeText(process.env[ENV_API_KEY]);
   const explicitBaseUrl = normalizeControlPlaneBaseUrl(config.baseUrl);
   const envBaseUrl = normalizeControlPlaneBaseUrl(process.env[ENV_BASE_URL]);
-  const sessionPath = resolveOAuthSessionPath(profile);
-  const session = !explicitApiKey && !envApiKey ? tryLoadOAuthSessionSync(sessionPath) : null;
-  const resolvedBaseUrl =
-    explicitBaseUrl ||
-    envBaseUrl ||
-    normalizeControlPlaneBaseUrl(session?.base_url) ||
-    DEFAULT_BASE_URL;
+  const configuredBaseUrl = explicitBaseUrl || envBaseUrl;
 
   if (explicitApiKey || envApiKey) {
     return {
-      baseUrl: resolvedBaseUrl,
+      baseUrl: configuredBaseUrl || DEFAULT_BASE_URL,
       authManager: new ControlPlaneAuthManager({
         kind: "api_key",
         apiKey: explicitApiKey || envApiKey || "",
       }),
     };
   }
+
+  const profile = normalizeProfile(config.profile || process.env[ENV_PROFILE]);
+  const sessionPath = resolveOAuthSessionPath(profile);
+  const session = tryLoadOAuthSessionSync(sessionPath);
+  const resolvedBaseUrl =
+    configuredBaseUrl || normalizeControlPlaneBaseUrl(session?.base_url) || DEFAULT_BASE_URL;
 
   if (!session) {
     throw new ControlAuthError(
@@ -91,7 +87,7 @@ export function resolveControlPlaneConfig(
     );
   }
 
-  if (normalizeControlPlaneBaseUrl(session.base_url) !== resolvedBaseUrl) {
+  if (configuredBaseUrl && normalizeControlPlaneBaseUrl(session.base_url) !== resolvedBaseUrl) {
     throw new ControlAuthError(
       `Saved OAuth session for profile ${profile} targets ${normalizeControlPlaneBaseUrl(session.base_url)}, not ${resolvedBaseUrl}`,
       {
@@ -317,7 +313,7 @@ export class ControlPlaneAuthManager {
           normalizeText(typeof payload.code === "string" ? payload.code : "") ||
           "oauth_refresh_failed",
         retryable: false,
-        details: payload,
+        details: redactSensitiveDetails(payload),
       });
     }
 

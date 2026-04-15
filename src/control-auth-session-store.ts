@@ -6,6 +6,7 @@ import {
   normalizeControlPlaneBaseUrl,
   normalizeText,
   OAUTH_REFRESH_EARLY_EXPIRY_MS,
+  redactSensitiveDetails,
 } from "./control-auth-helpers";
 import { type OAuthSessionFile } from "./control-auth-types";
 
@@ -102,7 +103,7 @@ export function buildRefreshedOAuthSession(
     throw new ControlAuthError("OAuth refresh response did not include an access token", {
       code: "oauth_refresh_failed",
       retryable: false,
-      details: payload,
+      details: redactSensitiveDetails(payload),
     });
   }
 

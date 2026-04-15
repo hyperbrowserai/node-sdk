@@ -16,6 +16,8 @@ const RETRYABLE_NETWORK_CODES = new Set([
   "ESOCKETTIMEDOUT",
 ]);
 
+const normalizeHeaderKey = (key: string): string => key.toLowerCase();
+
 const getRequestId = (response: Response): string | undefined => {
   return response.headers.get("x-request-id") || response.headers.get("request-id") || undefined;
 };
@@ -38,19 +40,24 @@ const toHeaderMap = (headers?: HeadersInit): Record<string, string> => {
     return {};
   }
   if (Array.isArray(headers)) {
-    return Object.fromEntries(headers.map(([key, value]) => [key, String(value)]));
+    return Object.fromEntries(
+      headers.map(([key, value]) => [normalizeHeaderKey(key), String(value)])
+    );
   }
   if (typeof (headers as { forEach?: unknown }).forEach === "function") {
     const values: Record<string, string> = {};
     (headers as { forEach: (callback: (value: string, key: string) => void) => void }).forEach(
       (value, key) => {
-        values[key] = value;
+        values[normalizeHeaderKey(key)] = value;
       }
     );
     return values;
   }
   return Object.fromEntries(
-    Object.entries(headers).map(([key, value]) => [key, value === undefined ? "" : String(value)])
+    Object.entries(headers).map(([key, value]) => [
+      normalizeHeaderKey(key),
+      value === undefined ? "" : String(value),
+    ])
   );
 };
 
@@ -59,9 +66,8 @@ const normalizeRequestInit = (init?: RequestInit): RequestInit => {
   return {
     ...init,
     headers: {
-      "content-type":
-        requestHeaders["content-type"] || requestHeaders["Content-Type"] || "application/json",
       ...requestHeaders,
+      "content-type": requestHeaders["content-type"] || "application/json",
     },
   };
 };
@@ -71,11 +77,7 @@ export class BaseService {
   protected readonly baseUrl: string;
   protected readonly timeout: number;
 
-  constructor(
-    auth: string | ControlPlaneAuthManager,
-    baseUrl: string,
-    timeout: number = 30000
-  ) {
+  constructor(auth: string | ControlPlaneAuthManager, baseUrl: string, timeout: number = 30000) {
     this.auth =
       typeof auth === "string"
         ? new ControlPlaneAuthManager({

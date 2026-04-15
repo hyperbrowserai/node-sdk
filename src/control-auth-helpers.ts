@@ -1,5 +1,6 @@
 import { homedir } from "os";
 import * as path from "path";
+import { ControlAuthError } from "./control-auth-errors";
 
 export const DEFAULT_PROFILE = "default";
 export const DEFAULT_BASE_URL = "https://api.hyperbrowser.ai";
@@ -14,13 +15,32 @@ export const ENV_LOCK_TIMEOUT_MS = "HYPERBROWSER_AUTH_LOCK_TIMEOUT_MS";
 export const ENV_LOCK_POLL_INTERVAL_MS = "HYPERBROWSER_AUTH_LOCK_POLL_INTERVAL_MS";
 export const ENV_LOCK_STALE_MS = "HYPERBROWSER_AUTH_LOCK_STALE_MS";
 
+const PROFILE_NAME_PATTERN = /^[A-Za-z0-9._-]+$/;
+const REDACTED_VALUE = "[REDACTED]";
+const SENSITIVE_DETAIL_KEYS = new Set(["access_token", "refresh_token"]);
+
 export function resolveOAuthSessionPath(profile: string): string {
   return path.join(homedir(), ".hx_config", "auth", `${profile}.json`);
 }
 
-export function normalizeProfile(value: string): string {
+export function normalizeProfile(value?: string | null): string {
   const normalized = normalizeText(value);
-  return normalized || DEFAULT_PROFILE;
+  if (!normalized) {
+    return DEFAULT_PROFILE;
+  }
+  if (!PROFILE_NAME_PATTERN.test(normalized)) {
+    throw new ControlAuthError(
+      "Profile names may contain only letters, numbers, dots, underscores, and hyphens",
+      {
+        code: "invalid_profile",
+        retryable: false,
+        details: {
+          profile: normalized,
+        },
+      }
+    );
+  }
+  return normalized;
 }
 
 export function normalizeControlPlaneBaseUrl(value?: string | null): string {
@@ -51,4 +71,21 @@ export function normalizePositiveInteger(
 
 export function resolveOAuthTokenUrl(baseUrl: string): string {
   return new URL("/oauth/token", `${baseUrl}/`).toString();
+}
+
+export function redactSensitiveDetails<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => redactSensitiveDetails(item)) as T;
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, nestedValue]) => [
+        key,
+        SENSITIVE_DETAIL_KEYS.has(key) ? REDACTED_VALUE : redactSensitiveDetails(nestedValue),
+      ])
+    ) as T;
+  }
+
+  return value;
 }
