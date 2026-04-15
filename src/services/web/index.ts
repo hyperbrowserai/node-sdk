@@ -14,10 +14,10 @@ export class WebService extends BaseService {
   public readonly batchFetch: BatchFetchService;
   public readonly crawl: WebCrawlService;
 
-  constructor(auth: ControlPlaneAuthManager, baseUrl: string, timeout: number) {
+  constructor(auth: string | ControlPlaneAuthManager, baseUrl: string, timeout: number) {
     super(auth, baseUrl, timeout);
-    this.batchFetch = new BatchFetchService(auth, baseUrl, timeout);
-    this.crawl = new WebCrawlService(auth, baseUrl, timeout);
+    this.batchFetch = new BatchFetchService(this.auth, this.baseUrl, timeout);
+    this.crawl = new WebCrawlService(this.auth, this.baseUrl, timeout);
   }
   /**
    * Fetch a URL and extract content

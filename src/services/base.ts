@@ -1,5 +1,10 @@
 import { HeadersInit, RequestInit, Response } from "node-fetch";
-import { ControlAuthError, ControlPlaneAuthManager, RequestInitFactory } from "../control-auth";
+import {
+  ControlAuthError,
+  ControlPlaneAuthManager,
+  normalizeControlPlaneBaseUrl,
+  RequestInitFactory,
+} from "../control-auth";
 import { HyperbrowserError } from "../client";
 
 const RETRYABLE_STATUS_CODES = new Set([429, 502, 503, 504]);
@@ -62,11 +67,25 @@ const normalizeRequestInit = (init?: RequestInit): RequestInit => {
 };
 
 export class BaseService {
+  protected readonly auth: ControlPlaneAuthManager;
+  protected readonly baseUrl: string;
+  protected readonly timeout: number;
+
   constructor(
-    protected readonly auth: ControlPlaneAuthManager,
-    protected readonly baseUrl: string,
-    protected readonly timeout: number = 30000
-  ) {}
+    auth: string | ControlPlaneAuthManager,
+    baseUrl: string,
+    timeout: number = 30000
+  ) {
+    this.auth =
+      typeof auth === "string"
+        ? new ControlPlaneAuthManager({
+            kind: "api_key",
+            apiKey: auth,
+          })
+        : auth;
+    this.baseUrl = normalizeControlPlaneBaseUrl(baseUrl);
+    this.timeout = timeout;
+  }
 
   protected async request<T>(
     path: string,

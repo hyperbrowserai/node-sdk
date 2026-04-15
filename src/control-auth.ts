@@ -77,6 +77,8 @@ type ControlPlaneAuthMode =
       lockStaleMs: number;
     };
 
+type OAuthControlPlaneAuthMode = Extract<ControlPlaneAuthMode, { kind: "oauth" }>;
+
 type AuthorizedHeaders = {
   headers: Record<string, string>;
   accessToken?: string;
@@ -90,12 +92,15 @@ export function resolveControlPlaneConfig(
   const profile = normalizeProfile(config.profile || process.env[ENV_PROFILE] || DEFAULT_PROFILE);
   const explicitApiKey = normalizeText(config.apiKey);
   const envApiKey = normalizeText(process.env[ENV_API_KEY]);
-  const explicitBaseUrl = normalizeBaseUrl(config.baseUrl);
-  const envBaseUrl = normalizeBaseUrl(process.env[ENV_BASE_URL]);
+  const explicitBaseUrl = normalizeControlPlaneBaseUrl(config.baseUrl);
+  const envBaseUrl = normalizeControlPlaneBaseUrl(process.env[ENV_BASE_URL]);
   const sessionPath = resolveOAuthSessionPath(profile);
   const session = !explicitApiKey && !envApiKey ? tryLoadOAuthSessionSync(sessionPath) : null;
   const resolvedBaseUrl =
-    explicitBaseUrl || envBaseUrl || normalizeBaseUrl(session?.base_url) || DEFAULT_BASE_URL;
+    explicitBaseUrl ||
+    envBaseUrl ||
+    normalizeControlPlaneBaseUrl(session?.base_url) ||
+    DEFAULT_BASE_URL;
 
   if (explicitApiKey || envApiKey) {
     return {
@@ -117,9 +122,9 @@ export function resolveControlPlaneConfig(
     );
   }
 
-  if (normalizeBaseUrl(session.base_url) !== resolvedBaseUrl) {
+  if (normalizeControlPlaneBaseUrl(session.base_url) !== resolvedBaseUrl) {
     throw new ControlAuthError(
-      `Saved OAuth session for profile ${profile} targets ${normalizeBaseUrl(session.base_url)}, not ${resolvedBaseUrl}`,
+      `Saved OAuth session for profile ${profile} targets ${normalizeControlPlaneBaseUrl(session.base_url)}, not ${resolvedBaseUrl}`,
       {
         code: "oauth_base_url_mismatch",
         retryable: false,
@@ -238,24 +243,20 @@ export class ControlPlaneAuthManager {
     forceRefresh: boolean,
     rejectedAccessToken?: string
   ): Promise<string> {
-    if (this.mode.kind !== "oauth") {
-      throw new ControlAuthError("OAuth auth is not configured", {
-        code: "missing_auth",
-        retryable: false,
-      });
-    }
-
+    const oauthMode = this.requireOAuthMode();
     let session = await this.loadOAuthSession();
+    let sessionMtimeMs = await this.tryReadOAuthSessionMtimeMs(oauthMode.sessionPath);
     if (shouldUseOAuthSession(session, forceRefresh, rejectedAccessToken)) {
       return session.access_token.trim();
     }
 
-    const deadline = Date.now() + this.mode.lockTimeoutMs;
+    const deadline = Date.now() + oauthMode.lockTimeoutMs;
     while (true) {
       const lockHandle = await this.tryAcquireRotationLock();
       if (lockHandle) {
         try {
           session = await this.loadOAuthSession();
+          sessionMtimeMs = await this.tryReadOAuthSessionMtimeMs(oauthMode.sessionPath);
           if (shouldUseOAuthSession(session, forceRefresh, rejectedAccessToken)) {
             return session.access_token.trim();
           }
@@ -268,7 +269,7 @@ export class ControlPlaneAuthManager {
           const refreshed = await this.refreshOAuthSession(session);
           return refreshed.access_token.trim();
         } finally {
-          await releaseRotationLock(this.mode.lockPath, lockHandle);
+          await releaseRotationLock(oauthMode.lockPath, lockHandle);
         }
       }
 
@@ -280,7 +281,12 @@ export class ControlPlaneAuthManager {
         });
       }
 
-      await sleep(this.mode.lockPollIntervalMs);
+      await sleep(oauthMode.lockPollIntervalMs);
+      const nextSessionMtimeMs = await this.tryReadOAuthSessionMtimeMs(oauthMode.sessionPath);
+      if (nextSessionMtimeMs === sessionMtimeMs) {
+        continue;
+      }
+      sessionMtimeMs = nextSessionMtimeMs;
       session = await this.loadOAuthSession();
       if (shouldUseOAuthSession(session, true, rejectedAccessToken)) {
         return session.access_token.trim();
@@ -295,16 +301,10 @@ export class ControlPlaneAuthManager {
   }
 
   private async loadOAuthSession(): Promise<OAuthSessionFile> {
-    if (this.mode.kind !== "oauth") {
-      throw new ControlAuthError("OAuth auth is not configured", {
-        code: "missing_auth",
-        retryable: false,
-      });
-    }
-
+    const oauthMode = this.requireOAuthMode();
     let raw: string;
     try {
-      raw = await fs.readFile(this.mode.sessionPath, "utf8");
+      raw = await fs.readFile(oauthMode.sessionPath, "utf8");
     } catch (error) {
       throw new ControlAuthError("Failed to read saved OAuth session", {
         code: "oauth_session_read_failed",
@@ -324,18 +324,12 @@ export class ControlPlaneAuthManager {
       });
     }
 
-    validateOAuthSession(parsed, this.mode.baseUrl);
+    validateOAuthSession(parsed, oauthMode.baseUrl);
     return parsed;
   }
 
   private async refreshOAuthSession(session: OAuthSessionFile): Promise<OAuthSessionFile> {
-    if (this.mode.kind !== "oauth") {
-      throw new ControlAuthError("OAuth auth is not configured", {
-        code: "missing_auth",
-        retryable: false,
-      });
-    }
-
+    const oauthMode = this.requireOAuthMode();
     const body = new URLSearchParams();
     body.set("grant_type", "refresh_token");
     body.set("client_id", normalizeText(session.client_id) || "hyperbrowser-cli");
@@ -343,13 +337,13 @@ export class ControlPlaneAuthManager {
 
     let response: Response;
     try {
-      response = await fetch(`${this.mode.baseUrl}/oauth/token`, {
+      response = await fetch(resolveOAuthTokenUrl(oauthMode.baseUrl), {
         method: "POST",
         headers: {
           "content-type": "application/x-www-form-urlencoded",
         },
         body: body.toString(),
-        timeout: this.mode.lockTimeoutMs,
+        timeout: oauthMode.lockTimeoutMs,
       });
     } catch (error) {
       throw new ControlAuthError("Failed to refresh OAuth session", {
@@ -385,24 +379,21 @@ export class ControlPlaneAuthManager {
     }
 
     const refreshed = buildRefreshedOAuthSession(session, payload);
-    await writeOAuthSessionAtomic(this.mode.sessionPath, refreshed);
+    await writeOAuthSessionAtomic(oauthMode.sessionPath, refreshed);
     return refreshed;
   }
 
   private async tryAcquireRotationLock() {
-    if (this.mode.kind !== "oauth") {
-      return null;
-    }
-
-    await fs.mkdir(path.dirname(this.mode.lockPath), {
+    const oauthMode = this.requireOAuthMode();
+    await fs.mkdir(path.dirname(oauthMode.lockPath), {
       recursive: true,
       mode: 0o700,
     });
-    await fs.chmod(path.dirname(this.mode.lockPath), 0o700).catch(() => undefined);
+    await fs.chmod(path.dirname(oauthMode.lockPath), 0o700).catch(() => undefined);
 
     let handle: Awaited<ReturnType<typeof fs.open>> | undefined;
     try {
-      handle = await fs.open(this.mode.lockPath, "wx", 0o600);
+      handle = await fs.open(oauthMode.lockPath, "wx", 0o600);
       await handle.writeFile(
         `pid=${process.pid}\ncreated_at=${new Date().toISOString()}\n`,
         "utf8"
@@ -416,7 +407,7 @@ export class ControlPlaneAuthManager {
       await handle?.close().catch(() => undefined);
       if (handle) {
         await fs
-          .rm(this.mode.lockPath, {
+          .rm(oauthMode.lockPath, {
             force: true,
           })
           .catch(() => undefined);
@@ -430,13 +421,10 @@ export class ControlPlaneAuthManager {
   }
 
   private async clearStaleRotationLock(): Promise<void> {
-    if (this.mode.kind !== "oauth") {
-      return;
-    }
-
+    const oauthMode = this.requireOAuthMode();
     let info;
     try {
-      info = await fs.stat(this.mode.lockPath);
+      info = await fs.stat(oauthMode.lockPath);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         return;
@@ -448,13 +436,39 @@ export class ControlPlaneAuthManager {
       });
     }
 
-    if (Date.now() - info.mtimeMs < this.mode.lockStaleMs) {
+    if (Date.now() - info.mtimeMs < oauthMode.lockStaleMs) {
       return;
     }
 
-    await fs.rm(this.mode.lockPath, {
+    await fs.rm(oauthMode.lockPath, {
       force: true,
     });
+  }
+
+  private requireOAuthMode(): OAuthControlPlaneAuthMode {
+    if (this.mode.kind !== "oauth") {
+      throw new ControlAuthError("OAuth auth is not configured", {
+        code: "missing_auth",
+        retryable: false,
+      });
+    }
+
+    return this.mode;
+  }
+
+  private async tryReadOAuthSessionMtimeMs(sessionPath: string): Promise<number | null> {
+    try {
+      return (await fs.stat(sessionPath)).mtimeMs;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        return null;
+      }
+      throw new ControlAuthError("Failed to inspect saved OAuth session", {
+        code: "oauth_session_read_failed",
+        retryable: false,
+        cause: error,
+      });
+    }
   }
 }
 
@@ -516,7 +530,10 @@ function validateOAuthSession(session: OAuthSessionFile, expectedBaseUrl?: strin
       retryable: false,
     });
   }
-  if (expectedBaseUrl && normalizeBaseUrl(session.base_url) !== normalizeBaseUrl(expectedBaseUrl)) {
+  if (
+    expectedBaseUrl &&
+    normalizeControlPlaneBaseUrl(session.base_url) !== normalizeControlPlaneBaseUrl(expectedBaseUrl)
+  ) {
     throw new ControlAuthError("Saved OAuth session targets a different base URL", {
       code: "oauth_base_url_mismatch",
       retryable: false,
@@ -583,7 +600,7 @@ function buildRefreshedOAuthSession(
 
   return {
     version: previous.version,
-    base_url: normalizeBaseUrl(previous.base_url),
+    base_url: normalizeControlPlaneBaseUrl(previous.base_url),
     client_id: normalizeText(previous.client_id) || "hyperbrowser-cli",
     token_type: nextTokenType,
     access_token: nextAccessToken,
@@ -652,9 +669,9 @@ function normalizeProfile(value: string): string {
   return normalized || DEFAULT_PROFILE;
 }
 
-function normalizeBaseUrl(value?: string | null): string {
+export function normalizeControlPlaneBaseUrl(value?: string | null): string {
   const normalized = normalizeText(value);
-  return normalized.replace(/\/+$/, "");
+  return normalized.replace(/\/+$/, "").replace(/\/api$/, "");
 }
 
 function normalizeText(value?: string | null): string {
@@ -712,6 +729,10 @@ function sleep(durationMs: number): Promise<void> {
 
 async function resolveRequestInit(init: RequestInit | RequestInitFactory): Promise<RequestInit> {
   return typeof init === "function" ? await init() : init;
+}
+
+function resolveOAuthTokenUrl(baseUrl: string): string {
+  return new URL("/oauth/token", `${baseUrl}/`).toString();
 }
 
 function isReplayableBody(body: RequestInit["body"]): boolean {

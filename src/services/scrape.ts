@@ -169,9 +169,9 @@ export class BatchScrapeService extends BaseService {
 export class ScrapeService extends BaseService {
   public readonly batch: BatchScrapeService;
 
-  constructor(auth: ControlPlaneAuthManager, baseUrl: string, timeout: number) {
+  constructor(auth: string | ControlPlaneAuthManager, baseUrl: string, timeout: number) {
     super(auth, baseUrl, timeout);
-    this.batch = new BatchScrapeService(auth, baseUrl, timeout);
+    this.batch = new BatchScrapeService(this.auth, this.baseUrl, timeout);
   }
 
   /**

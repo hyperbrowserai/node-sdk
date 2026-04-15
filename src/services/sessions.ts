@@ -59,9 +59,9 @@ class SessionEventLogsService extends BaseService {
 export class SessionsService extends BaseService {
   public readonly eventLogs: SessionEventLogsService;
 
-  constructor(auth: ControlPlaneAuthManager, baseUrl: string, timeout: number) {
+  constructor(auth: string | ControlPlaneAuthManager, baseUrl: string, timeout: number) {
     super(auth, baseUrl, timeout);
-    this.eventLogs = new SessionEventLogsService(auth, baseUrl, timeout);
+    this.eventLogs = new SessionEventLogsService(this.auth, this.baseUrl, timeout);
   }
 
   /**

@@ -445,7 +445,7 @@ export class SandboxesService extends BaseService {
   public readonly runtimeProxyOverride?: string;
 
   constructor(
-    auth: ControlPlaneAuthManager,
+    auth: string | ControlPlaneAuthManager,
     baseUrl: string,
     timeout: number,
     runtimeProxyOverride?: string
