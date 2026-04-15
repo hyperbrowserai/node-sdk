@@ -2,6 +2,7 @@ import { promises as fs, Stats, createReadStream, ReadStream } from "fs";
 import * as path from "path";
 import FormData from "form-data";
 import { RequestInit } from "node-fetch";
+import { Readable } from "stream";
 import {
   BasicResponse,
   CreateSessionParams,
@@ -24,6 +25,27 @@ import {
 import { ControlPlaneAuthManager } from "../control-auth";
 import { BaseService } from "./base";
 import { HyperbrowserError } from "../client";
+
+function wrapFileReadErrors(filePath: string, stream: ReadStream): Readable {
+  return Readable.from(
+    (async function*() {
+      try {
+        for await (const chunk of stream) {
+          yield chunk;
+        }
+      } catch (error) {
+        if (error instanceof HyperbrowserError) {
+          throw error;
+        }
+
+        const message = error instanceof Error ? error.message : String(error);
+        throw new HyperbrowserError(`Failed to read file ${filePath}: ${message}`, {
+          cause: error,
+        });
+      }
+    })()
+  );
+}
 
 /**
  * Service for managing session event logs
@@ -237,7 +259,7 @@ export class SessionsService extends BaseService {
         const fileBaseName = fileName || path.basename(fileInput);
         fetchOptions = () => {
           const formData = new FormData();
-          formData.append("file", createReadStream(fileInput), {
+          formData.append("file", wrapFileReadErrors(fileInput, createReadStream(fileInput)), {
             filename: fileBaseName,
           });
           return {
