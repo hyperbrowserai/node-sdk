@@ -51,6 +51,7 @@ export type BrowserUseLlm =
 export type ClaudeComputerUseLlm =
   | "claude-opus-4-5"
   | "claude-opus-4-6"
+  | "claude-opus-4-7"
   | "claude-haiku-4-5-20251001"
   | "claude-sonnet-4-5"
   | "claude-sonnet-4-6"
