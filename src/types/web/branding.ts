@@ -1,8 +1,14 @@
 // Typed response shape for the branding extraction output.
+//
 // Every field is optional because the server may return a partial profile
-// when the LLM refuses / fails — consumers should defensively check before
-// reading nested fields. The trailing index signature keeps the interface
-// forward-compatible if the server adds new keys.
+// when the LLM refuses or fails. Nested types are intentionally closed — they
+// describe the exact set of keys the server emits today, so typos like
+// `colors.prmary` are caught by tsc. Forward-compat for future server-added
+// fields happens at SDK version boundaries (upgrade the SDK package).
+//
+// If the server adds a new debug key under the profile root (e.g. another
+// `__llm_*` dump), consumers that want to read it can cast:
+//   (page.branding as Record<string, unknown>).__llm_metadata
 
 export type BrandingColorScheme = "light" | "dark";
 
@@ -16,6 +22,21 @@ export type BrandingPersonalityTone =
 
 export type BrandingPersonalityEnergy = "low" | "medium" | "high";
 
+export type BrandingFontRole =
+  | "heading"
+  | "body"
+  | "monospace"
+  | "display"
+  | "unknown";
+
+export type BrandingDesignFramework =
+  | "tailwind"
+  | "bootstrap"
+  | "material"
+  | "chakra"
+  | "custom"
+  | "unknown";
+
 export interface BrandingColors {
   primary?: string;
   secondary?: string;
@@ -27,13 +48,11 @@ export interface BrandingColors {
   success?: string;
   warning?: string;
   error?: string;
-  [key: string]: string | undefined;
 }
 
 export interface BrandingFont {
   family: string;
-  role?: "heading" | "body" | "monospace" | "display" | "unknown";
-  [key: string]: unknown;
+  role?: BrandingFontRole;
 }
 
 export interface BrandingBorderRadiusCorners {
@@ -50,60 +69,65 @@ export interface BrandingButtonStyle {
   borderRadius?: string;
   borderRadiusCorners?: BrandingBorderRadiusCorners;
   shadow?: string;
-  [key: string]: string | BrandingBorderRadiusCorners | undefined;
 }
 
 export interface BrandingInputStyle {
   background?: string;
-  textColor?: string;
-  borderColor?: string;
-  focusBorderColor?: string;
+  // textColor / borderColor / shadow pass null through from the server's
+  // InputSnapshot when the DOM probe couldn't read the value (hexify returns
+  // null with no fallback for inputs). See ignore/evals/claude/ours.json for
+  // a live example of `borderColor: null`.
+  textColor?: string | null;
+  borderColor?: string | null;
+  focusBorderColor?: string | null;
   borderRadius?: string;
   borderRadiusCorners?: BrandingBorderRadiusCorners;
-  shadow?: string;
-  [key: string]: string | BrandingBorderRadiusCorners | undefined;
+  shadow?: string | null;
 }
 
 export interface BrandingComponents {
   buttonPrimary?: BrandingButtonStyle;
   buttonSecondary?: BrandingButtonStyle;
   input?: BrandingInputStyle;
-  [key: string]: unknown;
+}
+
+export interface BrandingFontFamilies {
+  primary?: string;
+  heading?: string;
+  code?: string;
+}
+
+export interface BrandingFontStacks {
+  primary?: string[];
+  heading?: string[];
+  body?: string[];
+  paragraph?: string[];
+}
+
+export interface BrandingFontSizes {
+  h1?: string;
+  h2?: string;
+  h3?: string;
+  body?: string;
+  small?: string;
 }
 
 export interface BrandingTypography {
-  fontFamilies?: {
-    primary?: string;
-    heading?: string;
-    code?: string;
-    [key: string]: string | undefined;
-  };
-  fontStacks?: {
-    primary?: string[];
-    heading?: string[];
-    body?: string[];
-    paragraph?: string[];
-    [key: string]: string[] | undefined;
-  };
-  fontSizes?: {
-    h1?: string;
-    h2?: string;
-    h3?: string;
-    body?: string;
-    small?: string;
-    [key: string]: string | undefined;
-  };
-  lineHeights?: Record<string, number | undefined>;
-  fontWeights?: Record<string, number | undefined>;
+  fontFamilies?: BrandingFontFamilies;
+  fontStacks?: BrandingFontStacks;
+  fontSizes?: BrandingFontSizes;
+  // LLM-extracted dicts — individual entries may be null when the model
+  // couldn't resolve a specific bucket.
+  lineHeights?: Record<string, number | null>;
+  fontWeights?: Record<string, number | null>;
 }
 
 export interface BrandingSpacing {
   baseUnit?: number;
   borderRadius?: string;
-  padding?: Record<string, number>;
-  margins?: Record<string, number>;
+  padding?: Record<string, number | null>;
+  margins?: Record<string, number | null>;
   gridGutter?: number;
-  [key: string]: number | string | Record<string, number> | undefined;
 }
 
 export interface BrandingImages {
@@ -114,7 +138,6 @@ export interface BrandingImages {
   logoAlt?: string | null;
   favicon?: string | null;
   ogImage?: string | null;
-  [key: string]: string | null | undefined;
 }
 
 export interface BrandingPersonality {
@@ -124,13 +147,7 @@ export interface BrandingPersonality {
 }
 
 export interface BrandingDesignSystem {
-  framework?:
-    | "tailwind"
-    | "bootstrap"
-    | "material"
-    | "chakra"
-    | "custom"
-    | "unknown";
+  framework?: BrandingDesignFramework;
   componentLibrary?: string;
 }
 
@@ -138,7 +155,6 @@ export interface BrandingConfidence {
   buttons?: number;
   colors?: number;
   overall?: number;
-  [key: string]: number | undefined;
 }
 
 export interface BrandingProfile {
@@ -152,6 +168,4 @@ export interface BrandingProfile {
   personality?: BrandingPersonality;
   designSystem?: BrandingDesignSystem;
   confidence?: BrandingConfidence;
-  /** Escape hatch for debug metadata (`__llm_*`) and future server additions. */
-  [key: string]: unknown;
 }
