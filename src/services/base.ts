@@ -1,4 +1,10 @@
-import fetch, { HeadersInit, RequestInit, Response } from "node-fetch";
+import { HeadersInit, RequestInit, Response } from "node-fetch";
+import {
+  ControlAuthError,
+  ControlPlaneAuthManager,
+  normalizeControlPlaneBaseUrl,
+  RequestInitFactory,
+} from "../control-auth";
 import { HyperbrowserError } from "../client";
 
 const RETRYABLE_STATUS_CODES = new Set([429, 502, 503, 504]);
@@ -9,6 +15,8 @@ const RETRYABLE_NETWORK_CODES = new Set([
   "ETIMEDOUT",
   "ESOCKETTIMEDOUT",
 ]);
+
+const normalizeHeaderKey = (key: string): string => key.toLowerCase();
 
 const getRequestId = (response: Response): string | undefined => {
   return response.headers.get("x-request-id") || response.headers.get("request-id") || undefined;
@@ -27,16 +35,63 @@ const isRetryableNetworkError = (error: unknown): boolean => {
   );
 };
 
+const toHeaderMap = (headers?: HeadersInit): Record<string, string> => {
+  if (!headers) {
+    return {};
+  }
+  if (Array.isArray(headers)) {
+    return Object.fromEntries(
+      headers.map(([key, value]) => [normalizeHeaderKey(key), String(value)])
+    );
+  }
+  if (typeof (headers as { forEach?: unknown }).forEach === "function") {
+    const values: Record<string, string> = {};
+    (headers as { forEach: (callback: (value: string, key: string) => void) => void }).forEach(
+      (value, key) => {
+        values[normalizeHeaderKey(key)] = value;
+      }
+    );
+    return values;
+  }
+  return Object.fromEntries(
+    Object.entries(headers).map(([key, value]) => [
+      normalizeHeaderKey(key),
+      value === undefined ? "" : String(value),
+    ])
+  );
+};
+
+const normalizeRequestInit = (init?: RequestInit): RequestInit => {
+  const requestHeaders = toHeaderMap(init?.headers);
+  return {
+    ...init,
+    headers: {
+      ...requestHeaders,
+      "content-type": requestHeaders["content-type"] || "application/json",
+    },
+  };
+};
+
 export class BaseService {
-  constructor(
-    protected readonly apiKey: string,
-    protected readonly baseUrl: string,
-    protected readonly timeout: number = 30000
-  ) {}
+  protected readonly auth: ControlPlaneAuthManager;
+  protected readonly baseUrl: string;
+  protected readonly timeout: number;
+
+  constructor(auth: string | ControlPlaneAuthManager, baseUrl: string, timeout: number = 30000) {
+    this.auth =
+      typeof auth === "string"
+        ? new ControlPlaneAuthManager({
+            kind: "api_key",
+            apiKey: auth,
+          })
+        : auth;
+    this.baseUrl = normalizeControlPlaneBaseUrl(baseUrl);
+    this.timeout = timeout;
+  }
 
   protected async request<T>(
     path: string,
-    init?: RequestInit,
+    init?: RequestInit | RequestInitFactory,
     params?: Record<string, string | number | string[] | undefined>,
     fullUrl: boolean = false
   ): Promise<T> {
@@ -57,22 +112,11 @@ export class BaseService {
         });
       }
 
-      const headerKeys = Object.keys(init?.headers || {});
-      const contentTypeKey = headerKeys.find(
-        (key) => key.toLowerCase() === "content-type"
-      ) as keyof HeadersInit;
-
-      const response = await fetch(url.toString(), {
-        ...init,
-        timeout: this.timeout,
-        headers: {
-          "x-api-key": this.apiKey,
-          ...(contentTypeKey && init?.headers
-            ? { "content-type": init.headers[contentTypeKey] as string }
-            : { "content-type": "application/json" }),
-          ...init?.headers,
-        },
-      });
+      const requestInit =
+        typeof init === "function"
+          ? async () => normalizeRequestInit(await init())
+          : normalizeRequestInit(init);
+      const response = await this.auth.fetch(url.toString(), requestInit, this.timeout);
 
       if (!response.ok) {
         let errorMessage: string;
@@ -114,6 +158,16 @@ export class BaseService {
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
+      }
+      if (error instanceof ControlAuthError) {
+        throw new HyperbrowserError(error.message, {
+          statusCode: error.statusCode,
+          code: error.code,
+          retryable: error.retryable,
+          service: "control",
+          details: error.details,
+          cause: error.cause ?? error,
+        });
       }
 
       throw new HyperbrowserError(

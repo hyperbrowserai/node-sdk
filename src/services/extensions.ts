@@ -32,23 +32,26 @@ export class ExtensionService extends BaseService {
   async create(params: CreateExtensionParams): Promise<CreateExtensionResponse> {
     try {
       await checkFileExists(params.filePath);
+      const extensionBuffer = await fs.readFile(params.filePath);
+      const extensionName = path.basename(params.filePath);
 
-      const form = new FormData();
-      form.append("file", await fs.readFile(params.filePath), {
-        filename: path.basename(params.filePath),
-        contentType: "application/zip",
+      return await this.request<CreateExtensionResponse>("/extensions/add", () => {
+        const form = new FormData();
+        form.append("file", extensionBuffer, {
+          filename: extensionName,
+          contentType: "application/zip",
+        });
+
+        if (params.name) {
+          form.append("name", params.name);
+        }
+
+        return {
+          method: "POST",
+          body: form,
+          headers: form.getHeaders(),
+        };
       });
-
-      if (params.name) {
-        form.append("name", params.name);
-      }
-
-      const response = await this.request<CreateExtensionResponse>("/extensions/add", {
-        method: "POST",
-        body: form,
-        headers: form.getHeaders(),
-      });
-      return response;
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;

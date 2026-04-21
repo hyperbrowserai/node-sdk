@@ -9,6 +9,7 @@ import {
   StartScrapeJobParams,
   StartScrapeJobResponse,
 } from "../types/scrape";
+import { ControlPlaneAuthManager } from "../control-auth";
 import { BaseService } from "./base";
 import { sleep } from "../utils";
 import { HyperbrowserError } from "../client";
@@ -168,9 +169,9 @@ export class BatchScrapeService extends BaseService {
 export class ScrapeService extends BaseService {
   public readonly batch: BatchScrapeService;
 
-  constructor(apiKey: string, baseUrl: string, timeout: number) {
-    super(apiKey, baseUrl, timeout);
-    this.batch = new BatchScrapeService(apiKey, baseUrl, timeout);
+  constructor(auth: string | ControlPlaneAuthManager, baseUrl: string, timeout: number) {
+    super(auth, baseUrl, timeout);
+    this.batch = new BatchScrapeService(this.auth, this.baseUrl, timeout);
   }
 
   /**

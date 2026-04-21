@@ -2,6 +2,7 @@ import { promises as fs, Stats, createReadStream, ReadStream } from "fs";
 import * as path from "path";
 import FormData from "form-data";
 import { RequestInit } from "node-fetch";
+import { Readable } from "stream";
 import {
   BasicResponse,
   CreateSessionParams,
@@ -21,8 +22,30 @@ import {
   UpdateSessionProxyParams,
   SessionGetParams,
 } from "../types/session";
+import { ControlPlaneAuthManager } from "../control-auth";
 import { BaseService } from "./base";
 import { HyperbrowserError } from "../client";
+
+function wrapFileReadErrors(filePath: string, stream: ReadStream): Readable {
+  return Readable.from(
+    (async function* () {
+      try {
+        for await (const chunk of stream) {
+          yield chunk;
+        }
+      } catch (error) {
+        if (error instanceof HyperbrowserError) {
+          throw error;
+        }
+
+        const message = error instanceof Error ? error.message : String(error);
+        throw new HyperbrowserError(`Failed to read file ${filePath}: ${message}`, {
+          cause: error,
+        });
+      }
+    })()
+  );
+}
 
 /**
  * Service for managing session event logs
@@ -58,9 +81,9 @@ class SessionEventLogsService extends BaseService {
 export class SessionsService extends BaseService {
   public readonly eventLogs: SessionEventLogsService;
 
-  constructor(apiKey: string, baseUrl: string, timeout: number) {
-    super(apiKey, baseUrl, timeout);
-    this.eventLogs = new SessionEventLogsService(apiKey, baseUrl, timeout);
+  constructor(auth: string | ControlPlaneAuthManager, baseUrl: string, timeout: number) {
+    super(auth, baseUrl, timeout);
+    this.eventLogs = new SessionEventLogsService(this.auth, this.baseUrl, timeout);
   }
 
   /**
@@ -207,7 +230,7 @@ export class SessionsService extends BaseService {
     const { fileInput, fileName } = fileOptions;
 
     try {
-      let fetchOptions: RequestInit;
+      let fetchOptions: RequestInit | (() => Promise<RequestInit> | RequestInit);
 
       if (typeof fileInput === "string") {
         let stats: Stats;
@@ -233,38 +256,30 @@ export class SessionsService extends BaseService {
           throw new HyperbrowserError(`Path is not a file: ${fileInput}`, undefined);
         }
 
-        const formData = new FormData();
-        const fileStream = createReadStream(fileInput);
         const fileBaseName = fileName || path.basename(fileInput);
-
-        fileStream.on("error", (error) => {
-          throw new HyperbrowserError(
-            `Failed to read file ${fileInput}: ${error.message}`,
-            undefined
-          );
-        });
-
-        formData.append("file", fileStream, {
-          filename: fileBaseName,
-        });
-
-        fetchOptions = {
-          method: "POST",
-          body: formData,
-          headers: formData.getHeaders(),
+        fetchOptions = () => {
+          const formData = new FormData();
+          formData.append("file", wrapFileReadErrors(fileInput, createReadStream(fileInput)), {
+            filename: fileBaseName,
+            knownLength: stats.size,
+          });
+          return {
+            method: "POST",
+            body: formData,
+            headers: formData.getHeaders(),
+          };
         };
       } else if (this.isReadableStream(fileInput)) {
-        const formData = new FormData();
-
-        let tmpFileName = fileName || `file-${Date.now()}`;
-        if (fileInput.path && typeof fileInput.path === "string" && !fileName) {
-          tmpFileName = path.basename(fileInput.path);
+        const streamPath = typeof fileInput.path === "string" ? fileInput.path : "";
+        let streamFileName = fileName || `file-${Date.now()}`;
+        if (streamPath && !fileName) {
+          streamFileName = path.basename(streamPath);
         }
 
+        const formData = new FormData();
         formData.append("file", fileInput, {
-          filename: tmpFileName,
+          filename: streamFileName,
         });
-
         fetchOptions = {
           method: "POST",
           body: formData,
@@ -275,15 +290,16 @@ export class SessionsService extends BaseService {
           throw new HyperbrowserError("fileName is required when uploading Buffer data", undefined);
         }
 
-        const formData = new FormData();
-        formData.append("file", fileInput, {
-          filename: fileName,
-        });
-
-        fetchOptions = {
-          method: "POST",
-          body: formData,
-          headers: formData.getHeaders(),
+        fetchOptions = () => {
+          const formData = new FormData();
+          formData.append("file", fileInput, {
+            filename: fileName,
+          });
+          return {
+            method: "POST",
+            body: formData,
+            headers: formData.getHeaders(),
+          };
         };
       } else {
         throw new HyperbrowserError(

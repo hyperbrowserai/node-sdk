@@ -1,5 +1,6 @@
 import { toJSONSchema } from "zod";
 import zodToJsonSchema from "zod-to-json-schema";
+import { ControlPlaneAuthManager } from "../../control-auth";
 import { BaseService } from "../base";
 import { HyperbrowserError } from "../../client";
 import { FetchParams, FetchResponse } from "../../types/web/fetch";
@@ -13,10 +14,10 @@ export class WebService extends BaseService {
   public readonly batchFetch: BatchFetchService;
   public readonly crawl: WebCrawlService;
 
-  constructor(apiKey: string, baseUrl: string, timeout: number) {
-    super(apiKey, baseUrl, timeout);
-    this.batchFetch = new BatchFetchService(apiKey, baseUrl, timeout);
-    this.crawl = new WebCrawlService(apiKey, baseUrl, timeout);
+  constructor(auth: string | ControlPlaneAuthManager, baseUrl: string, timeout: number) {
+    super(auth, baseUrl, timeout);
+    this.batchFetch = new BatchFetchService(this.auth, this.baseUrl, timeout);
+    this.crawl = new WebCrawlService(this.auth, this.baseUrl, timeout);
   }
   /**
    * Fetch a URL and extract content
