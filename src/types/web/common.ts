@@ -36,6 +36,7 @@ export interface PageData {
   links?: string[];
   screenshot?: string;
   json?: Record<string, any>;
+  branding?: Record<string, any>;
 }
 
 export interface FetchOutputMarkdown {
@@ -63,16 +64,22 @@ export interface FetchOutputJson extends FetchOutputJsonOptions {
   type: "json";
 }
 
+export interface FetchOutputBranding {
+  type: "branding";
+}
+
 export type FetchOutputFormat =
   | FetchOutputMarkdown
   | FetchOutputHtml
   | FetchOutputLinks
   | FetchOutputScreenshot
   | FetchOutputJson
+  | FetchOutputBranding
   | "markdown"
   | "html"
   | "links"
-  | "screenshot";
+  | "screenshot"
+  | "branding";
 
 export interface FetchOutputOptions {
   formats?: FetchOutputFormat[];

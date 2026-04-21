@@ -24,6 +24,7 @@ export interface FetchResponseData {
   links?: string[];
   screenshot?: string;
   json?: Record<string, any>;
+  branding?: Record<string, any>;
 }
 
 export interface FetchResponse {
