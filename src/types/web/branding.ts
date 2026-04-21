@@ -1,15 +1,3 @@
-// Typed response shape for the branding extraction output.
-//
-// Every field is optional because the server may return a partial profile
-// when the LLM refuses or fails. Nested types are intentionally closed — they
-// describe the exact set of keys the server emits today, so typos like
-// `colors.prmary` are caught by tsc. Forward-compat for future server-added
-// fields happens at SDK version boundaries (upgrade the SDK package).
-//
-// If the server adds a new debug key under the profile root (e.g. another
-// `__llm_*` dump), consumers that want to read it can cast:
-//   (page.branding as Record<string, unknown>).__llm_metadata
-
 export type BrandingColorScheme = "light" | "dark";
 
 export type BrandingPersonalityTone =
@@ -22,10 +10,8 @@ export type BrandingPersonalityTone =
 
 export type BrandingPersonalityEnergy = "low" | "medium" | "high";
 
-// Known values listed for IDE autocomplete; any string is accepted so the
-// SDK doesn't need a version bump when the server's LLM starts emitting a
-// new role / framework label. The `(string & {})` trick stops TypeScript
-// from collapsing the union back into a bare `string` and losing the hint.
+// `(string & {})` keeps the literal arm visible to autocomplete while
+// accepting any string — without it the union collapses to bare `string`.
 export type BrandingFontRole =
   | "heading"
   | "body"
@@ -79,10 +65,6 @@ export interface BrandingButtonStyle {
 
 export interface BrandingInputStyle {
   background?: string;
-  // textColor / borderColor / shadow pass null through from the server's
-  // InputSnapshot when the DOM probe couldn't read the value (hexify returns
-  // null with no fallback for inputs). See ignore/evals/claude/ours.json for
-  // a live example of `borderColor: null`.
   textColor?: string | null;
   borderColor?: string | null;
   focusBorderColor?: string | null;
@@ -122,8 +104,6 @@ export interface BrandingTypography {
   fontFamilies?: BrandingFontFamilies;
   fontStacks?: BrandingFontStacks;
   fontSizes?: BrandingFontSizes;
-  // LLM-extracted dicts — individual entries may be null when the model
-  // couldn't resolve a specific bucket.
   lineHeights?: Record<string, number | null>;
   fontWeights?: Record<string, number | null>;
 }
@@ -138,9 +118,7 @@ export interface BrandingSpacing {
 
 export interface BrandingImages {
   logo?: string | null;
-  /** Parent <a href> when the logo is linked (usually the homepage). */
   logoHref?: string | null;
-  /** Alt text on the logo or its parent aria-label. */
   logoAlt?: string | null;
   favicon?: string | null;
   ogImage?: string | null;
