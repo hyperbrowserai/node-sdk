@@ -22,12 +22,17 @@ export type BrandingPersonalityTone =
 
 export type BrandingPersonalityEnergy = "low" | "medium" | "high";
 
+// Known values listed for IDE autocomplete; any string is accepted so the
+// SDK doesn't need a version bump when the server's LLM starts emitting a
+// new role / framework label. The `(string & {})` trick stops TypeScript
+// from collapsing the union back into a bare `string` and losing the hint.
 export type BrandingFontRole =
   | "heading"
   | "body"
   | "monospace"
   | "display"
-  | "unknown";
+  | "unknown"
+  | (string & {});
 
 export type BrandingDesignFramework =
   | "tailwind"
@@ -35,7 +40,8 @@ export type BrandingDesignFramework =
   | "material"
   | "chakra"
   | "custom"
-  | "unknown";
+  | "unknown"
+  | (string & {});
 
 export interface BrandingColors {
   primary?: string;
