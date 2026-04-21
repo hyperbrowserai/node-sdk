@@ -1,5 +1,6 @@
 import { Country, State } from "../constants";
 import { ScreenConfig } from "../session";
+import { BrandingProfile } from "./branding";
 
 export type FetchStealthMode = "none" | "auto" | "ultra";
 export type FetchSanitizeMode = "none" | "basic" | "advanced";
@@ -36,6 +37,7 @@ export interface PageData {
   links?: string[];
   screenshot?: string;
   json?: Record<string, any>;
+  branding?: BrandingProfile;
 }
 
 export interface FetchOutputMarkdown {
@@ -63,16 +65,22 @@ export interface FetchOutputJson extends FetchOutputJsonOptions {
   type: "json";
 }
 
+export interface FetchOutputBranding {
+  type: "branding";
+}
+
 export type FetchOutputFormat =
   | FetchOutputMarkdown
   | FetchOutputHtml
   | FetchOutputLinks
   | FetchOutputScreenshot
   | FetchOutputJson
+  | FetchOutputBranding
   | "markdown"
   | "html"
   | "links"
-  | "screenshot";
+  | "screenshot"
+  | "branding";
 
 export interface FetchOutputOptions {
   formats?: FetchOutputFormat[];

@@ -5,6 +5,7 @@ import {
   FetchNavigationOptions,
   FetchCacheOptions,
 } from "./common";
+import { BrandingProfile } from "./branding";
 
 export type FetchStatus = "completed" | "failed" | "pending" | "running";
 
@@ -24,6 +25,7 @@ export interface FetchResponseData {
   links?: string[];
   screenshot?: string;
   json?: Record<string, any>;
+  branding?: BrandingProfile;
 }
 
 export interface FetchResponse {
