@@ -44,8 +44,33 @@ export function normalizeProfile(value?: string | null): string {
 }
 
 export function normalizeControlPlaneBaseUrl(value?: string | null): string {
-  const normalized = normalizeText(value);
-  return normalized.replace(/\/+$/, "").replace(/\/api$/, "");
+  const normalized = normalizeText(value).replace(/\/+$/, "").replace(/\/api$/, "");
+  if (!normalized) {
+    return normalized;
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(normalized);
+  } catch (cause) {
+    throw new ControlAuthError(`Invalid control-plane base URL: ${normalized}`, {
+      code: "invalid_base_url",
+      retryable: false,
+      cause,
+    });
+  }
+
+  if ((parsed.pathname && parsed.pathname !== "/") || parsed.search || parsed.hash) {
+    throw new ControlAuthError(
+      `Control-plane base URL must be an origin (scheme + host [+ port]) with no path, query, or fragment: ${normalized}`,
+      {
+        code: "invalid_base_url",
+        retryable: false,
+      }
+    );
+  }
+
+  return normalized;
 }
 
 export function normalizeText(value?: string | null): string {
