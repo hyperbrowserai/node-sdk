@@ -1,4 +1,4 @@
-export type BrandingColorScheme = "light" | "dark";
+export type BrandingColorScheme = "light" | "dark" | (string & {});
 
 export type BrandingPersonalityTone =
   | "professional"
@@ -6,9 +6,14 @@ export type BrandingPersonalityTone =
   | "modern"
   | "traditional"
   | "minimalist"
-  | "bold";
+  | "bold"
+  | (string & {});
 
-export type BrandingPersonalityEnergy = "low" | "medium" | "high";
+export type BrandingPersonalityEnergy =
+  | "low"
+  | "medium"
+  | "high"
+  | (string & {});
 
 // `(string & {})` keeps the literal arm visible to autocomplete while
 // accepting any string — without it the union collapses to bare `string`.
@@ -43,7 +48,7 @@ export interface BrandingColors {
 }
 
 export interface BrandingFont {
-  family: string;
+  family?: string;
   role?: BrandingFontRole;
 }
 
@@ -86,10 +91,10 @@ export interface BrandingFontFamilies {
 }
 
 export interface BrandingFontStacks {
-  primary?: string[];
-  heading?: string[];
-  body?: string[];
-  paragraph?: string[];
+  primary?: (string | null)[];
+  heading?: (string | null)[];
+  body?: (string | null)[];
+  paragraph?: (string | null)[];
 }
 
 export interface BrandingFontSizes {
