@@ -9,11 +9,7 @@ export type BrandingPersonalityTone =
   | "bold"
   | (string & {});
 
-export type BrandingPersonalityEnergy =
-  | "low"
-  | "medium"
-  | "high"
-  | (string & {});
+export type BrandingPersonalityEnergy = "low" | "medium" | "high" | (string & {});
 
 // `(string & {})` keeps the literal arm visible to autocomplete while
 // accepting any string — without it the union collapses to bare `string`.
