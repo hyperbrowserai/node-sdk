@@ -46,6 +46,7 @@ export interface SessionLaunchState {
   enableAlwaysOpenPdfExternally?: boolean;
   appendTimestampToDownloads?: boolean;
   disablePostQuantumKeyAgreement?: boolean;
+  enableWebBotAuth?: boolean;
 }
 
 export interface SessionCreditBreakdown {
@@ -153,6 +154,12 @@ export interface CreateSessionParams {
   liveViewTtlSeconds?: number;
   replaceNativeElements?: boolean;
   disablePostQuantumKeyAgreement?: boolean;
+  /**
+   * When true, sign all outbound HTTP requests from the session with
+   * Hyperbrowser's Cloudflare-verified bot identity (Web Bot Auth).
+   * Mutually exclusive with useStealth and useUltraStealth.
+   */
+  enableWebBotAuth?: boolean;
 }
 
 export interface SessionRecording {
