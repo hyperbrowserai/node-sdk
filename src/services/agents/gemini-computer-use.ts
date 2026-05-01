@@ -9,6 +9,7 @@ import {
   StartGeminiComputerUseTaskParams,
   StartGeminiComputerUseTaskResponse,
 } from "../../types/agents/gemini-computer-use";
+import { validateCustomApiKeys } from "./validation";
 
 export class GeminiComputerUseService extends BaseService {
   /**
@@ -19,6 +20,9 @@ export class GeminiComputerUseService extends BaseService {
     params: StartGeminiComputerUseTaskParams
   ): Promise<StartGeminiComputerUseTaskResponse> {
     try {
+      validateCustomApiKeys(params.useCustomApiKeys, params.apiKeys, {
+        googleBaseUrl: params.apiKeys?.googleBaseUrl,
+      });
       return await this.request<StartGeminiComputerUseTaskResponse>("/task/gemini-computer-use", {
         method: "POST",
         body: JSON.stringify(params),

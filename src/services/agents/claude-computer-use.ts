@@ -9,6 +9,7 @@ import {
   StartClaudeComputerUseTaskParams,
   StartClaudeComputerUseTaskResponse,
 } from "../../types/agents/claude-computer-use";
+import { validateCustomApiKeys } from "./validation";
 
 export class ClaudeComputerUseService extends BaseService {
   /**
@@ -19,6 +20,9 @@ export class ClaudeComputerUseService extends BaseService {
     params: StartClaudeComputerUseTaskParams
   ): Promise<StartClaudeComputerUseTaskResponse> {
     try {
+      validateCustomApiKeys(params.useCustomApiKeys, params.apiKeys, {
+        anthropicBaseUrl: params.apiKeys?.anthropicBaseUrl,
+      });
       return await this.request<StartClaudeComputerUseTaskResponse>("/task/claude-computer-use", {
         method: "POST",
         body: JSON.stringify(params),

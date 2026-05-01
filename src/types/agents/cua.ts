@@ -3,6 +3,7 @@ import { CreateSessionParams } from "../session";
 
 export interface CuaApiKeys {
   openai?: string;
+  openaiBaseUrl?: string;
 }
 
 export interface StartCuaTaskParams {

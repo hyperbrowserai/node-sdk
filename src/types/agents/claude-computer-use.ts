@@ -3,6 +3,7 @@ import { CreateSessionParams } from "../session";
 
 export interface ClaudeComputerUseApiKeys {
   anthropic?: string;
+  anthropicBaseUrl?: string;
 }
 
 export interface StartClaudeComputerUseTaskParams {

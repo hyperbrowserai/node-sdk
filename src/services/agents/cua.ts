@@ -9,6 +9,7 @@ import {
   StartCuaTaskParams,
   StartCuaTaskResponse,
 } from "../../types/agents/cua";
+import { validateCustomApiKeys } from "./validation";
 
 export class CuaService extends BaseService {
   /**
@@ -17,6 +18,9 @@ export class CuaService extends BaseService {
    */
   async start(params: StartCuaTaskParams): Promise<StartCuaTaskResponse> {
     try {
+      validateCustomApiKeys(params.useCustomApiKeys, params.apiKeys, {
+        openaiBaseUrl: params.apiKeys?.openaiBaseUrl,
+      });
       return await this.request<StartCuaTaskResponse>("/task/cua", {
         method: "POST",
         body: JSON.stringify(params),

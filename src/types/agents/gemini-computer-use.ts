@@ -3,6 +3,7 @@ import { CreateSessionParams } from "../session";
 
 export interface GeminiComputerUseApiKeys {
   google?: string;
+  googleBaseUrl?: string;
 }
 
 export interface StartGeminiComputerUseTaskParams {
