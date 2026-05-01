@@ -1,6 +1,7 @@
 import WebSocket from "ws";
 import { RuntimeTransport } from "./base";
 import { AsyncEventQueue, openRuntimeWebSocket, toWebSocketUrl } from "./ws";
+import { HyperbrowserError } from "../client";
 import {
   SandboxTerminalCreateParams,
   SandboxTerminalEvent,
@@ -180,7 +181,7 @@ export class SandboxTerminalConnection {
 export class SandboxTerminalHandle {
   constructor(
     private readonly transport: RuntimeTransport,
-    private readonly getConnectionInfo: () => Promise<RuntimeConnectionInfo>,
+    private readonly getConnectionInfo: (forceRefresh?: boolean) => Promise<RuntimeConnectionInfo>,
     private status: SandboxTerminalStatus,
     private readonly runtimeProxyOverride?: string
   ) {}
@@ -268,27 +269,41 @@ export class SandboxTerminalHandle {
   }
 
   async attach(cursor?: number | string): Promise<SandboxTerminalConnection> {
-    const connectionInfo = await this.getConnectionInfo();
-    const query = new URLSearchParams({
-      sessionId: connectionInfo.sandboxId,
-    });
-    if (cursor !== undefined) {
-      query.set("cursor", String(cursor));
-    }
-    const target = toWebSocketUrl(
-      connectionInfo.baseUrl,
-      `/sandbox/pty/${this.id}/ws?${query.toString()}`,
-      this.runtimeProxyOverride
-    );
+    const buildTarget = async (forceRefresh: boolean = false) => {
+      const connectionInfo = await this.getConnectionInfo(forceRefresh);
+      const query = new URLSearchParams({
+        sessionId: connectionInfo.sandboxId,
+      });
+      if (cursor !== undefined) {
+        query.set("cursor", String(cursor));
+      }
+      const target = toWebSocketUrl(
+        connectionInfo.baseUrl,
+        `/sandbox/pty/${this.id}/ws?${query.toString()}`,
+        this.runtimeProxyOverride
+      );
 
-    const headers: Record<string, string> = {
-      Authorization: `Bearer ${connectionInfo.token}`,
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${connectionInfo.token}`,
+      };
+      if (target.hostHeader) {
+        headers.Host = target.hostHeader;
+      }
+
+      return { target, headers };
     };
-    if (target.hostHeader) {
-      headers.Host = target.hostHeader;
-    }
 
-    const ws = await openRuntimeWebSocket(target, headers);
+    const { target, headers } = await buildTarget();
+    let ws: WebSocket;
+    try {
+      ws = await openRuntimeWebSocket(target, headers);
+    } catch (error) {
+      if (!(error instanceof HyperbrowserError) || error.statusCode !== 401) {
+        throw error;
+      }
+      const refreshed = await buildTarget(true);
+      ws = await openRuntimeWebSocket(refreshed.target, refreshed.headers);
+    }
 
     return new SandboxTerminalConnection(ws);
   }
@@ -297,7 +312,7 @@ export class SandboxTerminalHandle {
 export class SandboxTerminalApi {
   constructor(
     private readonly transport: RuntimeTransport,
-    private readonly getConnectionInfo: () => Promise<RuntimeConnectionInfo>,
+    private readonly getConnectionInfo: (forceRefresh?: boolean) => Promise<RuntimeConnectionInfo>,
     private readonly runtimeProxyOverride?: string
   ) {}
 

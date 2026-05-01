@@ -248,7 +248,7 @@ const encodeWriteData = async (
 class RuntimeFileWatchHandle {
   constructor(
     private readonly transport: RuntimeTransport,
-    private readonly getConnectionInfo: () => Promise<RuntimeConnectionInfo>,
+    private readonly getConnectionInfo: (forceRefresh?: boolean) => Promise<RuntimeConnectionInfo>,
     private readonly status: RawFileWatchStatus,
     private readonly runtimeProxyOverride?: string
   ) {}
@@ -271,23 +271,40 @@ class RuntimeFileWatchHandle {
   }
 
   async *events(cursor?: number): AsyncGenerator<RawFileWatchEvent> {
-    const connectionInfo = await this.getConnectionInfo();
-    const target = toWebSocketUrl(
-      connectionInfo.baseUrl,
-      `/sandbox/files/watch/${this.status.id}/ws?sessionId=${encodeURIComponent(
-        connectionInfo.sandboxId
-      )}${cursor !== undefined ? `&cursor=${encodeURIComponent(String(cursor))}` : ""}`,
-      this.runtimeProxyOverride
-    );
+    const buildTarget = async (forceRefresh: boolean = false) => {
+      const connectionInfo = await this.getConnectionInfo(forceRefresh);
+      const target = toWebSocketUrl(
+        connectionInfo.baseUrl,
+        `/sandbox/files/watch/${this.status.id}/ws?sessionId=${encodeURIComponent(
+          connectionInfo.sandboxId
+        )}${cursor !== undefined ? `&cursor=${encodeURIComponent(String(cursor))}` : ""}`,
+        this.runtimeProxyOverride
+      );
 
-    const headers: Record<string, string> = {
-      Authorization: `Bearer ${connectionInfo.token}`,
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${connectionInfo.token}`,
+      };
+      if (target.hostHeader) {
+        headers.Host = target.hostHeader;
+      }
+
+      return { target, headers };
     };
-    if (target.hostHeader) {
-      headers.Host = target.hostHeader;
-    }
 
-    const ws = await openRuntimeWebSocket(target, headers);
+    const openSocket = async () => {
+      const { target, headers } = await buildTarget();
+      try {
+        return await openRuntimeWebSocket(target, headers);
+      } catch (error) {
+        if (error instanceof HyperbrowserError && error.statusCode === 401) {
+          const refreshed = await buildTarget(true);
+          return openRuntimeWebSocket(refreshed.target, refreshed.headers);
+        }
+        throw error;
+      }
+    };
+
+    const ws = await openSocket();
     const queue = new AsyncEventQueue<RawFileWatchEvent>();
 
     ws.on("message", (data) => {
@@ -405,7 +422,7 @@ export class SandboxWatchDirHandle {
 export class SandboxFilesApi {
   constructor(
     private readonly transport: RuntimeTransport,
-    private readonly getConnectionInfo: () => Promise<RuntimeConnectionInfo>,
+    private readonly getConnectionInfo: (forceRefresh?: boolean) => Promise<RuntimeConnectionInfo>,
     private readonly runtimeProxyOverride?: string,
     private readonly defaultRunAs?: string
   ) {}

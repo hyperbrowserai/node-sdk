@@ -204,12 +204,12 @@ export class SandboxHandle {
     this.processes = new SandboxProcessesApi(this.transport);
     this.files = new SandboxFilesApi(
       this.transport,
-      () => this.resolveRuntimeSocketConnectionInfo(),
+      (forceRefresh) => this.resolveRuntimeSocketConnectionInfo(forceRefresh),
       service.runtimeProxyOverride
     );
     this.terminal = new SandboxTerminalApi(
       this.transport,
-      () => this.resolveRuntimeSocketConnectionInfo(),
+      (forceRefresh) => this.resolveRuntimeSocketConnectionInfo(forceRefresh),
       service.runtimeProxyOverride
     );
     this.pty = this.terminal;
@@ -342,12 +342,12 @@ export class SandboxHandle {
     };
   }
 
-  private async resolveRuntimeSocketConnectionInfo(): Promise<{
+  private async resolveRuntimeSocketConnectionInfo(forceRefresh: boolean = false): Promise<{
     sandboxId: string;
     baseUrl: string;
     token: string;
   }> {
-    const session = await this.ensureRuntimeSession();
+    const session = await this.ensureRuntimeSession(forceRefresh);
     return {
       sandboxId: this.id,
       baseUrl: session.runtime.baseUrl,

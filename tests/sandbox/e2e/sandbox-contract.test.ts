@@ -2,6 +2,7 @@ import { describe, expect, test, vi, afterEach } from "vitest";
 import { SandboxFilesApi } from "../../../src/sandbox/files";
 import { SandboxTerminalHandle } from "../../../src/sandbox/terminal";
 import * as wsModule from "../../../src/sandbox/ws";
+import { HyperbrowserError } from "../../../src/client";
 import { SandboxesService } from "../../../src/services/sandboxes";
 import type { SandboxExposeResult } from "../../../src/types";
 
@@ -305,6 +306,65 @@ describe("sandbox control and runtime contract", () => {
       "https://runtime.example.com/sandbox/sbx_123",
       "/sandbox/pty/pty_123/ws?sessionId=sbx_123&cursor=10",
       undefined
+    );
+  });
+
+  test("terminal attach refreshes runtime auth once after a 401 handshake", async () => {
+    const openRuntimeWebSocketSpy = vi
+      .spyOn(wsModule, "openRuntimeWebSocket")
+      .mockRejectedValueOnce(
+        new HyperbrowserError("expired runtime token", {
+          statusCode: 401,
+          service: "runtime",
+        })
+      )
+      .mockResolvedValueOnce({
+        on: vi.fn(),
+        once: vi.fn(),
+        close: vi.fn(),
+        send: vi.fn(),
+        readyState: 1,
+      } as any);
+    const getConnectionInfo = vi
+      .fn()
+      .mockResolvedValueOnce({
+        sandboxId: "sbx_123",
+        baseUrl: "https://runtime.example.com/sandbox/sbx_123",
+        token: "old-token",
+      })
+      .mockResolvedValueOnce({
+        sandboxId: "sbx_123",
+        baseUrl: "https://runtime.example.com/sandbox/sbx_123",
+        token: "new-token",
+      });
+
+    const terminal = new SandboxTerminalHandle(
+      {} as any,
+      getConnectionInfo,
+      {
+        id: "pty_123",
+        command: "bash",
+        cwd: "/",
+        running: true,
+        rows: 24,
+        cols: 80,
+        startedAt: Date.now(),
+      }
+    );
+
+    await terminal.attach();
+
+    expect(getConnectionInfo).toHaveBeenNthCalledWith(1, false);
+    expect(getConnectionInfo).toHaveBeenNthCalledWith(2, true);
+    expect(openRuntimeWebSocketSpy).toHaveBeenNthCalledWith(
+      1,
+      expect.any(Object),
+      expect.objectContaining({ Authorization: "Bearer old-token" })
+    );
+    expect(openRuntimeWebSocketSpy).toHaveBeenNthCalledWith(
+      2,
+      expect.any(Object),
+      expect.objectContaining({ Authorization: "Bearer new-token" })
     );
   });
 });
