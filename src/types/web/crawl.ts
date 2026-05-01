@@ -7,7 +7,7 @@ import {
   PageData,
 } from "./common";
 
-export type WebCrawlJobStatus = "pending" | "running" | "completed" | "failed";
+export type WebCrawlJobStatus = "pending" | "running" | "completed" | "failed" | "stopped";
 
 export interface WebCrawlOptions {
   maxPages?: number;

@@ -83,7 +83,7 @@ export class CrawlService extends BaseService {
     while (true) {
       try {
         const { status } = await this.getStatus(jobId);
-        if (status === "completed" || status === "failed") {
+        if (status === "completed" || status === "failed" || status === "stopped") {
           jobStatus = status;
           break;
         }

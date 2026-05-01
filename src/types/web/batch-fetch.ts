@@ -7,7 +7,7 @@ import {
   PageData,
 } from "./common";
 
-export type BatchFetchJobStatus = "pending" | "running" | "completed" | "failed";
+export type BatchFetchJobStatus = "pending" | "running" | "completed" | "failed" | "stopped";
 
 export interface StartBatchFetchJobParams {
   urls: string[];

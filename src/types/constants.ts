@@ -4,9 +4,9 @@ export type SessionEventLogType =
   | "captcha_error"
   | "file_downloaded";
 export type ScrapeFormat = "markdown" | "html" | "links" | "screenshot";
-export type ScrapeJobStatus = "pending" | "running" | "completed" | "failed";
-export type ExtractJobStatus = "pending" | "running" | "completed" | "failed";
-export type CrawlJobStatus = "pending" | "running" | "completed" | "failed";
+export type ScrapeJobStatus = "pending" | "running" | "completed" | "failed" | "stopped";
+export type ExtractJobStatus = "pending" | "running" | "completed" | "failed" | "stopped";
+export type CrawlJobStatus = "pending" | "running" | "completed" | "failed" | "stopped";
 export type BrowserUseTaskStatus = "pending" | "running" | "completed" | "failed" | "stopped";
 export type CuaTaskStatus = "pending" | "running" | "completed" | "failed" | "stopped";
 export type HyperAgentTaskStatus = "pending" | "running" | "completed" | "failed" | "stopped";
