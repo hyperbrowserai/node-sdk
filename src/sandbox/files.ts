@@ -1,5 +1,5 @@
 import { Blob, Buffer } from "buffer";
-import nodePath from "path";
+import nodePath from "node:path/posix";
 import { ReadableStream } from "node:stream/web";
 import WebSocket from "ws";
 import { HyperbrowserError } from "../client";
