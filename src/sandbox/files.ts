@@ -158,7 +158,7 @@ const relativeWatchName = (root: string, absolutePath: string): string => {
   if (!relative || relative === ".") {
     return nodePath.basename(absolutePath);
   }
-  return relative.split(nodePath.sep).join("/");
+  return relative;
 };
 
 const isReadableStreamLike = (value: SandboxFileWriteData): value is ReadableStream<Uint8Array> => {
