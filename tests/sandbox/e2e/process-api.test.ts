@@ -143,8 +143,13 @@ describe("sandbox process api", () => {
 
   test("sandbox handle exec forwards string options to processes.exec", async () => {
     const exec = vi.fn().mockResolvedValue(execResponse.result);
+    const execMethod = SandboxHandle.prototype.exec as unknown as (
+      this: { processes: { exec: typeof exec } },
+      input: string,
+      options?: { runAs: string }
+    ) => Promise<unknown>;
 
-    await SandboxHandle.prototype.exec.call(
+    await execMethod.call(
       {
         processes: { exec },
       },

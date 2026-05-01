@@ -80,7 +80,8 @@ describe("sandbox control and runtime contract", () => {
         method: "POST",
       })
     );
-    expect(JSON.parse(requestSpy.mock.calls[0][1].body)).toEqual({
+    const createRequest = requestSpy.mock.calls[0][1] as { body: string };
+    expect(JSON.parse(createRequest.body)).toEqual({
       imageName: "node",
       exposedPorts: [{ port: 3000, auth: true }],
       mounts: {
@@ -123,7 +124,8 @@ describe("sandbox control and runtime contract", () => {
         method: "POST",
       })
     );
-    expect(JSON.parse(requestSpy.mock.calls[0][1].body)).toEqual({
+    const createRequest = requestSpy.mock.calls[0][1] as { body: string };
+    expect(JSON.parse(createRequest.body)).toEqual({
       snapshotName: "snapshot-1",
       mounts: {
         "/workspace/readonly": {
