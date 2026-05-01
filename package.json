@@ -16,7 +16,8 @@
   "type": "commonjs",
   "license": "MIT",
   "scripts": {
-    "build": "tsc",
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "yarn clean && tsc",
     "lint": "eslint src/**/*.ts",
     "prepare": "yarn build",
     "test": "vitest run",

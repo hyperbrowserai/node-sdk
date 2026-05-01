@@ -12,7 +12,7 @@ import { HyperAgentService } from "./services/agents/hyper-agent";
 import { TeamService } from "./services/team";
 import { ComputerActionService } from "./services/computer-action";
 import { GeminiComputerUseService } from "./services/agents/gemini-computer-use";
-import { WebService } from "./services/web";
+import { WebService } from "./services/web/index";
 import { SandboxesService } from "./services/sandboxes";
 import { VolumesService } from "./services/volumes";
 
