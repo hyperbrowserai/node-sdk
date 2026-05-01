@@ -52,6 +52,19 @@ describe("sandbox runtime transport target", () => {
     });
   });
 
+  test("clears the runtime port when the proxy override has no explicit port", () => {
+    const target = resolveRuntimeTransportTarget(
+      "https://session.example.dev:8443",
+      "/sandbox/exec?foo=bar",
+      "http://127.0.0.1"
+    );
+
+    expect(target).toEqual({
+      url: "http://127.0.0.1/sandbox/exec?foo=bar",
+      hostHeader: "session.example.dev:8443",
+    });
+  });
+
   test("applies the explicit override to websocket targets", () => {
     const target = toWebSocketUrl(
       "https://session.example.dev:8443",

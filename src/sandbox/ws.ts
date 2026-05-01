@@ -158,7 +158,7 @@ export const resolveRuntimeTransportTarget = (
   url.username = override.username;
   url.password = override.password;
   url.hostname = override.hostname;
-  url.port = override.port || url.port;
+  url.port = override.port;
 
   return {
     url: url.toString(),
