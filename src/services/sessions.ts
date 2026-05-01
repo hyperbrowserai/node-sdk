@@ -237,13 +237,6 @@ export class SessionsService extends BaseService {
         const fileStream = createReadStream(fileInput);
         const fileBaseName = fileName || path.basename(fileInput);
 
-        fileStream.on("error", (error) => {
-          throw new HyperbrowserError(
-            `Failed to read file ${fileInput}: ${error.message}`,
-            undefined
-          );
-        });
-
         formData.append("file", fileStream, {
           filename: fileBaseName,
         });
