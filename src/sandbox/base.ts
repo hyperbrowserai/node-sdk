@@ -52,12 +52,13 @@ export class RuntimeTransport {
 
   async requestJSON<T>(path: string, init?: RequestInit, params?: RuntimeParams): Promise<T> {
     const response = await this.fetchWithAuth(path, init, params);
-    if (response.headers.get("content-length") === "0") {
+    const responseText = await response.text();
+    if (!responseText) {
       return {} as T;
     }
 
     try {
-      return (await response.json()) as T;
+      return JSON.parse(responseText) as T;
     } catch {
       throw new HyperbrowserError("Failed to parse JSON response", {
         statusCode: response.status,

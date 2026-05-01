@@ -97,12 +97,13 @@ export class BaseService {
         });
       }
 
-      if (response.headers.get("content-length") === "0") {
+      const responseText = await response.text();
+      if (!responseText) {
         return {} as T;
       }
 
       try {
-        return (await response.json()) as T;
+        return JSON.parse(responseText) as T;
       } catch {
         throw new HyperbrowserError("Failed to parse JSON response", {
           statusCode: response.status,
