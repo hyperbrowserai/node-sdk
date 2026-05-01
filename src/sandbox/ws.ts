@@ -252,12 +252,13 @@ const buildHandshakeError = async (response: IncomingMessage): Promise<Hyperbrow
 
 export const openRuntimeWebSocket = async (
   target: RuntimeTransportTarget,
-  headers: Record<string, string>
+  headers: Record<string, string>,
+  timeout: number = 30000
 ): Promise<WebSocket> =>
   new Promise<WebSocket>((resolve, reject) => {
     let settled = false;
 
-    const socket = new WebSocket(target.url, { headers });
+    const socket = new WebSocket(target.url, { headers, handshakeTimeout: timeout });
 
     const rejectOnce = (error: unknown) => {
       if (settled) {

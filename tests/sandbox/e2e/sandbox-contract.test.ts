@@ -359,12 +359,52 @@ describe("sandbox control and runtime contract", () => {
     expect(openRuntimeWebSocketSpy).toHaveBeenNthCalledWith(
       1,
       expect.any(Object),
-      expect.objectContaining({ Authorization: "Bearer old-token" })
+      expect.objectContaining({ Authorization: "Bearer old-token" }),
+      undefined
     );
     expect(openRuntimeWebSocketSpy).toHaveBeenNthCalledWith(
       2,
       expect.any(Object),
-      expect.objectContaining({ Authorization: "Bearer new-token" })
+      expect.objectContaining({ Authorization: "Bearer new-token" }),
+      undefined
+    );
+  });
+
+  test("terminal attach forwards the websocket handshake timeout", async () => {
+    const openRuntimeWebSocketSpy = vi.spyOn(wsModule, "openRuntimeWebSocket").mockResolvedValue({
+      on: vi.fn(),
+      once: vi.fn(),
+      close: vi.fn(),
+      send: vi.fn(),
+      readyState: 1,
+    } as any);
+
+    const terminal = new SandboxTerminalHandle(
+      {} as any,
+      async () => ({
+        sandboxId: "sbx_123",
+        baseUrl: "https://runtime.example.com/sandbox/sbx_123",
+        token: "runtime-token",
+      }),
+      {
+        id: "pty_123",
+        command: "bash",
+        cwd: "/",
+        running: true,
+        rows: 24,
+        cols: 80,
+        startedAt: Date.now(),
+      },
+      undefined,
+      12_345
+    );
+
+    await terminal.attach();
+
+    expect(openRuntimeWebSocketSpy).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({ Authorization: "Bearer runtime-token" }),
+      12_345
     );
   });
 });

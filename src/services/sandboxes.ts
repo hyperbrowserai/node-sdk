@@ -205,12 +205,15 @@ export class SandboxHandle {
     this.files = new SandboxFilesApi(
       this.transport,
       (forceRefresh) => this.resolveRuntimeSocketConnectionInfo(forceRefresh),
-      service.runtimeProxyOverride
+      service.runtimeProxyOverride,
+      undefined,
+      service.runtimeTimeout
     );
     this.terminal = new SandboxTerminalApi(
       this.transport,
       (forceRefresh) => this.resolveRuntimeSocketConnectionInfo(forceRefresh),
-      service.runtimeProxyOverride
+      service.runtimeProxyOverride,
+      service.runtimeTimeout
     );
     this.pty = this.terminal;
   }

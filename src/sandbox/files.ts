@@ -250,7 +250,8 @@ class RuntimeFileWatchHandle {
     private readonly transport: RuntimeTransport,
     private readonly getConnectionInfo: (forceRefresh?: boolean) => Promise<RuntimeConnectionInfo>,
     private readonly status: RawFileWatchStatus,
-    private readonly runtimeProxyOverride?: string
+    private readonly runtimeProxyOverride?: string,
+    private readonly webSocketTimeout?: number
   ) {}
 
   get id(): string {
@@ -294,11 +295,11 @@ class RuntimeFileWatchHandle {
     const openSocket = async () => {
       const { target, headers } = await buildTarget();
       try {
-        return await openRuntimeWebSocket(target, headers);
+        return await openRuntimeWebSocket(target, headers, this.webSocketTimeout);
       } catch (error) {
         if (error instanceof HyperbrowserError && error.statusCode === 401) {
           const refreshed = await buildTarget(true);
-          return openRuntimeWebSocket(refreshed.target, refreshed.headers);
+          return openRuntimeWebSocket(refreshed.target, refreshed.headers, this.webSocketTimeout);
         }
         throw error;
       }
@@ -424,7 +425,8 @@ export class SandboxFilesApi {
     private readonly transport: RuntimeTransport,
     private readonly getConnectionInfo: (forceRefresh?: boolean) => Promise<RuntimeConnectionInfo>,
     private readonly runtimeProxyOverride?: string,
-    private readonly defaultRunAs?: string
+    private readonly defaultRunAs?: string,
+    private readonly webSocketTimeout?: number
   ) {}
 
   withRunAs(runAs?: string): SandboxFilesApi {
@@ -433,7 +435,8 @@ export class SandboxFilesApi {
       this.transport,
       this.getConnectionInfo,
       this.runtimeProxyOverride,
-      normalized ? normalized : undefined
+      normalized ? normalized : undefined,
+      this.webSocketTimeout
     );
   }
 
@@ -733,7 +736,8 @@ export class SandboxFilesApi {
       this.transport,
       this.getConnectionInfo,
       response.watch,
-      this.runtimeProxyOverride
+      this.runtimeProxyOverride,
+      this.webSocketTimeout
     );
 
     return new SandboxWatchDirHandle(watch, onEvent, options.onExit, options.timeoutMs);

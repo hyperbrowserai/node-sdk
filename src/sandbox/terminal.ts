@@ -183,7 +183,8 @@ export class SandboxTerminalHandle {
     private readonly transport: RuntimeTransport,
     private readonly getConnectionInfo: (forceRefresh?: boolean) => Promise<RuntimeConnectionInfo>,
     private status: SandboxTerminalStatus,
-    private readonly runtimeProxyOverride?: string
+    private readonly runtimeProxyOverride?: string,
+    private readonly webSocketTimeout?: number
   ) {}
 
   get id(): string {
@@ -296,13 +297,13 @@ export class SandboxTerminalHandle {
     const { target, headers } = await buildTarget();
     let ws: WebSocket;
     try {
-      ws = await openRuntimeWebSocket(target, headers);
+      ws = await openRuntimeWebSocket(target, headers, this.webSocketTimeout);
     } catch (error) {
       if (!(error instanceof HyperbrowserError) || error.statusCode !== 401) {
         throw error;
       }
       const refreshed = await buildTarget(true);
-      ws = await openRuntimeWebSocket(refreshed.target, refreshed.headers);
+      ws = await openRuntimeWebSocket(refreshed.target, refreshed.headers, this.webSocketTimeout);
     }
 
     return new SandboxTerminalConnection(ws);
@@ -313,7 +314,8 @@ export class SandboxTerminalApi {
   constructor(
     private readonly transport: RuntimeTransport,
     private readonly getConnectionInfo: (forceRefresh?: boolean) => Promise<RuntimeConnectionInfo>,
-    private readonly runtimeProxyOverride?: string
+    private readonly runtimeProxyOverride?: string,
+    private readonly webSocketTimeout?: number
   ) {}
 
   async create(params: SandboxTerminalCreateParams): Promise<SandboxTerminalHandle> {
@@ -329,7 +331,8 @@ export class SandboxTerminalApi {
       this.transport,
       this.getConnectionInfo,
       normalizeTerminalStatus(response.pty),
-      this.runtimeProxyOverride
+      this.runtimeProxyOverride,
+      this.webSocketTimeout
     );
   }
 
@@ -344,7 +347,8 @@ export class SandboxTerminalApi {
       this.transport,
       this.getConnectionInfo,
       normalizeTerminalStatus(response.pty),
-      this.runtimeProxyOverride
+      this.runtimeProxyOverride,
+      this.webSocketTimeout
     );
   }
 }
