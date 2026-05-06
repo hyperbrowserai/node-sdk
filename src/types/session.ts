@@ -239,3 +239,8 @@ export interface UpdateSessionProxyParams {
   staticIpId?: string;
   location?: UpdateSessionProxyLocationParams;
 }
+
+export interface UpdateSessionScreenParams {
+  width: number;
+  height: number;
+}
