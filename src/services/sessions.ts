@@ -398,7 +398,7 @@ export class SessionsService extends BaseService {
     }
   }
 
-  async updateScreenParams(id: string, params: UpdateSessionScreenParams): Promise<BasicResponse> {
+  async updateScreenSize(id: string, params: UpdateSessionScreenParams): Promise<BasicResponse> {
     try {
       return await this.request<BasicResponse>(`/session/${id}/update`, {
         method: "PUT",
