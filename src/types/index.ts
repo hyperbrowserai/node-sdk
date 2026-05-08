@@ -243,6 +243,9 @@ export {
   GetClipboardTextActionParams,
   PutSelectionTextActionParams,
   ComputerActionResponseDataClipboardText,
+  ListWindowsActionParams,
+  ComputerActionWindow,
+  ComputerActionResponseDataListWindows,
 } from "./computer-action";
 export { FetchParams, FetchResponse, FetchResponseData, FetchStatus } from "./web/fetch";
 export {

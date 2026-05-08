@@ -198,4 +198,14 @@ export class ComputerActionService extends BaseService {
       returnScreenshot,
     });
   }
+
+  async listWindows(
+    session: SessionDetail | string,
+    returnScreenshot: boolean = false
+  ): Promise<ComputerActionResponse> {
+    return this.executeRequest(session, {
+      action: ComputerAction.LIST_WINDOWS,
+      returnScreenshot,
+    });
+  }
 }
