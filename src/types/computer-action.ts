@@ -14,6 +14,7 @@ export enum ComputerAction {
   TYPE_TEXT = "type_text",
   GET_CLIPBOARD_TEXT = "get_clipboard_text",
   PUT_SELECTION_TEXT = "put_selection_text",
+  LIST_WINDOWS = "list_windows",
 }
 
 export type ComputerActionMouseButton = "left" | "right" | "middle" | "back" | "forward" | "wheel";
@@ -134,6 +135,14 @@ export interface PutSelectionTextActionParams {
 }
 
 /**
+ * Parameters for list windows action.
+ */
+export interface ListWindowsActionParams {
+  action: ComputerAction.LIST_WINDOWS;
+  returnScreenshot?: boolean;
+}
+
+/**
  * Union type for all computer action parameters
  */
 export type ComputerActionParams =
@@ -148,13 +157,33 @@ export type ComputerActionParams =
   | MouseDownActionParams
   | MouseUpActionParams
   | GetClipboardTextActionParams
-  | PutSelectionTextActionParams;
+  | PutSelectionTextActionParams
+  | ListWindowsActionParams;
 
 export interface ComputerActionResponseDataClipboardText {
   clipboardText?: string;
 }
 
-export type ComputerActionResponseData = ComputerActionResponseDataClipboardText;
+/**
+ * A single visible top-level X11/native window entry.
+ */
+export interface ComputerActionWindow {
+  id: string;
+  name: string;
+  active: boolean;
+}
+
+/**
+ * Response data for the list windows action.
+ */
+export interface ComputerActionResponseDataListWindows {
+  activeWindowId: string;
+  windows: ComputerActionWindow[];
+}
+
+export type ComputerActionResponseData =
+  | ComputerActionResponseDataClipboardText
+  | ComputerActionResponseDataListWindows;
 
 /**
  * Response from computer action API
