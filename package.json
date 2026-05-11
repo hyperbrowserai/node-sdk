@@ -21,6 +21,7 @@
     "prepare": "yarn build",
     "test": "vitest run",
     "test:e2e": "vitest run tests/sandbox/e2e",
+    "test:integration": "vitest run tests/integration",
     "test:watch": "vitest",
     "format": "prettier --write 'src/**/*.ts'"
   },
