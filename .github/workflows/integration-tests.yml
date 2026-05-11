@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   integration-tests:
-    runs-on: depot-ubuntu-24.04-16
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
