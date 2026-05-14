@@ -2,6 +2,14 @@ export interface CreateProfileParams {
   name?: string;
 }
 
+export interface UpdateProfileParams {
+  name?: string;
+}
+
+export interface BatchDeleteProfilesParams {
+  ids: string[];
+}
+
 export interface CreateProfileResponse {
   id: string;
   name: string | null;

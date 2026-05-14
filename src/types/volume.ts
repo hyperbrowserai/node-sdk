@@ -9,6 +9,15 @@ export interface Volume {
   transferAmount?: number;
 }
 
+export interface VolumeListParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
 export interface VolumeListResponse {
   volumes: Volume[];
+  totalCount: number;
+  page: number;
+  perPage: number;
 }

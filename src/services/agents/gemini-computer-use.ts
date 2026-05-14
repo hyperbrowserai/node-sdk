@@ -3,6 +3,7 @@ import { BasicResponse } from "../../types";
 import { POLLING_ATTEMPTS } from "../../types/constants";
 import { sleep } from "../../utils";
 import { BaseService } from "../base";
+import { AgentTaskListParams, AgentTaskListResponse } from "../../types/agents/task";
 import {
   GeminiComputerUseTaskResponse,
   GeminiComputerUseTaskStatusResponse,
@@ -11,6 +12,26 @@ import {
 } from "../../types/agents/gemini-computer-use";
 
 export class GeminiComputerUseService extends BaseService {
+
+  /**
+   * List task jobs
+   * @param params Optional filters and pagination
+   */
+  async list(params: AgentTaskListParams = {}): Promise<AgentTaskListResponse> {
+    try {
+      return await this.request<AgentTaskListResponse>("/task/gemini-computer-use", undefined, {
+        task: params.task,
+        page: params.page,
+        limit: params.limit,
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError("Failed to list gemini-computer-use task jobs", undefined);
+    }
+  }
+
   /**
    * Start a new Gemini Computer Use task job
    * @param params The parameters for the task job

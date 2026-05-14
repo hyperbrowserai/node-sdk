@@ -3,6 +3,7 @@ import { BasicResponse } from "../../types";
 import { POLLING_ATTEMPTS } from "../../types/constants";
 import { sleep } from "../../utils";
 import { BaseService } from "../base";
+import { AgentTaskListParams, AgentTaskListResponse } from "../../types/agents/task";
 import {
   CuaTaskResponse,
   CuaTaskStatusResponse,
@@ -11,6 +12,26 @@ import {
 } from "../../types/agents/cua";
 
 export class CuaService extends BaseService {
+
+  /**
+   * List task jobs
+   * @param params Optional filters and pagination
+   */
+  async list(params: AgentTaskListParams = {}): Promise<AgentTaskListResponse> {
+    try {
+      return await this.request<AgentTaskListResponse>("/task/cua", undefined, {
+        task: params.task,
+        page: params.page,
+        limit: params.limit,
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError("Failed to list cua task jobs", undefined);
+    }
+  }
+
   /**
    * Start a new CUA task job
    * @param params The parameters for the task job

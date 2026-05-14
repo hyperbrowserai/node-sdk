@@ -13,9 +13,17 @@ import {
   SandboxExposeResult,
   SandboxExecParams,
   SandboxExecOptions,
+  SandboxImageListParams,
   SandboxImageListResponse,
   SandboxListParams,
   SandboxListResponse,
+  SandboxRuntimeBrowserAuthResponse,
+  CreateFirecrackerImageBuildParams,
+  CompleteFirecrackerImageBuildParams,
+  CreateFirecrackerImageBuildResponse,
+  FirecrackerImageBuildResponse,
+  FirecrackerImageBuildListParams,
+  FirecrackerImageBuildListResponse,
   SandboxMemorySnapshotParams,
   SandboxMemorySnapshotResult,
   SandboxProcessResult,
@@ -484,9 +492,18 @@ export class SandboxesService extends BaseService {
     }
   }
 
-  async listImages(): Promise<SandboxImageListResponse> {
+  async listImages(params: SandboxImageListParams = {}): Promise<SandboxImageListResponse> {
     try {
-      return await this.request<SandboxImageListResponse>("/images");
+      const query = {
+        page: params.page,
+        limit: params.limit,
+        source: Array.isArray(params.source) ? params.source : params.source ? [params.source] : undefined,
+        search: params.search,
+      };
+      const hasQuery = Object.values(query).some((value) => value !== undefined);
+      return hasQuery
+        ? await this.request<SandboxImageListResponse>("/images", undefined, query)
+        : await this.request<SandboxImageListResponse>("/images");
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
@@ -502,6 +519,8 @@ export class SandboxesService extends BaseService {
       return await this.request<SandboxSnapshotListResponse>("/snapshots", undefined, {
         status: params.status,
         imageName: params.imageName,
+        search: params.search,
+        page: params.page,
         limit: params.limit,
       });
     } catch (error) {
@@ -509,6 +528,97 @@ export class SandboxesService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError("Failed to list sandbox snapshots", undefined);
+    }
+  }
+
+
+  async getRuntimeBrowserAuth(
+    id: string,
+    allowedOrigin: string
+  ): Promise<SandboxRuntimeBrowserAuthResponse> {
+    try {
+      return await this.request<SandboxRuntimeBrowserAuthResponse>(`/sandbox/${id}/runtime/browser-auth`, {
+        method: "POST",
+        headers: { Origin: allowedOrigin },
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to issue runtime browser auth for sandbox ${id}`, undefined);
+    }
+  }
+
+  async createImageBuild(
+    params: CreateFirecrackerImageBuildParams
+  ): Promise<CreateFirecrackerImageBuildResponse> {
+    try {
+      return await this.request<CreateFirecrackerImageBuildResponse>("/images/builds", {
+        method: "POST",
+        body: JSON.stringify(params),
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError("Failed to create image build", undefined);
+    }
+  }
+
+  async listImageBuilds(
+    params: FirecrackerImageBuildListParams = {}
+  ): Promise<FirecrackerImageBuildListResponse> {
+    try {
+      return await this.request<FirecrackerImageBuildListResponse>("/images/builds", undefined, {
+        status: params.status,
+        limit: params.limit,
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError("Failed to list image builds", undefined);
+    }
+  }
+
+  async getImageBuild(buildId: string): Promise<FirecrackerImageBuildResponse> {
+    try {
+      return await this.request<FirecrackerImageBuildResponse>(`/images/builds/${buildId}`);
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to get image build ${buildId}`, undefined);
+    }
+  }
+
+  async completeImageBuild(
+    buildId: string,
+    params: CompleteFirecrackerImageBuildParams
+  ): Promise<FirecrackerImageBuildResponse> {
+    try {
+      return await this.request<FirecrackerImageBuildResponse>(`/images/builds/${buildId}/complete`, {
+        method: "POST",
+        body: JSON.stringify(params),
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to complete image build ${buildId}`, undefined);
+    }
+  }
+
+  async cancelImageBuild(buildId: string): Promise<FirecrackerImageBuildResponse> {
+    try {
+      return await this.request<FirecrackerImageBuildResponse>(`/images/builds/${buildId}/cancel`, {
+        method: "POST",
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to cancel image build ${buildId}`, undefined);
     }
   }
 
