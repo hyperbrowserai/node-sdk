@@ -76,10 +76,12 @@ export class TaskService extends BaseService {
       } catch (error) {
         failures++;
         if (failures >= POLLING_ATTEMPTS) {
-          throw error;
+          throw new HyperbrowserError(
+            `Failed to poll task job ${jobId} after ${POLLING_ATTEMPTS} attempts: ${error}`
+          );
         }
       }
-      await sleep(1000);
+      await sleep(2000);
     }
   }
 }
