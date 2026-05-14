@@ -10,29 +10,11 @@ import {
   BrowserUseTaskStatusResponse,
 } from "../../types/agents/browser-use";
 import { isZodSchema, sleep } from "../../utils";
-import { BaseService } from "../base";
-import { AgentTaskListParams, AgentTaskListResponse } from "../../types/agents/task";
+import { AgentTaskListService } from "./base";
 
-export class BrowserUseService extends BaseService {
-
-  /**
-   * List task jobs
-   * @param params Optional filters and pagination
-   */
-  async list(params: AgentTaskListParams = {}): Promise<AgentTaskListResponse> {
-    try {
-      return await this.request<AgentTaskListResponse>("/task/browser-use", undefined, {
-        task: params.task,
-        page: params.page,
-        limit: params.limit,
-      });
-    } catch (error) {
-      if (error instanceof HyperbrowserError) {
-        throw error;
-      }
-      throw new HyperbrowserError("Failed to list browser-use task jobs", undefined);
-    }
-  }
+export class BrowserUseService extends AgentTaskListService {
+  protected readonly taskPath = "browser-use";
+  protected readonly taskLabel = "browser-use";
 
   /**
    * Start a new browser-use task job

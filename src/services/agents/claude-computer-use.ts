@@ -2,8 +2,7 @@ import { HyperbrowserError } from "../../client";
 import { BasicResponse } from "../../types";
 import { POLLING_ATTEMPTS } from "../../types/constants";
 import { sleep } from "../../utils";
-import { BaseService } from "../base";
-import { AgentTaskListParams, AgentTaskListResponse } from "../../types/agents/task";
+import { AgentTaskListService } from "./base";
 import {
   ClaudeComputerUseTaskResponse,
   ClaudeComputerUseTaskStatusResponse,
@@ -11,26 +10,9 @@ import {
   StartClaudeComputerUseTaskResponse,
 } from "../../types/agents/claude-computer-use";
 
-export class ClaudeComputerUseService extends BaseService {
-
-  /**
-   * List task jobs
-   * @param params Optional filters and pagination
-   */
-  async list(params: AgentTaskListParams = {}): Promise<AgentTaskListResponse> {
-    try {
-      return await this.request<AgentTaskListResponse>("/task/claude-computer-use", undefined, {
-        task: params.task,
-        page: params.page,
-        limit: params.limit,
-      });
-    } catch (error) {
-      if (error instanceof HyperbrowserError) {
-        throw error;
-      }
-      throw new HyperbrowserError("Failed to list claude-computer-use task jobs", undefined);
-    }
-  }
+export class ClaudeComputerUseService extends AgentTaskListService {
+  protected readonly taskPath = "claude-computer-use";
+  protected readonly taskLabel = "claude-computer-use";
 
   /**
    * Start a new Claude Computer Use task job
