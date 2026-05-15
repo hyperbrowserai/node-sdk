@@ -2,7 +2,7 @@ import { HyperbrowserError } from "../../client";
 import { BasicResponse } from "../../types";
 import { POLLING_ATTEMPTS } from "../../types/constants";
 import { sleep } from "../../utils";
-import { BaseService } from "../base";
+import { AgentTaskListService } from "./base";
 import {
   GeminiComputerUseTaskResponse,
   GeminiComputerUseTaskStatusResponse,
@@ -10,7 +10,10 @@ import {
   StartGeminiComputerUseTaskResponse,
 } from "../../types/agents/gemini-computer-use";
 
-export class GeminiComputerUseService extends BaseService {
+export class GeminiComputerUseService extends AgentTaskListService {
+  protected readonly taskPath = "gemini-computer-use";
+  protected readonly taskLabel = "gemini-computer-use";
+
   /**
    * Start a new Gemini Computer Use task job
    * @param params The parameters for the task job

@@ -32,6 +32,8 @@ export const POLLING_ATTEMPTS = 5;
 
 export type BrowserUseVersion = "0.1.40" | "0.7.10" | "latest";
 
+export type TaskLlm = BrowserUseLlm;
+
 export type BrowserUseLlm =
   | "gpt-4o"
   | "gpt-4o-mini"

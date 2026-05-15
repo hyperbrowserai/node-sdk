@@ -21,6 +21,14 @@ import {
   UpdateSessionProxyParams,
   UpdateSessionScreenParams,
   SessionGetParams,
+  SessionLogsTokenResponse,
+  SessionInfoResponse,
+  SessionCreditUsageResponse,
+  SessionMetricsResponse,
+  SessionConsoleParams,
+  SessionConsoleResponse,
+  SessionNetworkParams,
+  SessionNetworkResponse,
 } from "../types/session";
 import { BaseService } from "./base";
 import { HyperbrowserError } from "../client";
@@ -327,6 +335,94 @@ export class SessionsService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError("Failed to get active sessions count", undefined);
+    }
+  }
+
+
+  async stopAll(): Promise<BasicResponse> {
+    try {
+      return await this.request<BasicResponse>("/sessions/stop", { method: "PUT" });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError("Failed to stop all sessions", undefined);
+    }
+  }
+
+  async getLogsToken(id: string): Promise<SessionLogsTokenResponse> {
+    try {
+      return await this.request<SessionLogsTokenResponse>(`/session/${id}/logs-token`);
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to get logs token for session ${id}`, undefined);
+    }
+  }
+
+  async getInfo(id: string): Promise<SessionInfoResponse> {
+    try {
+      return await this.request<SessionInfoResponse>(`/session/${id}/info`);
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to get info for session ${id}`, undefined);
+    }
+  }
+
+  async getCreditUsage(id: string): Promise<SessionCreditUsageResponse> {
+    try {
+      return await this.request<SessionCreditUsageResponse>(`/session/${id}/credit-usage`);
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to get credit usage for session ${id}`, undefined);
+    }
+  }
+
+  async getMetrics(id: string): Promise<SessionMetricsResponse> {
+    try {
+      return await this.request<SessionMetricsResponse>(`/session/${id}/metrics`);
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to get metrics for session ${id}`, undefined);
+    }
+  }
+
+  async getConsoleLogs(
+    id: string,
+    params: SessionConsoleParams = {}
+  ): Promise<SessionConsoleResponse> {
+    try {
+      return await this.request<SessionConsoleResponse>(`/session/${id}/console`, undefined, {
+        ...params,
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to get console logs for session ${id}`, undefined);
+    }
+  }
+
+  async getNetworkLogs(
+    id: string,
+    params: SessionNetworkParams = {}
+  ): Promise<SessionNetworkResponse> {
+    try {
+      return await this.request<SessionNetworkResponse>(`/session/${id}/network`, undefined, {
+        ...params,
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to get network logs for session ${id}`, undefined);
     }
   }
 

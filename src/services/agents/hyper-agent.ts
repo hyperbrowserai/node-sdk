@@ -2,7 +2,7 @@ import { HyperbrowserError } from "../../client";
 import { BasicResponse } from "../../types";
 import { POLLING_ATTEMPTS } from "../../types/constants";
 import { sleep } from "../../utils";
-import { BaseService } from "../base";
+import { AgentTaskListService } from "./base";
 import {
   HyperAgentTaskResponse,
   HyperAgentTaskStatusResponse,
@@ -10,7 +10,10 @@ import {
   StartHyperAgentTaskResponse,
 } from "../../types/agents/hyper-agent";
 
-export class HyperAgentService extends BaseService {
+export class HyperAgentService extends AgentTaskListService {
+  protected readonly taskPath = "hyper-agent";
+  protected readonly taskLabel = "hyper-agent";
+
   /**
    * Start a new HyperAgent task job
    * @param params The parameters for the task job

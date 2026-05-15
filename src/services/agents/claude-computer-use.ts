@@ -2,7 +2,7 @@ import { HyperbrowserError } from "../../client";
 import { BasicResponse } from "../../types";
 import { POLLING_ATTEMPTS } from "../../types/constants";
 import { sleep } from "../../utils";
-import { BaseService } from "../base";
+import { AgentTaskListService } from "./base";
 import {
   ClaudeComputerUseTaskResponse,
   ClaudeComputerUseTaskStatusResponse,
@@ -10,7 +10,10 @@ import {
   StartClaudeComputerUseTaskResponse,
 } from "../../types/agents/claude-computer-use";
 
-export class ClaudeComputerUseService extends BaseService {
+export class ClaudeComputerUseService extends AgentTaskListService {
+  protected readonly taskPath = "claude-computer-use";
+  protected readonly taskLabel = "claude-computer-use";
+
   /**
    * Start a new Claude Computer Use task job
    * @param params The parameters for the task job

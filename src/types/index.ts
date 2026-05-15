@@ -15,6 +15,12 @@ export {
   ScrapeOptions,
   ScrapeJobStatusResponse,
   BatchScrapeJobStatusResponse,
+  StartBatchScrapeJobParams,
+  StartBatchScrapeJobResponse,
+  BatchScrapeJobResponse,
+  GetBatchScrapeJobParams,
+  ScrapedPage,
+  ScreenshotOptions,
   StorageStateOptions,
 } from "./scrape";
 export {
@@ -92,6 +98,18 @@ export {
   GeminiComputerUseTaskMetadata,
 } from "./agents/gemini-computer-use";
 export {
+  TaskStatus,
+  TaskMetadata,
+  TaskData,
+  StartTaskParams,
+  StartTaskResponse,
+  TaskStatusResponse,
+  TaskResponse,
+  AgentTaskListParams,
+  AgentTaskSummary,
+  AgentTaskListResponse,
+} from "./agents/task";
+export {
   BasicResponse,
   SessionStatus,
   Session,
@@ -114,6 +132,19 @@ export {
   SessionProfile,
   SessionLaunchState,
   SessionCreditBreakdown,
+  SessionRecording,
+  CreateSessionProfile,
+  SessionLogsTokenResponse,
+  SessionInfoResponse,
+  SessionCreditUsageResponse,
+  SessionMetricsResponse,
+  SessionLogLevel,
+  SessionLogOrder,
+  SessionNetworkMethod,
+  SessionConsoleParams,
+  SessionConsoleResponse,
+  SessionNetworkParams,
+  SessionNetworkResponse,
   UpdateSessionProfileParams,
   UpdateSessionProxyLocationParams,
   UpdateSessionProxyParams,
@@ -128,13 +159,26 @@ export {
   SandboxVolumeMount,
   SandboxListParams,
   SandboxListResponse,
+  SandboxImageSource,
   SandboxImageSummary,
+  SandboxImageListParams,
   SandboxImageListResponse,
   SandboxSnapshotStatus,
   SandboxSnapshotSummary,
   SandboxSnapshotListParams,
   SandboxSnapshotListResponse,
   CreateSandboxParams,
+  SandboxRuntimeBrowserAuthResponse,
+  FirecrackerImageBuildStatus,
+  FirecrackerImageInit,
+  CreateFirecrackerImageBuildParams,
+  CompleteFirecrackerImageBuildParams,
+  FirecrackerImageBuild,
+  FirecrackerImageBuildUpload,
+  CreateFirecrackerImageBuildResponse,
+  FirecrackerImageBuildResponse,
+  FirecrackerImageBuildListParams,
+  FirecrackerImageBuildListResponse,
   SandboxMemorySnapshotParams,
   SandboxMemorySnapshotResult,
   SandboxExposeParams,
@@ -178,11 +222,13 @@ export {
   SandboxTerminalKillParams,
   SandboxTerminalEvent,
 } from "./sandbox";
-export { CreateVolumeParams, Volume, VolumeListResponse } from "./volume";
+export { CreateVolumeParams, Volume, VolumeListParams, VolumeListResponse } from "./volume";
 export {
   CreateProfileParams,
   ProfileResponse,
   CreateProfileResponse,
+  UpdateProfileParams,
+  BatchDeleteProfilesParams,
   ProfileListParams,
   ProfileListResponse,
 } from "./profile";
@@ -220,6 +266,7 @@ export {
   SessionEventLogType,
   SessionRegion,
   BrowserUseVersion,
+  TaskLlm,
   HyperAgentVersion,
 } from "./constants";
 export { TeamCreditInfo } from "./team";
@@ -256,6 +303,15 @@ export {
   BatchFetchJobResponse,
   BatchFetchJobStatus,
 } from "./web/batch-fetch";
+export {
+  StartWebCrawlJobParams,
+  GetWebCrawlJobParams,
+  StartWebCrawlJobResponse,
+  WebCrawlJobStatusResponse,
+  WebCrawlJobResponse,
+  WebCrawlJobStatus,
+  WebCrawlOptions,
+} from "./web/crawl";
 export {
   WebSearchParams,
   WebSearchResponse,

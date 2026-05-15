@@ -244,3 +244,76 @@ export interface UpdateSessionScreenParams {
   width: number;
   height: number;
 }
+
+
+export interface SessionLogsTokenResponse {
+  token: string;
+  tokenExpiresAt: string;
+}
+
+export interface SessionInfoProfile {
+  id: string;
+  name?: string | null;
+}
+
+export interface SessionInfoResponse {
+  id: string;
+  status: SessionStatus;
+  startTime?: number | null;
+  launchState?: SessionLaunchState | null;
+  duration: number;
+  proxyBytesUsed: number;
+  region: string;
+  settings: unknown[];
+  recordingUrl?: string | null;
+  videoRecordingUrl?: string | null;
+  videoRecordingPlaylistUrl?: string | null;
+  isRecordingEncrypted?: boolean | null;
+  liveUrl?: string | null;
+  liveDomain?: string | null;
+  profile?: SessionInfoProfile | null;
+  creditsUsed?: number | null;
+  creditBreakdown?: SessionCreditBreakdown | null;
+}
+
+export interface SessionCreditUsageResponse {
+  creditUsage: number | null;
+}
+
+export interface SessionMetricsResponse {
+  metrics: Array<Record<string, unknown>>;
+  displayedMetrics: string[];
+}
+
+export type SessionLogLevel = "log" | "debug" | "info" | "error" | "warning";
+export type SessionLogOrder = "asc" | "desc";
+export type SessionNetworkMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS" | "HEAD";
+
+export interface SessionConsoleParams {
+  logLevels?: SessionLogLevel[];
+  search?: string;
+  afterTimestamp?: number;
+  beforeTimestamp?: number;
+  order?: SessionLogOrder;
+  limit?: number;
+}
+
+export interface SessionNetworkParams {
+  methods?: SessionNetworkMethod[];
+  statusCodes?: string[];
+  search?: string;
+  afterTimestamp?: number;
+  beforeTimestamp?: number;
+  order?: SessionLogOrder;
+  limit?: number;
+}
+
+export interface SessionConsoleResponse {
+  consoleLogs: Array<Record<string, unknown>>;
+  pages: Array<Record<string, unknown>>;
+}
+
+export interface SessionNetworkResponse {
+  networkCalls: Array<Record<string, unknown>>;
+  pages: Array<Record<string, unknown>>;
+}

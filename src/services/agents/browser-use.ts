@@ -10,9 +10,12 @@ import {
   BrowserUseTaskStatusResponse,
 } from "../../types/agents/browser-use";
 import { isZodSchema, sleep } from "../../utils";
-import { BaseService } from "../base";
+import { AgentTaskListService } from "./base";
 
-export class BrowserUseService extends BaseService {
+export class BrowserUseService extends AgentTaskListService {
+  protected readonly taskPath = "browser-use";
+  protected readonly taskLabel = "browser-use";
+
   /**
    * Start a new browser-use task job
    * @param params The parameters for the task job

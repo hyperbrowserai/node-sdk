@@ -103,12 +103,20 @@ export interface SandboxImageSummary {
   updatedAt: string;
 }
 
+export type SandboxImageSource = "public" | "team";
+
+export interface SandboxImageListParams {
+  page?: number;
+  limit?: number;
+  source?: SandboxImageSource | SandboxImageSource[];
+  search?: string;
+}
+
 export interface SandboxImageListResponse {
   images: SandboxImageSummary[];
-  // TODO: add pagination metadata when /api/images supports it.
-  // totalCount?: number;
-  // page?: number;
-  // perPage?: number;
+  totalCount: number;
+  page: number;
+  perPage: number;
 }
 
 export type SandboxSnapshotStatus = "creating" | "created" | "failed";
@@ -129,17 +137,108 @@ export interface SandboxSnapshotSummary {
 }
 
 export interface SandboxSnapshotListParams {
-  status?: SandboxSnapshotStatus;
+  status?: SandboxSnapshotStatus | SandboxSnapshotStatus[];
   imageName?: string;
+  search?: string;
+  page?: number;
   limit?: number;
 }
 
 export interface SandboxSnapshotListResponse {
   snapshots: SandboxSnapshotSummary[];
-  // TODO: add pagination metadata when /api/snapshots supports it.
-  // totalCount?: number;
-  // page?: number;
-  // perPage?: number;
+  totalCount: number;
+  page: number;
+  perPage: number;
+}
+
+
+export interface SandboxRuntimeBrowserAuthResponse {
+  runtime: SandboxRuntimeTarget;
+  allowedOrigin: string;
+  capabilities: string[];
+  bootstrapUrl: string;
+  bootstrapUrlExpiresAt: string | null;
+}
+
+export type FirecrackerImageBuildStatus =
+  | "awaiting_upload"
+  | "upload_verified"
+  | "dispatching"
+  | "building"
+  | "verifying"
+  | "completed"
+  | "failed"
+  | "canceled";
+
+export interface FirecrackerImageInit {
+  commands?: string[];
+  [key: string]: unknown;
+}
+
+export interface CreateFirecrackerImageBuildParams {
+  imageName: string;
+  inputSha256: string;
+  inputSizeBytes: number;
+  inputFormat: string;
+  sourcePlatform: string;
+  imageConfigUser?: string;
+  imageInit?: FirecrackerImageInit;
+}
+
+export interface CompleteFirecrackerImageBuildParams {
+  inputSha256: string;
+  inputSizeBytes: number;
+  inputFormat: string;
+}
+
+export interface FirecrackerImageBuild {
+  id: string;
+  teamId: string;
+  userId: string | null;
+  namespace: string;
+  imageName: string;
+  imageId: string;
+  status: FirecrackerImageBuildStatus;
+  inputBucket?: string | null;
+  inputKey?: string | null;
+  inputSha256?: string | null;
+  inputSizeBytes?: number | null;
+  outputBucket?: string | null;
+  outputKey?: string | null;
+  vmId?: string | null;
+  errorCode?: string | null;
+  errorMessage?: string | null;
+  metadata?: Record<string, unknown> | null;
+  completedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FirecrackerImageBuildUpload {
+  url: string;
+  method: "PUT";
+  headers: Record<string, string>;
+  objectKey: string;
+  expiresInSeconds: number;
+  maxUploadBytes: number;
+}
+
+export interface CreateFirecrackerImageBuildResponse {
+  build: FirecrackerImageBuild;
+  upload: FirecrackerImageBuildUpload;
+}
+
+export interface FirecrackerImageBuildResponse {
+  build: FirecrackerImageBuild;
+}
+
+export interface FirecrackerImageBuildListParams {
+  status?: FirecrackerImageBuildStatus;
+  limit?: number;
+}
+
+export interface FirecrackerImageBuildListResponse {
+  builds: FirecrackerImageBuild[];
 }
 
 export interface SandboxMemorySnapshotParams {

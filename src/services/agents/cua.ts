@@ -2,7 +2,7 @@ import { HyperbrowserError } from "../../client";
 import { BasicResponse } from "../../types";
 import { POLLING_ATTEMPTS } from "../../types/constants";
 import { sleep } from "../../utils";
-import { BaseService } from "../base";
+import { AgentTaskListService } from "./base";
 import {
   CuaTaskResponse,
   CuaTaskStatusResponse,
@@ -10,7 +10,10 @@ import {
   StartCuaTaskResponse,
 } from "../../types/agents/cua";
 
-export class CuaService extends BaseService {
+export class CuaService extends AgentTaskListService {
+  protected readonly taskPath = "cua";
+  protected readonly taskLabel = "cua";
+
   /**
    * Start a new CUA task job
    * @param params The parameters for the task job

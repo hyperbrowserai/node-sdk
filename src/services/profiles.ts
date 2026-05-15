@@ -3,6 +3,8 @@ import {
   CreateProfileParams,
   ProfileResponse,
   CreateProfileResponse,
+  UpdateProfileParams,
+  BatchDeleteProfilesParams,
   ProfileListParams,
   ProfileListResponse,
 } from "../types/profile";
@@ -57,6 +59,44 @@ export class ProfilesService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError(`Failed to delete profile ${id}`, undefined);
+    }
+  }
+
+
+  /**
+   * Update an existing profile
+   * @param id The ID of the profile to update
+   * @param params Profile fields to update
+   */
+  async update(id: string, params: UpdateProfileParams): Promise<ProfileResponse> {
+    try {
+      return await this.request<ProfileResponse>(`/profile/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(params),
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to update profile ${id}`, undefined);
+    }
+  }
+
+  /**
+   * Delete multiple profiles
+   * @param params Profile IDs to delete
+   */
+  async deleteMany(params: BatchDeleteProfilesParams): Promise<BasicResponse> {
+    try {
+      return await this.request<BasicResponse>("/profiles", {
+        method: "DELETE",
+        body: JSON.stringify(params),
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError("Failed to delete profiles", undefined);
     }
   }
 
