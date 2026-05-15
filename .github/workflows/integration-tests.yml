@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   integration-tests:
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Check out repository
