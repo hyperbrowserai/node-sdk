@@ -118,13 +118,9 @@ export type CaptchaEvaluationType =
   | "aliexpress"
   | "recaptcha"
   | "recaptcha-visual"
-  | "amazon"
-  | "datadome"
-  | "normal";
+  | "amazon";
 
-export type CaptchaEvaluationTarget =
-  | CaptchaEvaluationType
-  | (string & {});
+export type CaptchaEvaluationTarget = CaptchaEvaluationType;
 
 export interface CaptchaEvaluationParams {
   captcha?: CaptchaEvaluationTarget;
