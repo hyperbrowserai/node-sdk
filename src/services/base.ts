@@ -62,9 +62,11 @@ export class BaseService {
         (key) => key.toLowerCase() === "content-type"
       ) as keyof HeadersInit;
 
+      const requestTimeout = init?.timeout ?? this.timeout;
+
       const response = await fetch(url.toString(), {
         ...init,
-        timeout: this.timeout,
+        timeout: requestTimeout,
         headers: {
           "x-api-key": this.apiKey,
           ...(contentTypeKey && init?.headers

@@ -35,6 +35,7 @@ export interface SessionLaunchState {
   enableVideoWebRecording?: boolean;
   enableLogCapture?: boolean;
   acceptCookies?: boolean;
+  solverType?: CaptchaSolverType;
   profile?: SessionProfile;
   staticIpId?: string;
   saveDownloads?: boolean;
@@ -109,6 +110,55 @@ export interface ImageCaptchaParam {
   inputSelector: string;
 }
 
+export type CaptchaSolverType = "visual" | (string & {});
+
+export type CaptchaEvaluationType =
+  | "turnstile"
+  | "cloudflare-challenge"
+  | "aliexpress"
+  | "recaptcha"
+  | "recaptcha-visual"
+  | "amazon"
+  | "datadome"
+  | "normal";
+
+export type CaptchaEvaluationTarget =
+  | CaptchaEvaluationType
+  | (string & {});
+
+export interface CaptchaEvaluationParams {
+  captcha?: CaptchaEvaluationTarget;
+  captchaType?: CaptchaEvaluationTarget;
+  text?: CaptchaEvaluationTarget;
+  iterations?: number;
+  maxIterations?: number;
+  solverType?: CaptchaSolverType;
+  imageCaptchaParams?: Array<ImageCaptchaParam>;
+  useGeminiCaptchaSolver?: boolean;
+  useUltraStealth?: boolean;
+}
+
+export interface CaptchaEvaluationPageResult {
+  url: string;
+  targetId: string | null;
+  iterationsRun: number;
+  solved: boolean;
+  solvedCaptchas: CaptchaEvaluationType[];
+  checkedCaptchas: CaptchaEvaluationType[];
+  captchaSolvedCounts: Record<string, number>;
+  lastSolveTime: Record<string, number>;
+}
+
+export interface CaptchaEvaluationResponse {
+  success: true;
+  captcha: CaptchaEvaluationType | null;
+  iterationsRequested: number;
+  iterationsRun: number;
+  solved: boolean;
+  solvedCaptchas: CaptchaEvaluationType[];
+  pages: CaptchaEvaluationPageResult[];
+}
+
 export interface CreateSessionParams {
   useUltraStealth?: boolean;
   useStealth?: boolean;
@@ -125,6 +175,7 @@ export interface CreateSessionParams {
   locales?: ISO639_1[];
   screen?: ScreenConfig;
   solveCaptchas?: boolean;
+  solverType?: CaptchaSolverType;
   adblock?: boolean;
   trackers?: boolean;
   annoyances?: boolean;
@@ -243,4 +294,14 @@ export interface UpdateSessionProxyParams {
 export interface UpdateSessionScreenParams {
   width: number;
   height: number;
+}
+
+export interface UpdateSessionSolveCaptchasParams {
+  solverType?: CaptchaSolverType;
+}
+
+export interface UpdateSessionSolveCaptchasResponse extends BasicResponse {
+  solveCaptchas?: boolean;
+  sessionId?: string;
+  telemetryReady?: boolean;
 }

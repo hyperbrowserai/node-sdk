@@ -4,6 +4,8 @@ import FormData from "form-data";
 import { RequestInit } from "node-fetch";
 import {
   BasicResponse,
+  CaptchaEvaluationParams,
+  CaptchaEvaluationResponse,
   CreateSessionParams,
   GetActiveSessionsCountResponse,
   GetSessionDownloadsUrlResponse,
@@ -20,10 +22,14 @@ import {
   UpdateSessionProfileParams,
   UpdateSessionProxyParams,
   UpdateSessionScreenParams,
+  UpdateSessionSolveCaptchasParams,
+  UpdateSessionSolveCaptchasResponse,
   SessionGetParams,
 } from "../types/session";
 import { BaseService } from "./base";
 import { HyperbrowserError } from "../client";
+
+const CAPTCHA_EVALUATION_REQUEST_TIMEOUT_MS = 185_000;
 
 /**
  * Service for managing session event logs
@@ -113,6 +119,29 @@ export class SessionsService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError(`Failed to stop session ${id}`, undefined);
+    }
+  }
+
+  /**
+   * Manually evaluate captchas in a running session.
+   * @param id The ID of the session to evaluate
+   * @param params Optional captcha evaluation parameters
+   */
+  async evaluateCaptcha(
+    id: string,
+    params: CaptchaEvaluationParams = {}
+  ): Promise<CaptchaEvaluationResponse> {
+    try {
+      return await this.request<CaptchaEvaluationResponse>(`/session/${id}/captcha/evaluate`, {
+        method: "POST",
+        timeout: Math.max(this.timeout, CAPTCHA_EVALUATION_REQUEST_TIMEOUT_MS),
+        body: JSON.stringify(params),
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to evaluate captcha for session ${id}`, undefined);
     }
   }
 
@@ -409,6 +438,57 @@ export class SessionsService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError(`Failed to update screen for session ${id}`, undefined);
+    }
+  }
+
+  /**
+   * Start automatic captcha solving for a running session.
+   * @param id The ID of the session to update
+   * @param params Optional captcha solver parameters
+   */
+  async startCaptchaSolving(
+    id: string,
+    params: UpdateSessionSolveCaptchasParams = {}
+  ): Promise<UpdateSessionSolveCaptchasResponse> {
+    try {
+      return await this.request<UpdateSessionSolveCaptchasResponse>(`/session/${id}/update`, {
+        method: "PUT",
+        body: JSON.stringify({
+          type: "solveCaptchas",
+          params: {
+            enabled: true,
+            ...params,
+          },
+        }),
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to start captcha solving for session ${id}`, undefined);
+    }
+  }
+
+  /**
+   * Stop automatic captcha solving for a running session.
+   * @param id The ID of the session to update
+   */
+  async stopCaptchaSolving(id: string): Promise<UpdateSessionSolveCaptchasResponse> {
+    try {
+      return await this.request<UpdateSessionSolveCaptchasResponse>(`/session/${id}/update`, {
+        method: "PUT",
+        body: JSON.stringify({
+          type: "solveCaptchas",
+          params: {
+            enabled: false,
+          },
+        }),
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to stop captcha solving for session ${id}`, undefined);
     }
   }
 
