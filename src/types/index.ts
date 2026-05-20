@@ -100,6 +100,12 @@ export {
   SessionListParams,
   SessionListResponse,
   ScreenConfig,
+  CaptchaEvaluationPageResult,
+  CaptchaEvaluationParams,
+  CaptchaEvaluationResponse,
+  CaptchaEvaluationTarget,
+  CaptchaEvaluationType,
+  CaptchaSolverType,
   CreateSessionParams,
   GetSessionDownloadsUrlResponse,
   GetSessionVideoRecordingUrlResponse,
@@ -118,6 +124,8 @@ export {
   UpdateSessionProxyLocationParams,
   UpdateSessionProxyParams,
   UpdateSessionScreenParams,
+  UpdateSessionSolveCaptchasParams,
+  UpdateSessionSolveCaptchasResponse,
 } from "./session";
 export {
   SandboxStatus,

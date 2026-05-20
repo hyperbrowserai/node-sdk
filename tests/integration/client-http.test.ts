@@ -60,6 +60,49 @@ const startServer = async (): Promise<TestServer> => {
       return;
     }
 
+    if (
+      request.method === "POST" &&
+      request.url ===
+        "/api/session/52dd29fb-75a2-43f9-9831-8ff377fedb0a/captcha/evaluate"
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      sendJson(response, 200, {
+        success: true,
+        captcha: "recaptcha-visual",
+        iterationsRequested: 5,
+        iterationsRun: 1,
+        solved: true,
+        solvedCaptchas: ["recaptcha-visual"],
+        pages: [
+          {
+            url: "https://example.com",
+            targetId: "target_123",
+            iterationsRun: 1,
+            solved: true,
+            solvedCaptchas: ["recaptcha-visual"],
+            checkedCaptchas: ["recaptcha-visual"],
+            captchaSolvedCounts: { "recaptcha-visual": 1 },
+            lastSolveTime: { "recaptcha-visual": 123 },
+          },
+        ],
+      });
+      return;
+    }
+
+    if (
+      request.method === "PUT" &&
+      request.url === "/api/session/52dd29fb-75a2-43f9-9831-8ff377fedb0a/update"
+    ) {
+      const updateBody = body as { type?: string; params?: { enabled?: boolean } };
+      if (updateBody.type === "solveCaptchas") {
+        sendJson(response, 200, {
+          success: true,
+          solveCaptchas: Boolean(updateBody.params?.enabled),
+        });
+        return;
+      }
+    }
+
     sendJson(response, 404, { message: `unexpected route ${request.method} ${request.url}` });
   });
 
@@ -130,6 +173,106 @@ describe("client HTTP integration", () => {
         apiKey: "test-api-key",
         contentType: "application/json",
         body: undefined,
+      },
+    ]);
+  });
+
+  test("session captcha evaluation posts the requested captcha target and iterations", async () => {
+    const server = await startServer();
+    servers.push(server);
+    const client = new HyperbrowserClient({
+      apiKey: "test-api-key",
+      baseUrl: server.baseUrl,
+      timeout: 1,
+    });
+
+    const result = await client.sessions.evaluateCaptcha(
+      "52dd29fb-75a2-43f9-9831-8ff377fedb0a",
+      {
+        captcha: "recaptcha-visual",
+        iterations: 5,
+      }
+    );
+
+    expect(result).toEqual({
+      success: true,
+      captcha: "recaptcha-visual",
+      iterationsRequested: 5,
+      iterationsRun: 1,
+      solved: true,
+      solvedCaptchas: ["recaptcha-visual"],
+      pages: [
+        {
+          url: "https://example.com",
+          targetId: "target_123",
+          iterationsRun: 1,
+          solved: true,
+          solvedCaptchas: ["recaptcha-visual"],
+          checkedCaptchas: ["recaptcha-visual"],
+          captchaSolvedCounts: { "recaptcha-visual": 1 },
+          lastSolveTime: { "recaptcha-visual": 123 },
+        },
+      ],
+    });
+    expect(server.requests).toEqual([
+      {
+        method: "POST",
+        url: "/api/session/52dd29fb-75a2-43f9-9831-8ff377fedb0a/captcha/evaluate",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: {
+          captcha: "recaptcha-visual",
+          iterations: 5,
+        },
+      },
+    ]);
+  });
+
+  test("session captcha solving update starts and stops automatic solving", async () => {
+    const server = await startServer();
+    servers.push(server);
+    const client = new HyperbrowserClient({
+      apiKey: "test-api-key",
+      baseUrl: server.baseUrl,
+    });
+
+    const started = await client.sessions.startCaptchaSolving(
+      "52dd29fb-75a2-43f9-9831-8ff377fedb0a",
+      {
+        solverType: "visual",
+      }
+    );
+    const stopped = await client.sessions.stopCaptchaSolving(
+      "52dd29fb-75a2-43f9-9831-8ff377fedb0a"
+    );
+
+    expect(started).toEqual({ success: true, solveCaptchas: true });
+    expect(stopped).toEqual({ success: true, solveCaptchas: false });
+    expect(server.requests).toEqual([
+      {
+        method: "PUT",
+        url: "/api/session/52dd29fb-75a2-43f9-9831-8ff377fedb0a/update",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: {
+          type: "solveCaptchas",
+          params: {
+            enabled: true,
+            solverType: "visual",
+          },
+        },
+      },
+      {
+        method: "PUT",
+        url: "/api/session/52dd29fb-75a2-43f9-9831-8ff377fedb0a/update",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: {
+          type: "solveCaptchas",
+          params: {
+            enabled: false,
+          },
+        },
       },
     ]);
   });
