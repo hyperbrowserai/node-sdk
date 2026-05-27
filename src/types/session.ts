@@ -159,8 +159,11 @@ export interface CreateSessionParams {
   useUltraStealth?: boolean;
   useStealth?: boolean;
   useProxy?: boolean;
+  /** Custom proxy server host. Enterprise plan only. */
   proxyServer?: string;
+  /** Password for authenticating with the custom proxy server. Enterprise plan only. */
   proxyServerPassword?: string;
+  /** Username for authenticating with the custom proxy server. Enterprise plan only. */
   proxyServerUsername?: string;
   proxyCountry?: Country;
   proxyState?: State;
