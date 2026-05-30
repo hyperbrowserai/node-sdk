@@ -1,6 +1,7 @@
 import { BaseService } from "./base";
 import {
   CreateProfileParams,
+  ForkProfileParams,
   ProfileResponse,
   CreateProfileResponse,
   ProfileListParams,
@@ -25,6 +26,28 @@ export class ProfilesService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError("Failed to create profile", undefined);
+    }
+  }
+
+  /**
+   * Fork an existing profile, creating a new independent copy
+   * @param id The ID of the source profile to fork
+   * @param params Optional parameters (e.g., name for the forked profile)
+   */
+  async fork(
+    id: string,
+    params?: ForkProfileParams
+  ): Promise<CreateProfileResponse> {
+    try {
+      return await this.request<CreateProfileResponse>(`/profile/${id}/fork`, {
+        method: "POST",
+        body: params ? JSON.stringify(params) : undefined,
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to fork profile ${id}`, undefined);
     }
   }
 
