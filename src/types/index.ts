@@ -126,6 +126,8 @@ export {
   UpdateSessionScreenParams,
   UpdateSessionSolveCaptchasParams,
   UpdateSessionSolveCaptchasResponse,
+  UpdateSessionForkProfileParams,
+  UpdateSessionForkProfileResponse,
 } from "./session";
 export {
   SandboxStatus,

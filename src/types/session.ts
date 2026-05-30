@@ -304,3 +304,11 @@ export interface UpdateSessionSolveCaptchasResponse extends BasicResponse {
   sessionId?: string;
   telemetryReady?: boolean;
 }
+
+export interface UpdateSessionForkProfileParams {
+  name?: string;
+}
+
+export interface UpdateSessionForkProfileResponse extends BasicResponse {
+  forkedProfileId?: string;
+}
