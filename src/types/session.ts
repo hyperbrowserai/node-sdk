@@ -301,4 +301,3 @@ export interface UpdateSessionSolveCaptchasResponse extends BasicResponse {
   sessionId?: string;
   telemetryReady?: boolean;
 }
-

@@ -492,7 +492,6 @@ export class SessionsService extends BaseService {
     }
   }
 
-
   private static hasWarnedUpdateSessionProfileParamsBooleanDeprecated = false;
 
   private warnUpdateSessionProfileParamsBooleanDeprecated(): void {
