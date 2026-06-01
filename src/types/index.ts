@@ -189,6 +189,7 @@ export {
 export { CreateVolumeParams, Volume, VolumeListResponse } from "./volume";
 export {
   CreateProfileParams,
+  ForkProfileParams,
   ProfileResponse,
   CreateProfileResponse,
   ProfileListParams,

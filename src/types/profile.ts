@@ -2,6 +2,10 @@ export interface CreateProfileParams {
   name?: string;
 }
 
+export interface ForkProfileParams {
+  name?: string;
+}
+
 export interface CreateProfileResponse {
   id: string;
   name: string | null;
