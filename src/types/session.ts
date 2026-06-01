@@ -75,7 +75,6 @@ export interface SessionDetail extends Session {
   webdriverEndpoint?: string;
   liveUrl?: string;
   token: string;
-  forkedProfileId?: string;
 }
 
 export interface SessionGetParams {
@@ -104,8 +103,6 @@ export interface CreateSessionProfile {
   id?: string;
   persistChanges?: boolean;
   persistNetworkCache?: boolean;
-  fork?: boolean;
-  forkProfileName?: string;
 }
 
 export interface ImageCaptchaParam {
@@ -305,10 +302,3 @@ export interface UpdateSessionSolveCaptchasResponse extends BasicResponse {
   telemetryReady?: boolean;
 }
 
-export interface UpdateSessionForkProfileParams {
-  name?: string;
-}
-
-export interface UpdateSessionForkProfileResponse extends BasicResponse {
-  forkedProfileId?: string;
-}

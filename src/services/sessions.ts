@@ -24,8 +24,6 @@ import {
   UpdateSessionScreenParams,
   UpdateSessionSolveCaptchasParams,
   UpdateSessionSolveCaptchasResponse,
-  UpdateSessionForkProfileParams,
-  UpdateSessionForkProfileResponse,
   SessionGetParams,
 } from "../types/session";
 import { BaseService } from "./base";
@@ -494,32 +492,6 @@ export class SessionsService extends BaseService {
     }
   }
 
-  /**
-   * Fork the session's profile on the fly, creating a new independent profile.
-   * The session will persist all subsequent browser state changes to the new
-   * forked profile while the original source profile remains untouched.
-   * @param id The ID of the session to fork
-   * @param params Optional fork parameters (name for the new profile)
-   */
-  async forkProfile(
-    id: string,
-    params: UpdateSessionForkProfileParams = {}
-  ): Promise<UpdateSessionForkProfileResponse> {
-    try {
-      return await this.request<UpdateSessionForkProfileResponse>(`/session/${id}/update`, {
-        method: "PUT",
-        body: JSON.stringify({
-          type: "fork",
-          params,
-        }),
-      });
-    } catch (error) {
-      if (error instanceof HyperbrowserError) {
-        throw error;
-      }
-      throw new HyperbrowserError(`Failed to fork profile for session ${id}`, undefined);
-    }
-  }
 
   private static hasWarnedUpdateSessionProfileParamsBooleanDeprecated = false;
 
