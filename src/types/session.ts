@@ -184,6 +184,7 @@ export interface CreateSessionParams {
   acceptCookies?: boolean;
   urlBlocklist?: string[];
   browserArgs?: string[];
+  disabledExternalProtocols?: string[];
   saveDownloads?: boolean;
   imageCaptchaParams?: Array<ImageCaptchaParam>;
   timeoutMinutes?: number;

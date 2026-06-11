@@ -34,10 +34,7 @@ export class ProfilesService extends BaseService {
    * @param id The ID of the source profile to fork
    * @param params Optional parameters (e.g., name for the forked profile)
    */
-  async fork(
-    id: string,
-    params?: ForkProfileParams
-  ): Promise<CreateProfileResponse> {
+  async fork(id: string, params?: ForkProfileParams): Promise<CreateProfileResponse> {
     try {
       return await this.request<CreateProfileResponse>(`/profile/${id}/fork`, {
         method: "POST",
