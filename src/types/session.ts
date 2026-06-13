@@ -74,6 +74,7 @@ export interface SessionDetail extends Session {
   computerActionEndpoint?: string;
   webdriverEndpoint?: string;
   liveUrl?: string;
+  liveDomain?: string;
   token: string;
 }
 
@@ -199,6 +200,7 @@ export interface CreateSessionParams {
   appendTimestampToDownloads?: boolean;
   showScrollbars?: boolean;
   liveViewTtlSeconds?: number;
+  liveDomain?: string;
   replaceNativeElements?: boolean;
   disablePostQuantumKeyAgreement?: boolean;
 }
