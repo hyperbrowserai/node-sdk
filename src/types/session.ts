@@ -200,7 +200,6 @@ export interface CreateSessionParams {
   appendTimestampToDownloads?: boolean;
   showScrollbars?: boolean;
   liveViewTtlSeconds?: number;
-  liveDomain?: string;
   replaceNativeElements?: boolean;
   disablePostQuantumKeyAgreement?: boolean;
 }
