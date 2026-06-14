@@ -74,6 +74,7 @@ export interface SessionDetail extends Session {
   computerActionEndpoint?: string;
   webdriverEndpoint?: string;
   liveUrl?: string;
+  liveDomain?: string;
   token: string;
 }
 
