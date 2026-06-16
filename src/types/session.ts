@@ -156,6 +156,10 @@ export interface CaptchaEvaluationResponse {
   pages: CaptchaEvaluationPageResult[];
 }
 
+export interface StartSessionFromSnapshotParams {
+  snapshotId: string;
+}
+
 export interface CreateSessionParams {
   useUltraStealth?: boolean;
   useStealth?: boolean;
@@ -202,6 +206,19 @@ export interface CreateSessionParams {
   liveViewTtlSeconds?: number;
   replaceNativeElements?: boolean;
   disablePostQuantumKeyAgreement?: boolean;
+  startFromSnapshot?: StartSessionFromSnapshotParams;
+}
+
+export interface CreateSessionSnapshotResponse {
+  snapshotName: string;
+  snapshotId: string;
+  namespace: string;
+  status: string;
+  uploaded: boolean;
+  ready: boolean;
+  imageName: string;
+  imageId: string;
+  imageNamespace: string;
 }
 
 export interface SessionRecording {

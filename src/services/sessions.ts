@@ -7,6 +7,7 @@ import {
   CaptchaEvaluationParams,
   CaptchaEvaluationResponse,
   CreateSessionParams,
+  CreateSessionSnapshotResponse,
   GetActiveSessionsCountResponse,
   GetSessionDownloadsUrlResponse,
   GetSessionRecordingUrlResponse,
@@ -119,6 +120,24 @@ export class SessionsService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError(`Failed to stop session ${id}`, undefined);
+    }
+  }
+
+  /**
+   * Create a restorable snapshot from a running browser session.
+   * @param id The ID of the session to snapshot
+   */
+  async createSnapshot(id: string): Promise<CreateSessionSnapshotResponse> {
+    try {
+      return await this.request<CreateSessionSnapshotResponse>(`/session/${id}/snapshot`, {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to create snapshot for session ${id}`, undefined);
     }
   }
 
