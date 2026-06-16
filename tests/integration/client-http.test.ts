@@ -55,8 +55,48 @@ const startServer = async (): Promise<TestServer> => {
       return;
     }
 
+    if (request.method === "POST" && request.url === "/api/session") {
+      sendJson(response, 200, {
+        id: "52dd29fb-75a2-43f9-9831-8ff377fedb0a",
+        teamId: "team_123",
+        status: "active",
+        createdAt: "2026-06-16T00:00:00.000Z",
+        updatedAt: "2026-06-16T00:00:00.000Z",
+        sessionUrl: "https://session.example.com",
+        launchState: null,
+        creditsUsed: null,
+        creditBreakdown: {
+          creditsUsed: null,
+          browserTimeCreditsUsed: null,
+          proxyDataCreditsUsed: null,
+        },
+        wsEndpoint: "wss://session.example.com/devtools/browser",
+        liveUrl: "https://live.example.com",
+        token: "session-token",
+      });
+      return;
+    }
+
     if (request.method === "GET" && request.url === "/api/scrape/job_123/status") {
       sendJson(response, 200, { status: "completed" });
+      return;
+    }
+
+    if (
+      request.method === "POST" &&
+      request.url === "/api/session/52dd29fb-75a2-43f9-9831-8ff377fedb0a/snapshot"
+    ) {
+      sendJson(response, 200, {
+        snapshotName: "browser-session-11111111-1111-4111-8111-111111111111",
+        snapshotId: "11111111-1111-4111-8111-111111111111",
+        namespace: "team_team_123",
+        status: "created",
+        uploaded: false,
+        ready: false,
+        imageName: "browser-base",
+        imageId: "22222222-2222-4222-8222-222222222222",
+        imageNamespace: "default",
+      });
       return;
     }
 
@@ -173,6 +213,72 @@ describe("client HTTP integration", () => {
         apiKey: "test-api-key",
         contentType: "application/json",
         body: undefined,
+      },
+    ]);
+  });
+
+  test("session create can start from a snapshot", async () => {
+    const server = await startServer();
+    servers.push(server);
+    const client = new HyperbrowserClient({
+      apiKey: "test-api-key",
+      baseUrl: server.baseUrl,
+    });
+
+    const session = await client.sessions.create({
+      startFromSnapshot: {
+        snapshotId: "11111111-1111-4111-8111-111111111111",
+      },
+      liveViewTtlSeconds: 300,
+    });
+
+    expect(session.id).toBe("52dd29fb-75a2-43f9-9831-8ff377fedb0a");
+    expect(server.requests).toEqual([
+      {
+        method: "POST",
+        url: "/api/session",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: {
+          startFromSnapshot: {
+            snapshotId: "11111111-1111-4111-8111-111111111111",
+          },
+          liveViewTtlSeconds: 300,
+        },
+      },
+    ]);
+  });
+
+  test("session snapshot posts an empty body and parses the snapshot result", async () => {
+    const server = await startServer();
+    servers.push(server);
+    const client = new HyperbrowserClient({
+      apiKey: "test-api-key",
+      baseUrl: server.baseUrl,
+    });
+
+    const snapshot = await client.sessions.createSnapshot(
+      "52dd29fb-75a2-43f9-9831-8ff377fedb0a"
+    );
+
+    expect(snapshot).toEqual({
+      snapshotName: "browser-session-11111111-1111-4111-8111-111111111111",
+      snapshotId: "11111111-1111-4111-8111-111111111111",
+      namespace: "team_team_123",
+      status: "created",
+      uploaded: false,
+      ready: false,
+      imageName: "browser-base",
+      imageId: "22222222-2222-4222-8222-222222222222",
+      imageNamespace: "default",
+    });
+    expect(server.requests).toEqual([
+      {
+        method: "POST",
+        url: "/api/session/52dd29fb-75a2-43f9-9831-8ff377fedb0a/snapshot",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: {},
       },
     ]);
   });
