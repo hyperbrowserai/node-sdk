@@ -292,6 +292,7 @@ export interface SessionEventLogListResponse {
 export interface UpdateSessionProfileParams {
   persistChanges?: boolean;
   persistNetworkCache?: boolean;
+  forkToProfileId?: string;
 }
 
 export interface UpdateSessionProxyLocationParams {
