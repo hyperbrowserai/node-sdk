@@ -12,6 +12,7 @@ import {
 } from "./constants";
 
 export type SessionStatus = "active" | "closed" | "error";
+export type BrowserMemorySize = "small" | "medium" | "large";
 
 export interface BasicResponse {
   success: boolean;
@@ -206,6 +207,7 @@ export interface CreateSessionParams {
   liveViewTtlSeconds?: number;
   replaceNativeElements?: boolean;
   disablePostQuantumKeyAgreement?: boolean;
+  browserMemorySize?: BrowserMemorySize;
   startFromSnapshot?: StartSessionFromSnapshotParams;
 }
 

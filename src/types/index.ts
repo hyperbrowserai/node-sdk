@@ -93,6 +93,7 @@ export {
 } from "./agents/gemini-computer-use";
 export {
   BasicResponse,
+  BrowserMemorySize,
   SessionStatus,
   Session,
   SessionDetail,
