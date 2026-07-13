@@ -12,6 +12,7 @@ import { HyperAgentService } from "./services/agents/hyper-agent";
 import { TeamService } from "./services/team";
 import { ComputerActionService } from "./services/computer-action";
 import { GeminiComputerUseService } from "./services/agents/gemini-computer-use";
+import { GrokComputerUseService } from "./services/agents/grok-computer-use";
 import { WebService } from "./services/web";
 import { SandboxesService } from "./services/sandboxes";
 import { VolumesService } from "./services/volumes";
@@ -67,6 +68,7 @@ export class HyperbrowserClient {
     cua: CuaService;
     hyperAgent: HyperAgentService;
     geminiComputerUse: GeminiComputerUseService;
+    grokComputerUse: GrokComputerUseService;
   };
   public readonly team: TeamService;
   public readonly computerAction: ComputerActionService;
@@ -102,6 +104,7 @@ export class HyperbrowserClient {
       cua: new CuaService(apiKey, baseUrl, timeout),
       hyperAgent: new HyperAgentService(apiKey, baseUrl, timeout),
       geminiComputerUse: new GeminiComputerUseService(apiKey, baseUrl, timeout),
+      grokComputerUse: new GrokComputerUseService(apiKey, baseUrl, timeout),
     };
   }
 }
