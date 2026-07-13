@@ -22,12 +22,7 @@ export type GeminiComputerUseTaskStatus =
   | "completed"
   | "failed"
   | "stopped";
-export type GrokComputerUseTaskStatus =
-  | "pending"
-  | "running"
-  | "completed"
-  | "failed"
-  | "stopped";
+export type GrokComputerUseTaskStatus = "pending" | "running" | "completed" | "failed" | "stopped";
 export type ScrapePageStatus = "completed" | "failed" | "pending" | "running";
 export type CrawlPageStatus = "completed" | "failed";
 export type ScrapeWaitUntil = "load" | "domcontentloaded" | "networkidle";

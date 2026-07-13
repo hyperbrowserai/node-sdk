@@ -15,9 +15,7 @@ export class GrokComputerUseService extends BaseService {
    * Start a new Grok Computer Use task job
    * @param params The parameters for the task job
    */
-  async start(
-    params: StartGrokComputerUseTaskParams
-  ): Promise<StartGrokComputerUseTaskResponse> {
+  async start(params: StartGrokComputerUseTaskParams): Promise<StartGrokComputerUseTaskResponse> {
     try {
       return await this.request<StartGrokComputerUseTaskResponse>("/task/grok-computer-use", {
         method: "POST",
@@ -87,9 +85,7 @@ export class GrokComputerUseService extends BaseService {
    * Start a Grok Computer Use task job and wait for it to complete
    * @param params The parameters for the task job
    */
-  async startAndWait(
-    params: StartGrokComputerUseTaskParams
-  ): Promise<GrokComputerUseTaskResponse> {
+  async startAndWait(params: StartGrokComputerUseTaskParams): Promise<GrokComputerUseTaskResponse> {
     const job = await this.start(params);
     const jobId = job.jobId;
     if (!jobId) {
