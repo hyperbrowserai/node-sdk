@@ -22,6 +22,7 @@ export type GeminiComputerUseTaskStatus =
   | "completed"
   | "failed"
   | "stopped";
+export type GrokComputerUseTaskStatus = "pending" | "running" | "completed" | "failed" | "stopped";
 export type ScrapePageStatus = "completed" | "failed" | "pending" | "running";
 export type CrawlPageStatus = "completed" | "failed";
 export type ScrapeWaitUntil = "load" | "domcontentloaded" | "networkidle";
@@ -94,6 +95,10 @@ export type GeminiComputerUseLlm =
   | "gemini-3.5-flash"
   | "gemini-3-flash-preview"
   | "gemini-2.5-computer-use-preview-10-2025";
+
+export type GrokComputerUseLlm = "grok-4.5";
+
+export type GrokReasoningEffort = "low" | "medium" | "high";
 
 export type SessionRegion =
   | "us-central"
