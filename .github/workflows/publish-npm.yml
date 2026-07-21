@@ -33,7 +33,7 @@ jobs:
           corepack prepare yarn@1.22.22 --activate
 
       - name: Upgrade npm
-        run: npm install -g npm@latest
+        run: npm install -g npm@11.18.0
 
       - name: Show tool versions
         run: |
