@@ -51,6 +51,7 @@ export type BrowserUseLlm =
   | "gemini-2.5-flash";
 
 export type ClaudeComputerUseLlm =
+  | "claude-opus-5"
   | "claude-opus-4-5"
   | "claude-opus-4-6"
   | "claude-opus-4-7"
