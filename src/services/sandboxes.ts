@@ -6,6 +6,8 @@ import { SandboxProcessHandle, SandboxProcessesApi } from "../sandbox/process";
 import { SandboxTerminalApi } from "../sandbox/terminal";
 import { BasicResponse } from "../types/session";
 import {
+  CompleteSandboxImageBuildParams,
+  CreateSandboxImageBuildParams,
   CreateSandboxParams,
   Sandbox,
   SandboxDetail,
@@ -13,14 +15,23 @@ import {
   SandboxExposeResult,
   SandboxExecParams,
   SandboxExecOptions,
+  SandboxImageBuild,
+  SandboxImageBuildCreateResult,
+  SandboxImageBuildListParams,
+  SandboxImageBuildListResponse,
+  SandboxImageListParams,
   SandboxImageListResponse,
   SandboxListParams,
   SandboxListResponse,
   SandboxMemorySnapshotParams,
   SandboxMemorySnapshotResult,
+  SandboxNetworkPolicyPatch,
+  SandboxNetworkUpdateResult,
   SandboxProcessResult,
+  SandboxSnapshotDeleteResult,
   SandboxSnapshotListParams,
   SandboxSnapshotListResponse,
+  SandboxSnapshotSummary,
   SandboxUnexposeResult,
 } from "../types/sandbox";
 import { BaseService } from "./base";
@@ -96,6 +107,9 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
       vcpus: params.cpu,
       memMiB: params.memoryMiB,
       diskSizeMiB: params.diskMiB,
+      allowInternetAccess: params.allowInternetAccess,
+      allowOut: params.allowOut,
+      denyOut: params.denyOut,
     };
   }
 
@@ -124,6 +138,9 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
     exposedPorts: snapshotParams.exposedPorts,
     mounts: snapshotParams.mounts,
     timeoutMinutes: snapshotParams.timeoutMinutes,
+    allowInternetAccess: snapshotParams.allowInternetAccess,
+    allowOut: snapshotParams.allowOut,
+    denyOut: snapshotParams.denyOut,
   };
 };
 
@@ -309,6 +326,27 @@ export class SandboxHandle {
     return buildSandboxExposedUrl(this.runtime, port);
   }
 
+  get network(): SandboxDetail["network"] {
+    return this.detail.network;
+  }
+
+  async updateNetwork(policy: SandboxNetworkPolicyPatch): Promise<SandboxNetworkUpdateResult> {
+    const result = await this.service.updateNetwork(this.id, policy);
+    this.detail = {
+      ...this.detail,
+      network: result.network,
+    };
+    return result;
+  }
+
+  async clearNetwork(): Promise<SandboxNetworkUpdateResult> {
+    return this.updateNetwork({
+      allowInternetAccess: true,
+      allowOut: [],
+      denyOut: [],
+    });
+  }
+
   async exec(input: string, options?: SandboxExecOptions): Promise<SandboxProcessResult>;
   async exec(input: SandboxExecParams): Promise<SandboxProcessResult>;
   async exec(
@@ -484,9 +522,14 @@ export class SandboxesService extends BaseService {
     }
   }
 
-  async listImages(): Promise<SandboxImageListResponse> {
+  async listImages(params: SandboxImageListParams = {}): Promise<SandboxImageListResponse> {
     try {
-      return await this.request<SandboxImageListResponse>("/images");
+      return await this.request<SandboxImageListResponse>("/images", undefined, {
+        source: params.source,
+        search: params.search,
+        page: params.page,
+        limit: params.limit,
+      });
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
@@ -502,6 +545,8 @@ export class SandboxesService extends BaseService {
       return await this.request<SandboxSnapshotListResponse>("/snapshots", undefined, {
         status: params.status,
         imageName: params.imageName,
+        search: params.search,
+        page: params.page,
         limit: params.limit,
       });
     } catch (error) {
@@ -569,6 +614,133 @@ export class SandboxesService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError(`Failed to expose port ${params.port} for sandbox ${id}`);
+    }
+  }
+
+  async getSnapshot(snapshot: string): Promise<SandboxSnapshotSummary> {
+    try {
+      const response = await this.request<{ snapshot: SandboxSnapshotSummary }>(
+        `/snapshots/${encodeURIComponent(snapshot)}`
+      );
+      return response.snapshot;
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to get snapshot ${snapshot}`);
+    }
+  }
+
+  async deleteSnapshot(snapshot: string): Promise<SandboxSnapshotDeleteResult> {
+    try {
+      return await this.request<SandboxSnapshotDeleteResult>(
+        `/snapshots/${encodeURIComponent(snapshot)}`,
+        { method: "DELETE" }
+      );
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to delete snapshot ${snapshot}`);
+    }
+  }
+
+  async createImageBuild(
+    params: CreateSandboxImageBuildParams
+  ): Promise<SandboxImageBuildCreateResult> {
+    try {
+      return await this.request<SandboxImageBuildCreateResult>("/images/builds", {
+        method: "POST",
+        body: JSON.stringify(params),
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError("Failed to create image build");
+    }
+  }
+
+  async getImageBuild(buildId: string): Promise<SandboxImageBuild> {
+    try {
+      const response = await this.request<{ build: SandboxImageBuild }>(
+        `/images/builds/${encodeURIComponent(buildId)}`
+      );
+      return response.build;
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to get image build ${buildId}`);
+    }
+  }
+
+  async listImageBuilds(
+    params: SandboxImageBuildListParams = {}
+  ): Promise<SandboxImageBuildListResponse> {
+    try {
+      return await this.request<SandboxImageBuildListResponse>("/images/builds", undefined, {
+        status: params.status,
+        limit: params.limit,
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError("Failed to list image builds");
+    }
+  }
+
+  async completeImageBuild(
+    buildId: string,
+    params: CompleteSandboxImageBuildParams
+  ): Promise<SandboxImageBuild> {
+    try {
+      const response = await this.request<{ build: SandboxImageBuild }>(
+        `/images/builds/${encodeURIComponent(buildId)}/complete`,
+        {
+          method: "POST",
+          body: JSON.stringify(params),
+        }
+      );
+      return response.build;
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to complete image build ${buildId}`);
+    }
+  }
+
+  async cancelImageBuild(buildId: string): Promise<SandboxImageBuild> {
+    try {
+      const response = await this.request<{ build: SandboxImageBuild }>(
+        `/images/builds/${encodeURIComponent(buildId)}/cancel`,
+        { method: "POST" }
+      );
+      return response.build;
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to cancel image build ${buildId}`);
+    }
+  }
+
+  async updateNetwork(
+    id: string,
+    policy: SandboxNetworkPolicyPatch
+  ): Promise<SandboxNetworkUpdateResult> {
+    try {
+      return await this.request<SandboxNetworkUpdateResult>(`/sandbox/${id}/network`, {
+        method: "PUT",
+        body: JSON.stringify(policy),
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to update network policy for sandbox ${id}`);
     }
   }
 

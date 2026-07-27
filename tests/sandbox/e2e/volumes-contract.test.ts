@@ -37,13 +37,20 @@ describe("volume control contract", () => {
           transferAmount: 0,
         },
       ],
+      totalCount: 1,
+      page: 1,
+      perPage: 20,
     };
 
     const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue(payload);
 
     const response = await service.list();
 
-    expect(requestSpy).toHaveBeenCalledWith("/volume");
+    expect(requestSpy).toHaveBeenCalledWith("/volume", undefined, {
+      search: undefined,
+      page: undefined,
+      limit: undefined,
+    });
     expect(response).toEqual(payload);
   });
 

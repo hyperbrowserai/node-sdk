@@ -27,6 +27,11 @@ const wireSandboxDetail = (overrides: Record<string, unknown> = {}): Record<stri
   vcpus: 2,
   memMiB: 2048,
   diskSizeMiB: 8192,
+  network: {
+    allowInternetAccess: true,
+    allowOut: [],
+    denyOut: [],
+  },
   runtime: {
     transport: "regional_proxy",
     host: "https://runtime.example.com",
@@ -130,6 +135,73 @@ describe("sandbox control and runtime contract", () => {
           type: "ro",
         },
       },
+    });
+  });
+
+  test("create forwards network policy fields for image and snapshot launches", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue(wireSandboxDetail());
+
+    await service.create({
+      imageName: "node",
+      allowInternetAccess: false,
+      allowOut: ["github.com"],
+      denyOut: ["169.254.169.254"],
+    });
+    await service.create({
+      snapshotName: "snapshot-1",
+      allowInternetAccess: true,
+      denyOut: ["10.0.0.0/8"],
+    });
+
+    expect(JSON.parse(requestSpy.mock.calls[0][1].body)).toEqual({
+      imageName: "node",
+      allowInternetAccess: false,
+      allowOut: ["github.com"],
+      denyOut: ["169.254.169.254"],
+    });
+    expect(JSON.parse(requestSpy.mock.calls[1][1].body)).toEqual({
+      snapshotName: "snapshot-1",
+      allowInternetAccess: true,
+      denyOut: ["10.0.0.0/8"],
+    });
+  });
+
+  test("updateNetwork sends a PUT patch and clearNetwork restores defaults", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const detailSpy = vi
+      .spyOn(service as any, "request")
+      .mockResolvedValue(wireSandboxDetail());
+    const sandbox = await service.get("sbx_123");
+    detailSpy.mockResolvedValue({
+      network: {
+        allowInternetAccess: false,
+        allowOut: ["github.com"],
+        denyOut: [],
+      },
+    });
+
+    const result = await sandbox.updateNetwork({
+      allowInternetAccess: false,
+      allowOut: ["github.com"],
+    });
+
+    expect(detailSpy).toHaveBeenLastCalledWith(
+      "/sandbox/sbx_123/network",
+      expect.objectContaining({ method: "PUT" })
+    );
+    expect(JSON.parse(detailSpy.mock.calls.at(-1)![1].body)).toEqual({
+      allowInternetAccess: false,
+      allowOut: ["github.com"],
+    });
+    expect(result.network.allowInternetAccess).toBe(false);
+    expect(sandbox.network).toEqual(result.network);
+
+    await sandbox.clearNetwork();
+    expect(JSON.parse(detailSpy.mock.calls.at(-1)![1].body)).toEqual({
+      allowInternetAccess: true,
+      allowOut: [],
+      denyOut: [],
     });
   });
 
