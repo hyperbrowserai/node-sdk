@@ -35,6 +35,9 @@ export interface SessionLaunchState {
   enableWebRecording?: boolean;
   enableVideoWebRecording?: boolean;
   enableLogCapture?: boolean;
+  allowInternetAccess?: boolean;
+  allowOut?: string[];
+  denyOut?: string[];
   acceptCookies?: boolean;
   solverType?: CaptchaSolverType;
   profile?: SessionProfile;
@@ -184,6 +187,9 @@ export interface CreateSessionParams {
   enableWebRecording?: boolean;
   enableVideoWebRecording?: boolean;
   enableLogCapture?: boolean;
+  allowInternetAccess?: boolean;
+  allowOut?: string[];
+  denyOut?: string[];
   profile?: CreateSessionProfile;
   extensionIds?: Array<string>;
   staticIpId?: string;
