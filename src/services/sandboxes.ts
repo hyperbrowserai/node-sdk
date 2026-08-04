@@ -54,18 +54,6 @@ type WireSandboxListResponse = Omit<SandboxListResponse, "sandboxes"> & {
   sandboxes: WireSandbox[];
 };
 
-const validateOptionalPositiveInteger = (
-  value: number | undefined,
-  fieldName: "cpu" | "memoryMiB" | "diskMiB"
-) => {
-  if (value === undefined) {
-    return;
-  }
-  if (!Number.isInteger(value) || value < 1) {
-    throw new HyperbrowserError(`${fieldName} must be a positive integer`, undefined);
-  }
-};
-
 const normalizeSandbox = (sandbox: WireSandbox): Sandbox => {
   const { vcpus, memMiB, diskSizeMiB, ...rest } = sandbox;
   return {
@@ -91,11 +79,7 @@ const normalizeSandboxListResponse = (response: WireSandboxListResponse): Sandbo
 });
 
 const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<string, unknown> => {
-  if ("imageName" in params) {
-    validateOptionalPositiveInteger(params.cpu, "cpu");
-    validateOptionalPositiveInteger(params.memoryMiB, "memoryMiB");
-    validateOptionalPositiveInteger(params.diskMiB, "diskMiB");
-
+  if (typeof params.imageName === "string") {
     return {
       imageName: params.imageName,
       imageId: params.imageId,
@@ -451,7 +435,11 @@ export class SandboxHandle {
   }
 
   private assertRuntimeAvailable() {
-    if (this.detail.status === "closed" || this.detail.status === "error") {
+    if (
+      this.detail.status === "closed" ||
+      this.detail.status === "close-error" ||
+      this.detail.status === "error"
+    ) {
       throw new HyperbrowserError(`Sandbox ${this.id} is not running`, {
         statusCode: 409,
         code: "sandbox_not_running",

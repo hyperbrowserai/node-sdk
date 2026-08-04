@@ -104,6 +104,7 @@ export type GrokComputerUseLlm = "grok-4.5";
 export type GrokReasoningEffort = "low" | "medium" | "high";
 
 export type SessionRegion =
+  | "us"
   | "us-central"
   | "asia-south"
   | "us-dev"

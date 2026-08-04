@@ -17,7 +17,7 @@ export interface VolumeListParams {
 
 export interface VolumeListResponse {
   volumes: Volume[];
-  totalCount: number;
-  page: number;
-  perPage: number;
+  totalCount?: number;
+  page?: number;
+  perPage?: number;
 }

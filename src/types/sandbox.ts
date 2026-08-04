@@ -50,7 +50,7 @@ export interface Sandbox {
   memoryMiB?: number | null;
   diskMiB?: number | null;
   timeoutMinutes?: number | null;
-  network: SandboxNetworkPolicy;
+  network?: SandboxNetworkPolicy;
   runtime: SandboxRuntimeTarget;
   exposedPorts: SandboxExposeResult[];
 }
@@ -137,9 +137,9 @@ export interface SandboxImageListParams {
 
 export interface SandboxImageListResponse {
   images: SandboxImageSummary[];
-  totalCount: number;
-  page: number;
-  perPage: number;
+  totalCount?: number;
+  page?: number;
+  perPage?: number;
 }
 
 export type SandboxSnapshotStatus = "creating" | "created" | "failed";
@@ -172,9 +172,9 @@ export interface SandboxSnapshotListParams {
 
 export interface SandboxSnapshotListResponse {
   snapshots: SandboxSnapshotSummary[];
-  totalCount: number;
-  page: number;
-  perPage: number;
+  totalCount?: number;
+  page?: number;
+  perPage?: number;
 }
 
 export interface SandboxSnapshotDeleteResult {
@@ -227,8 +227,10 @@ export interface CreateSandboxImageBuildParams {
   imageName: string;
   inputSha256: string;
   inputSizeBytes: number;
-  inputFormat?: string;
-  sourcePlatform?: string;
+  /** Defaults to `rootfs_export_tar_gz` server-side. */
+  inputFormat?: "rootfs_export_tar_gz";
+  /** Defaults to `linux/amd64` server-side. */
+  sourcePlatform?: "linux/amd64";
   imageConfigUser?: string;
   imageInit?: {
     env?: Record<string, string>;
@@ -240,7 +242,8 @@ export interface CreateSandboxImageBuildParams {
 export interface CompleteSandboxImageBuildParams {
   inputSha256: string;
   inputSizeBytes: number;
-  inputFormat?: string;
+  /** Defaults to `rootfs_export_tar_gz` server-side. */
+  inputFormat?: "rootfs_export_tar_gz";
 }
 
 export interface SandboxImageBuildCreateResult {
@@ -249,7 +252,7 @@ export interface SandboxImageBuildCreateResult {
 }
 
 export interface SandboxImageBuildListParams {
-  status?: string;
+  status?: SandboxImageBuildStatus;
   limit?: number;
 }
 
