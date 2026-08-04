@@ -34,6 +34,7 @@ const wireSandboxDetail = (overrides: Record<string, unknown> = {}): Record<stri
   vcpus: 2,
   memMiB: 2048,
   diskSizeMiB: 8192,
+  timeoutMinutes: 15,
   network: {
     allowInternetAccess: true,
     allowOut: [],
@@ -110,7 +111,9 @@ describe("sandbox control and runtime contract", () => {
       cpu: 2,
       memoryMiB: 2048,
       diskMiB: 8192,
+      timeoutMinutes: 15,
     });
+    expect(sandbox.timeoutMinutes).toBe(15);
     expect(sandbox.getExposedUrl(3000)).toBe("https://3000-sbx_123.runtime.example.com/");
   });
 

@@ -252,6 +252,10 @@ export class SandboxHandle {
     return this.detail.diskMiB;
   }
 
+  get timeoutMinutes(): number | null | undefined {
+    return this.detail.timeoutMinutes;
+  }
+
   get exposedPorts(): SandboxExposeResult[] {
     return (this.detail.exposedPorts ?? []).map((entry) => ({ ...entry }));
   }
