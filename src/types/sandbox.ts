@@ -227,9 +227,7 @@ export interface CreateSandboxImageBuildParams {
   imageName: string;
   inputSha256: string;
   inputSizeBytes: number;
-  /** Defaults to `rootfs_export_tar_gz` server-side. */
   inputFormat?: "rootfs_export_tar_gz";
-  /** Defaults to `linux/amd64` server-side. */
   sourcePlatform?: "linux/amd64";
   imageConfigUser?: string;
   imageInit?: {
@@ -242,7 +240,6 @@ export interface CreateSandboxImageBuildParams {
 export interface CompleteSandboxImageBuildParams {
   inputSha256: string;
   inputSizeBytes: number;
-  /** Defaults to `rootfs_export_tar_gz` server-side. */
   inputFormat?: "rootfs_export_tar_gz";
 }
 
@@ -309,7 +306,7 @@ export interface SandboxExecParams {
   timeoutMs?: number;
   timeoutSec?: number;
   runAs?: string;
-  /** @deprecated Ignored for process APIs. Commands always execute via `/bin/sh -lc` server-side. */
+  /** @deprecated Ignored for process APIs. */
   useShell?: boolean;
 }
 
