@@ -5,6 +5,22 @@ import { SessionLaunchState, SessionStatus } from "./session";
 
 export type SandboxStatus = SessionStatus;
 
+export interface SandboxNetworkPolicy {
+  allowInternetAccess: boolean;
+  allowOut: string[];
+  denyOut: string[];
+}
+
+export interface SandboxNetworkPolicyPatch {
+  allowInternetAccess?: boolean;
+  allowOut?: string[];
+  denyOut?: string[];
+}
+
+export interface SandboxNetworkUpdateResult {
+  network: SandboxNetworkPolicy;
+}
+
 export interface SandboxRuntimeTarget {
   transport: "regional_proxy";
   host: string;
@@ -33,6 +49,8 @@ export interface Sandbox {
   cpu?: number | null;
   memoryMiB?: number | null;
   diskMiB?: number | null;
+  timeoutMinutes?: number | null;
+  network?: SandboxNetworkPolicy;
   runtime: SandboxRuntimeTarget;
   exposedPorts: SandboxExposeResult[];
 }
@@ -56,6 +74,9 @@ interface SandboxCreateCommonParams {
   exposedPorts?: SandboxExposeParams[];
   mounts?: Record<string, SandboxVolumeMount>;
   timeoutMinutes?: number;
+  allowInternetAccess?: boolean;
+  allowOut?: string[];
+  denyOut?: string[];
 }
 
 export type CreateSandboxParams =
@@ -94,21 +115,31 @@ export interface SandboxListResponse {
   perPage: number;
 }
 
+export type SandboxImageSource = "public" | "team";
+
 export interface SandboxImageSummary {
   id: string;
   imageName: string;
   namespace: string;
+  source?: SandboxImageSource;
+  imageInit?: Record<string, unknown> | null;
   uploaded: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
+export interface SandboxImageListParams {
+  source?: SandboxImageSource | SandboxImageSource[];
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
 export interface SandboxImageListResponse {
   images: SandboxImageSummary[];
-  // TODO: add pagination metadata when /api/images supports it.
-  // totalCount?: number;
-  // page?: number;
-  // perPage?: number;
+  totalCount?: number;
+  page?: number;
+  perPage?: number;
 }
 
 export type SandboxSnapshotStatus = "creating" | "created" | "failed";
@@ -121,6 +152,9 @@ export interface SandboxSnapshotSummary {
   imageName: string;
   imageId: string;
   status: SandboxSnapshotStatus;
+  vcpus?: number | null;
+  memMiB?: number | null;
+  diskSizeMiB?: number | null;
   compatibilityTag: string;
   metadata: Record<string, unknown>;
   uploaded: boolean;
@@ -129,17 +163,98 @@ export interface SandboxSnapshotSummary {
 }
 
 export interface SandboxSnapshotListParams {
-  status?: SandboxSnapshotStatus;
+  status?: SandboxSnapshotStatus | SandboxSnapshotStatus[];
   imageName?: string;
+  search?: string;
+  page?: number;
   limit?: number;
 }
 
 export interface SandboxSnapshotListResponse {
   snapshots: SandboxSnapshotSummary[];
-  // TODO: add pagination metadata when /api/snapshots supports it.
-  // totalCount?: number;
-  // page?: number;
-  // perPage?: number;
+  totalCount?: number;
+  page?: number;
+  perPage?: number;
+}
+
+export interface SandboxSnapshotDeleteResult {
+  deleted: boolean;
+}
+
+export type SandboxImageBuildStatus =
+  | "awaiting_upload"
+  | "upload_verified"
+  | "dispatching"
+  | "building"
+  | "verifying"
+  | "completed"
+  | "failed"
+  | "canceled";
+
+export interface SandboxImageBuildUpload {
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  objectKey: string;
+  expiresInSeconds: number;
+  maxUploadBytes: number;
+}
+
+export interface SandboxImageBuild {
+  id: string;
+  teamId?: string | null;
+  userId?: string | null;
+  namespace?: string | null;
+  imageName: string;
+  imageId?: string | null;
+  status: SandboxImageBuildStatus;
+  inputBucket?: string | null;
+  inputKey?: string | null;
+  inputSha256?: string | null;
+  inputSizeBytes?: number | null;
+  outputBucket?: string | null;
+  outputKey?: string | null;
+  vmId?: string | null;
+  errorCode?: string | null;
+  errorMessage?: string | null;
+  metadata?: Record<string, unknown> | null;
+  completedAt?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface CreateSandboxImageBuildParams {
+  imageName: string;
+  inputSha256: string;
+  inputSizeBytes: number;
+  inputFormat?: "rootfs_export_tar_gz";
+  sourcePlatform?: "linux/amd64";
+  imageConfigUser?: string;
+  imageInit?: {
+    env?: Record<string, string>;
+    command?: string;
+    args?: string[];
+  };
+}
+
+export interface CompleteSandboxImageBuildParams {
+  inputSha256: string;
+  inputSizeBytes: number;
+  inputFormat?: "rootfs_export_tar_gz";
+}
+
+export interface SandboxImageBuildCreateResult {
+  build: SandboxImageBuild;
+  upload: SandboxImageBuildUpload;
+}
+
+export interface SandboxImageBuildListParams {
+  status?: SandboxImageBuildStatus;
+  limit?: number;
+}
+
+export interface SandboxImageBuildListResponse {
+  builds: SandboxImageBuild[];
 }
 
 export interface SandboxMemorySnapshotParams {
@@ -191,7 +306,7 @@ export interface SandboxExecParams {
   timeoutMs?: number;
   timeoutSec?: number;
   runAs?: string;
-  /** @deprecated Ignored for process APIs. Commands always execute via `/bin/sh -lc` server-side. */
+  /** @deprecated Ignored for process APIs. */
   useShell?: boolean;
 }
 

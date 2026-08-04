@@ -11,7 +11,7 @@ import {
   State,
 } from "./constants";
 
-export type SessionStatus = "active" | "closed" | "error";
+export type SessionStatus = "active" | "closed" | "close-error" | "error";
 export type BrowserMemorySize = "small" | "medium" | "large";
 
 export interface BasicResponse {

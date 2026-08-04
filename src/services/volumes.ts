@@ -1,5 +1,5 @@
 import { HyperbrowserError } from "../client";
-import { CreateVolumeParams, Volume, VolumeListResponse } from "../types/volume";
+import { CreateVolumeParams, Volume, VolumeListParams, VolumeListResponse } from "../types/volume";
 import { BaseService } from "./base";
 
 export class VolumesService extends BaseService {
@@ -23,9 +23,13 @@ export class VolumesService extends BaseService {
   /**
    * List sandbox volumes for the current team.
    */
-  async list(): Promise<VolumeListResponse> {
+  async list(params: VolumeListParams = {}): Promise<VolumeListResponse> {
     try {
-      return await this.request<VolumeListResponse>("/volume");
+      return await this.request<VolumeListResponse>("/volume", undefined, {
+        search: params.search,
+        page: params.page,
+        limit: params.limit,
+      });
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;

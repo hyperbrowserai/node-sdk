@@ -83,13 +83,21 @@ describe("sandbox control list contract", () => {
           updatedAt: "2026-03-12T00:00:01Z",
         },
       ],
+      totalCount: 1,
+      page: 1,
+      perPage: 20,
     };
 
     const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue(payload);
 
     const response = await service.listImages();
 
-    expect(requestSpy).toHaveBeenCalledWith("/images");
+    expect(requestSpy).toHaveBeenCalledWith("/images", undefined, {
+      source: undefined,
+      search: undefined,
+      page: undefined,
+      limit: undefined,
+    });
     expect(response).toEqual(payload);
   });
 
@@ -112,6 +120,9 @@ describe("sandbox control list contract", () => {
           updatedAt: "2026-03-12T00:00:01Z",
         },
       ],
+      totalCount: 1,
+      page: 1,
+      perPage: 20,
     };
 
     const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue(payload);
@@ -125,6 +136,8 @@ describe("sandbox control list contract", () => {
     expect(requestSpy).toHaveBeenCalledWith("/snapshots", undefined, {
       status: "created",
       imageName: "node",
+      search: undefined,
+      page: undefined,
       limit: 10,
     });
     expect(response).toEqual(payload);

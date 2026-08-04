@@ -5,6 +5,13 @@ import * as wsModule from "../../../src/sandbox/ws";
 import { SandboxesService } from "../../../src/services/sandboxes";
 import type { SandboxExposeResult } from "../../../src/types";
 
+const parseJsonRequestBody = (init: unknown): unknown => {
+  if (!init || typeof init !== "object" || !("body" in init) || typeof init.body !== "string") {
+    throw new TypeError("Expected a string request body");
+  }
+  return JSON.parse(init.body) as unknown;
+};
+
 const wireSandboxDetail = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   id: "sbx_123",
   teamId: "team_1",
@@ -27,6 +34,12 @@ const wireSandboxDetail = (overrides: Record<string, unknown> = {}): Record<stri
   vcpus: 2,
   memMiB: 2048,
   diskSizeMiB: 8192,
+  timeoutMinutes: 15,
+  network: {
+    allowInternetAccess: true,
+    allowOut: [],
+    denyOut: [],
+  },
   runtime: {
     transport: "regional_proxy",
     host: "https://runtime.example.com",
@@ -79,7 +92,7 @@ describe("sandbox control and runtime contract", () => {
         method: "POST",
       })
     );
-    expect(JSON.parse(requestSpy.mock.calls[0][1].body)).toEqual({
+    expect(parseJsonRequestBody(requestSpy.mock.calls[0][1])).toEqual({
       imageName: "node",
       exposedPorts: [{ port: 3000, auth: true }],
       mounts: {
@@ -98,7 +111,9 @@ describe("sandbox control and runtime contract", () => {
       cpu: 2,
       memoryMiB: 2048,
       diskMiB: 8192,
+      timeoutMinutes: 15,
     });
+    expect(sandbox.timeoutMinutes).toBe(15);
     expect(sandbox.getExposedUrl(3000)).toBe("https://3000-sbx_123.runtime.example.com/");
   });
 
@@ -122,7 +137,7 @@ describe("sandbox control and runtime contract", () => {
         method: "POST",
       })
     );
-    expect(JSON.parse(requestSpy.mock.calls[0][1].body)).toEqual({
+    expect(parseJsonRequestBody(requestSpy.mock.calls[0][1])).toEqual({
       snapshotName: "snapshot-1",
       mounts: {
         "/workspace/readonly": {
@@ -131,6 +146,139 @@ describe("sandbox control and runtime contract", () => {
         },
       },
     });
+  });
+
+  test("create leaves resource value validation to the server", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue(wireSandboxDetail());
+
+    await service.create({
+      imageName: "node",
+      cpu: 0,
+      memoryMiB: -1,
+      diskMiB: 1.5,
+    });
+
+    expect(parseJsonRequestBody(requestSpy.mock.calls[0][1])).toEqual({
+      imageName: "node",
+      vcpus: 0,
+      memMiB: -1,
+      diskSizeMiB: 1.5,
+    });
+  });
+
+  test("create treats an explicitly undefined imageName as a snapshot launch", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue(wireSandboxDetail());
+
+    await service.create({
+      snapshotName: "snapshot-1",
+      imageName: undefined,
+    });
+
+    expect(parseJsonRequestBody(requestSpy.mock.calls[0][1])).toEqual({
+      snapshotName: "snapshot-1",
+    });
+  });
+
+  test("create forwards network policy fields for image and snapshot launches", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue(wireSandboxDetail());
+
+    await service.create({
+      imageName: "node",
+      allowInternetAccess: false,
+      allowOut: ["github.com"],
+      denyOut: ["169.254.169.254"],
+    });
+    await service.create({
+      snapshotName: "snapshot-1",
+      allowInternetAccess: true,
+      denyOut: ["10.0.0.0/8"],
+    });
+
+    expect(parseJsonRequestBody(requestSpy.mock.calls[0][1])).toEqual({
+      imageName: "node",
+      allowInternetAccess: false,
+      allowOut: ["github.com"],
+      denyOut: ["169.254.169.254"],
+    });
+    expect(parseJsonRequestBody(requestSpy.mock.calls[1][1])).toEqual({
+      snapshotName: "snapshot-1",
+      allowInternetAccess: true,
+      denyOut: ["10.0.0.0/8"],
+    });
+  });
+
+  test("updateNetwork sends a PUT patch and clearNetwork restores defaults", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const detailSpy = vi.spyOn(service as any, "request").mockResolvedValue(wireSandboxDetail());
+    const sandbox = await service.get("sbx_123");
+    detailSpy.mockResolvedValue({
+      network: {
+        allowInternetAccess: false,
+        allowOut: ["github.com"],
+        denyOut: [],
+      },
+    });
+
+    const result = await sandbox.updateNetwork({
+      allowInternetAccess: false,
+      allowOut: ["github.com"],
+    });
+
+    expect(detailSpy).toHaveBeenLastCalledWith(
+      "/sandbox/sbx_123/network",
+      expect.objectContaining({ method: "PUT" })
+    );
+    expect(parseJsonRequestBody(detailSpy.mock.calls.at(-1)![1])).toEqual({
+      allowInternetAccess: false,
+      allowOut: ["github.com"],
+    });
+    expect(result.network.allowInternetAccess).toBe(false);
+    expect(sandbox.network).toEqual(result.network);
+
+    await sandbox.clearNetwork();
+    expect(parseJsonRequestBody(detailSpy.mock.calls.at(-1)![1])).toEqual({
+      allowInternetAccess: true,
+      allowOut: [],
+      denyOut: [],
+    });
+  });
+
+  test("handles sandbox responses that omit network until a policy is updated", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const detail = wireSandboxDetail();
+    delete detail.network;
+    const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue(detail);
+    const sandbox = await service.get("sbx_123");
+
+    expect(sandbox.network).toBeUndefined();
+
+    requestSpy.mockResolvedValue({
+      network: {
+        allowInternetAccess: false,
+        allowOut: [],
+        denyOut: ["10.0.0.0/8"],
+      },
+    });
+    await sandbox.updateNetwork({ denyOut: ["10.0.0.0/8"] });
+
+    expect(sandbox.network).toEqual({
+      allowInternetAccess: false,
+      allowOut: [],
+      denyOut: ["10.0.0.0/8"],
+    });
+  });
+
+  test("treats close-error sandboxes as unavailable at runtime", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    vi.spyOn(service as any, "request").mockResolvedValue(
+      wireSandboxDetail({ status: "close-error" })
+    );
+    const sandbox = await service.get("sbx_123");
+
+    await expect(sandbox.connect()).rejects.toThrow("Sandbox sbx_123 is not running");
   });
 
   test("expose and unexpose preserve server fields and update cached exposed ports", async () => {
