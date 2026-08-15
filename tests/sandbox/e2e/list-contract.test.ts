@@ -101,6 +101,18 @@ describe("sandbox control list contract", () => {
     expect(response).toEqual(payload);
   });
 
+  test("deleteImage sends DELETE /images/:key", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const requestSpy = vi
+      .spyOn(service as any, "request")
+      .mockResolvedValue({ deleted: true });
+
+    const response = await service.deleteImage("custom_node");
+
+    expect(requestSpy).toHaveBeenCalledWith("/images/custom_node", { method: "DELETE" });
+    expect(response).toEqual({ deleted: true });
+  });
+
   test("listSnapshots returns the wrapped snapshot response from the control API", async () => {
     const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
     const payload = {

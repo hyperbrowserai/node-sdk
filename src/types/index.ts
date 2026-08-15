@@ -161,6 +161,7 @@ export {
   SandboxSnapshotListParams,
   SandboxSnapshotListResponse,
   SandboxSnapshotDeleteResult,
+  SandboxImageDeleteResult,
   SandboxImageBuildStatus,
   SandboxImageBuildUpload,
   SandboxImageBuild,

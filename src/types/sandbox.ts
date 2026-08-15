@@ -181,6 +181,10 @@ export interface SandboxSnapshotDeleteResult {
   deleted: boolean;
 }
 
+export interface SandboxImageDeleteResult {
+  deleted: boolean;
+}
+
 export type SandboxImageBuildStatus =
   | "awaiting_upload"
   | "upload_verified"
