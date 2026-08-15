@@ -28,6 +28,7 @@ import {
   SandboxNetworkPolicyPatch,
   SandboxNetworkUpdateResult,
   SandboxProcessResult,
+  SandboxImageDeleteResult,
   SandboxSnapshotDeleteResult,
   SandboxSnapshotListParams,
   SandboxSnapshotListResponse,
@@ -511,6 +512,20 @@ export class SandboxesService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError("Failed to list sandboxes", undefined);
+    }
+  }
+
+  async deleteImage(image: string): Promise<SandboxImageDeleteResult> {
+    try {
+      return await this.request<SandboxImageDeleteResult>(
+        `/images/${encodeURIComponent(image)}`,
+        { method: "DELETE" }
+      );
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to delete image ${image}`);
     }
   }
 
