@@ -105,12 +105,22 @@ describe("sandbox control list contract", () => {
     const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
     const requestSpy = vi
       .spyOn(service as any, "request")
-      .mockResolvedValue({ deleted: true });
+      .mockResolvedValue({
+        deleted: true,
+        id: "img_123",
+        imageName: "custom_node",
+        uploaded: true,
+      });
 
     const response = await service.deleteImage("custom_node");
 
     expect(requestSpy).toHaveBeenCalledWith("/images/custom_node", { method: "DELETE" });
-    expect(response).toEqual({ deleted: true });
+    expect(response).toEqual({
+      deleted: true,
+      id: "img_123",
+      imageName: "custom_node",
+      uploaded: true,
+    });
   });
 
   test("listSnapshots returns the wrapped snapshot response from the control API", async () => {

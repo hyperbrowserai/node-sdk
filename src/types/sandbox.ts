@@ -183,6 +183,9 @@ export interface SandboxSnapshotDeleteResult {
 
 export interface SandboxImageDeleteResult {
   deleted: boolean;
+  id?: string;
+  imageName?: string;
+  uploaded?: boolean;
 }
 
 export type SandboxImageBuildStatus =
