@@ -90,9 +90,11 @@ export type HyperAgentLlm =
   | "claude-sonnet-4-5"
   | "claude-sonnet-4-6"
   | "gemini-2.5-flash"
+  | "gemini-3.7-flash"
   | "gemini-3-flash-preview";
 
 export type GeminiComputerUseLlm =
+  | "gemini-3.7-flash"
   | "gemini-3.6-flash"
   | "gemini-3.5-flash"
   | "gemini-3.5-flash-lite"
