@@ -68,4 +68,22 @@ describe("volume control contract", () => {
     expect(requestSpy).toHaveBeenCalledWith("/volume/2d6f01cf-c5d7-4c61-ae9e-0264f1c8063d");
     expect(response).toEqual(payload);
   });
+
+  test("delete forwards the volume key and returns the deleted revision", async () => {
+    const service = new VolumesService("test-key", "https://api.example.com", 30_000);
+    const payload = {
+      deleted: true,
+      id: "2d6f01cf-c5d7-4c61-ae9e-0264f1c8063d",
+      name: "project-cache",
+    };
+
+    const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue(payload);
+
+    const response = await service.delete("project-cache");
+
+    expect(requestSpy).toHaveBeenCalledWith("/volume/project-cache", {
+      method: "DELETE",
+    });
+    expect(response).toEqual(payload);
+  });
 });

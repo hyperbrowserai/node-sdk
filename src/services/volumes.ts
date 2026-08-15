@@ -1,5 +1,11 @@
 import { HyperbrowserError } from "../client";
-import { CreateVolumeParams, Volume, VolumeListParams, VolumeListResponse } from "../types/volume";
+import {
+  CreateVolumeParams,
+  Volume,
+  VolumeDeleteResult,
+  VolumeListParams,
+  VolumeListResponse,
+} from "../types/volume";
 import { BaseService } from "./base";
 
 export class VolumesService extends BaseService {
@@ -49,6 +55,23 @@ export class VolumesService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError(`Failed to get volume ${id}`, undefined);
+    }
+  }
+
+  /**
+   * Delete a sandbox volume by id or name.
+   */
+  async delete(key: string): Promise<VolumeDeleteResult> {
+    try {
+      return await this.request<VolumeDeleteResult>(
+        `/volume/${encodeURIComponent(key)}`,
+        { method: "DELETE" }
+      );
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to delete volume ${key}`, undefined);
     }
   }
 }
