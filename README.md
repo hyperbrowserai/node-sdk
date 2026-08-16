@@ -274,6 +274,7 @@ const sandbox = await client.sandboxes.create({
 });
 
 await sandbox.stop();
+await client.volumes.delete(sameVolume.id);
 ```
 
 List sandboxes with time-range and search filters:

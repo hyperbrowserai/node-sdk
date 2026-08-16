@@ -215,7 +215,13 @@ export {
   SandboxTerminalKillParams,
   SandboxTerminalEvent,
 } from "./sandbox";
-export { CreateVolumeParams, Volume, VolumeListParams, VolumeListResponse } from "./volume";
+export {
+  CreateVolumeParams,
+  Volume,
+  VolumeListParams,
+  VolumeListResponse,
+  VolumeDeleteResult,
+} from "./volume";
 export {
   CreateProfileParams,
   ForkProfileParams,

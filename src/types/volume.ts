@@ -21,3 +21,9 @@ export interface VolumeListResponse {
   page?: number;
   perPage?: number;
 }
+
+export interface VolumeDeleteResult {
+  deleted: boolean;
+  id?: string;
+  name?: string;
+}
