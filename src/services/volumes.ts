@@ -60,6 +60,8 @@ export class VolumesService extends BaseService {
 
   /**
    * Delete a sandbox volume by id or name.
+   * Name lookup is case-insensitive. Multiple volumes that share a name
+   * return 409 and require an id. Active mounts also return 409.
    */
   async delete(key: string): Promise<VolumeDeleteResult> {
     try {
