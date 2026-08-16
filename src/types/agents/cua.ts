@@ -5,6 +5,10 @@ export interface CuaApiKeys {
   openai?: string;
 }
 
+export interface CuaBaseUrls {
+  openai?: string;
+}
+
 export interface StartCuaTaskParams {
   task: string;
   llm?: CuaLlm;
@@ -15,6 +19,7 @@ export interface StartCuaTaskParams {
   sessionOptions?: CreateSessionParams;
   useCustomApiKeys?: boolean;
   apiKeys?: CuaApiKeys;
+  baseUrls?: CuaBaseUrls;
   useComputerAction?: boolean;
 }
 

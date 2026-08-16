@@ -55,6 +55,11 @@ const startServer = async (): Promise<TestServer> => {
       return;
     }
 
+    if (request.method === "POST" && request.url === "/api/task/cua") {
+      sendJson(response, 200, { jobId: "cua_job_123", liveUrl: null });
+      return;
+    }
+
     if (request.method === "POST" && request.url === "/api/session") {
       sendJson(response, 200, {
         id: "52dd29fb-75a2-43f9-9831-8ff377fedb0a",
@@ -213,6 +218,40 @@ describe("client HTTP integration", () => {
         apiKey: "test-api-key",
         contentType: "application/json",
         body: undefined,
+      },
+    ]);
+  });
+
+  test("OpenAI CUA forwards a custom provider base URL", async () => {
+    const server = await startServer();
+    servers.push(server);
+    const client = new HyperbrowserClient({
+      apiKey: "test-api-key",
+      baseUrl: server.baseUrl,
+    });
+
+    const started = await client.agents.cua.start({
+      task: "Complete the task",
+      llm: "gpt-5.4-mini",
+      useCustomApiKeys: true,
+      apiKeys: { openai: "openai-key" },
+      baseUrls: { openai: "https://example.openai.azure.com/openai/v1/" },
+    });
+
+    expect(started).toEqual({ jobId: "cua_job_123", liveUrl: null });
+    expect(server.requests).toEqual([
+      {
+        method: "POST",
+        url: "/api/task/cua",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: {
+          task: "Complete the task",
+          llm: "gpt-5.4-mini",
+          useCustomApiKeys: true,
+          apiKeys: { openai: "openai-key" },
+          baseUrls: { openai: "https://example.openai.azure.com/openai/v1/" },
+        },
       },
     ]);
   });
