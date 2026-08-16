@@ -517,10 +517,9 @@ export class SandboxesService extends BaseService {
 
   async deleteImage(image: string): Promise<SandboxImageDeleteResult> {
     try {
-      return await this.request<SandboxImageDeleteResult>(
-        `/images/${encodeURIComponent(image)}`,
-        { method: "DELETE" }
-      );
+      return await this.request<SandboxImageDeleteResult>(`/images/${encodeURIComponent(image)}`, {
+        method: "DELETE",
+      });
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;

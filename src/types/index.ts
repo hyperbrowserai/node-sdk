@@ -65,6 +65,7 @@ export {
   CuaTaskData,
   CuaStepResponse,
   CuaApiKeys,
+  CuaBaseUrls,
   CuaTaskMetadata,
 } from "./agents/cua";
 export {
