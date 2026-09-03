@@ -198,6 +198,7 @@ const BROWSER_USE_LLM_SCHEMA = {
     "claude-3-5-sonnet-20241022",
     "claude-3-5-haiku-20241022",
     "gemini-2.0-flash",
+    "gemini-3.8-flash",
   ],
   default: "gemini-2.0-flash",
 };
