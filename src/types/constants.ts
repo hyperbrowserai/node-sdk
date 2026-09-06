@@ -111,9 +111,9 @@ export type GrokComputerUseLlm = "grok-4.5";
 
 export type GrokReasoningEffort = "low" | "medium" | "high";
 
-export type MetaComputerUseLlm = "muse-spark-1.1";
+export type MetaComputerUseLlm = "muse-spark-1.1" | "muse-spark-1.2" | "muse-spark-1.3";
 
-export type MetaReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh";
+export type MetaReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
 
 export type SessionRegion =
   | "us"

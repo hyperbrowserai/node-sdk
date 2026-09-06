@@ -292,8 +292,8 @@ describe("client HTTP integration", () => {
 
     const started = await client.agents.metaComputerUse.start({
       task: "Complete the task",
-      llm: "muse-spark-1.1",
-      reasoningEffort: "xhigh",
+      llm: "muse-spark-1.3",
+      reasoningEffort: "max",
       useCustomApiKeys: true,
       apiKeys: { meta: "meta-key" },
     });
@@ -313,8 +313,8 @@ describe("client HTTP integration", () => {
         contentType: "application/json",
         body: {
           task: "Complete the task",
-          llm: "muse-spark-1.1",
-          reasoningEffort: "xhigh",
+          llm: "muse-spark-1.3",
+          reasoningEffort: "max",
           useCustomApiKeys: true,
           apiKeys: { meta: "meta-key" },
         },
