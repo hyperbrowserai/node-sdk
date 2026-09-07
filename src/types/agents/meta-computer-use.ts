@@ -22,6 +22,7 @@ export interface StartMetaComputerUseTaskParams {
 export interface StartMetaComputerUseTaskResponse {
   jobId: string;
   liveUrl: string | null;
+  liveDomain?: string | null;
 }
 
 export interface MetaComputerUseTaskStatusResponse {
@@ -65,11 +66,27 @@ export interface MetaComputerUseTaskMetadata {
   numTaskStepsCompleted?: number | null;
 }
 
+export interface MetaComputerUseJobParams {
+  task?: string;
+  llm?: MetaComputerUseLlm;
+  reasoningEffort?: MetaReasoningEffort;
+  sessionId?: string;
+  maxSteps?: number;
+  keepBrowserOpen?: boolean;
+  maxFailures?: number;
+  useCustomApiKeys?: boolean;
+  useComputerAction?: boolean;
+}
+
 export interface MetaComputerUseTaskResponse {
   jobId: string;
   status: MetaComputerUseTaskStatus;
+  createdAt?: string | null;
+  finishedAt?: string | null;
   metadata?: MetaComputerUseTaskMetadata | null;
   data?: MetaComputerUseTaskData | null;
   error?: string | null;
   liveUrl: string | null;
+  liveDomain?: string | null;
+  jobParams?: MetaComputerUseJobParams | null;
 }

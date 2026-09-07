@@ -114,6 +114,7 @@ export {
   MetaComputerUseStepReasoning,
   MetaComputerUseApiKeys,
   MetaComputerUseTaskMetadata,
+  MetaComputerUseJobParams,
 } from "./agents/meta-computer-use";
 export {
   BasicResponse,
