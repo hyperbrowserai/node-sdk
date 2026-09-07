@@ -60,6 +60,54 @@ const startServer = async (): Promise<TestServer> => {
       return;
     }
 
+    if (request.method === "POST" && request.url === "/api/task/meta-computer-use") {
+      sendJson(response, 200, { jobId: "meta_job_123", liveUrl: null });
+      return;
+    }
+
+    if (request.method === "GET" && request.url === "/api/task/meta-computer-use/meta_job_123/status") {
+      sendJson(response, 200, { status: "completed" });
+      return;
+    }
+
+    if (request.method === "GET" && request.url === "/api/task/meta-computer-use/meta_job_123") {
+      sendJson(response, 200, {
+        jobId: "meta_job_123",
+        status: "completed",
+        data: {
+          steps: [
+            {
+              created_at: 1788743504,
+              completed_at: 1788743511,
+              output_text: "Second sentence in the Ecology section.",
+              error: null,
+              incomplete_details: null,
+              model: "muse-spark-1.3",
+              output: [
+                {
+                  type: "function_call",
+                  name: "computer.computer",
+                  arguments: '{"actions":[{"action":"type","text":"google.com\\n"}]}',
+                  status: "completed",
+                },
+              ],
+              reasoning: { effort: "medium", summary: "concise" },
+              status: "completed",
+            },
+          ],
+          finalResult: "done",
+        },
+        error: null,
+        liveUrl: null,
+      });
+      return;
+    }
+
+    if (request.method === "PUT" && request.url === "/api/task/meta-computer-use/meta_job_123/stop") {
+      sendJson(response, 200, { success: true });
+      return;
+    }
+
     if (request.method === "POST" && request.url === "/api/session") {
       sendJson(response, 200, {
         id: "52dd29fb-75a2-43f9-9831-8ff377fedb0a",
@@ -252,6 +300,77 @@ describe("client HTTP integration", () => {
           apiKeys: { openai: "openai-key" },
           baseUrls: { openai: "https://example.openai.azure.com/openai/v1/" },
         },
+      },
+    ]);
+  });
+
+  test("Meta Computer Use starts, polls, reads, and stops a task", async () => {
+    const server = await startServer();
+    servers.push(server);
+    const client = new HyperbrowserClient({
+      apiKey: "test-api-key",
+      baseUrl: server.baseUrl,
+    });
+
+    const started = await client.agents.metaComputerUse.start({
+      task: "Complete the task",
+      llm: "muse-spark-1.3",
+      reasoningEffort: "max",
+      useCustomApiKeys: true,
+      apiKeys: { meta: "meta-key" },
+    });
+    const status = await client.agents.metaComputerUse.getStatus(started.jobId);
+    const result = await client.agents.metaComputerUse.get(started.jobId);
+    const stopped = await client.agents.metaComputerUse.stop(started.jobId);
+
+    expect(started).toEqual({ jobId: "meta_job_123", liveUrl: null });
+    expect(status).toEqual({ status: "completed" });
+    expect(result.data?.finalResult).toBe("done");
+    expect(result.data?.steps[0]).toMatchObject({
+      created_at: 1788743504,
+      completed_at: 1788743511,
+      model: "muse-spark-1.3",
+      reasoning: { effort: "medium", summary: "concise" },
+    });
+    expect(result.data?.steps[0].output?.[0]).toMatchObject({
+      type: "function_call",
+      name: "computer.computer",
+    });
+    expect(stopped).toEqual({ success: true });
+    expect(server.requests).toEqual([
+      {
+        method: "POST",
+        url: "/api/task/meta-computer-use",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: {
+          task: "Complete the task",
+          llm: "muse-spark-1.3",
+          reasoningEffort: "max",
+          useCustomApiKeys: true,
+          apiKeys: { meta: "meta-key" },
+        },
+      },
+      {
+        method: "GET",
+        url: "/api/task/meta-computer-use/meta_job_123/status",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: undefined,
+      },
+      {
+        method: "GET",
+        url: "/api/task/meta-computer-use/meta_job_123",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: undefined,
+      },
+      {
+        method: "PUT",
+        url: "/api/task/meta-computer-use/meta_job_123/stop",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: undefined,
       },
     ]);
   });

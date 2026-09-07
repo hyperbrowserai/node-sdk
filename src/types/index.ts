@@ -103,6 +103,19 @@ export {
   GrokComputerUseTaskMetadata,
 } from "./agents/grok-computer-use";
 export {
+  StartMetaComputerUseTaskParams,
+  StartMetaComputerUseTaskResponse,
+  MetaComputerUseTaskStatusResponse,
+  MetaComputerUseTaskResponse,
+  MetaComputerUseTaskData,
+  MetaComputerUseStepResponse,
+  MetaComputerUseStepError,
+  MetaComputerUseStepIncompleteDetails,
+  MetaComputerUseStepReasoning,
+  MetaComputerUseApiKeys,
+  MetaComputerUseTaskMetadata,
+} from "./agents/meta-computer-use";
+export {
   BasicResponse,
   BrowserMemorySize,
   SessionStatus,
@@ -244,6 +257,8 @@ export {
   GeminiComputerUseLlm,
   GrokComputerUseLlm,
   GrokReasoningEffort,
+  MetaComputerUseLlm,
+  MetaReasoningEffort,
   ScrapeScreenshotFormat,
   ScrapeJobStatus,
   CrawlJobStatus,
@@ -264,6 +279,7 @@ export {
   CuaTaskStatus,
   GeminiComputerUseTaskStatus,
   GrokComputerUseTaskStatus,
+  MetaComputerUseTaskStatus,
   SessionEventLogType,
   SessionRegion,
   BrowserUseVersion,
