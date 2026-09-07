@@ -28,15 +28,29 @@ export interface MetaComputerUseTaskStatusResponse {
   status: MetaComputerUseTaskStatus;
 }
 
+export interface MetaComputerUseStepError {
+  code: string;
+  message: string;
+}
+
+export interface MetaComputerUseStepIncompleteDetails {
+  reason?: string;
+}
+
+export interface MetaComputerUseStepReasoning {
+  effort?: string | null;
+  summary?: string | null;
+}
+
 export interface MetaComputerUseStepResponse {
-  created_at?: string | null;
-  completed_at?: string | null;
+  created_at?: number | null;
+  completed_at?: number | null;
   output_text?: string | null;
-  error?: string | null;
-  incomplete_details?: any;
+  error?: MetaComputerUseStepError | null;
+  incomplete_details?: MetaComputerUseStepIncompleteDetails | null;
   model?: string | null;
   output?: any[];
-  reasoning?: any;
+  reasoning?: MetaComputerUseStepReasoning | null;
   status?: string | null;
 }
 

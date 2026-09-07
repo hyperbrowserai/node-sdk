@@ -109,6 +109,9 @@ export {
   MetaComputerUseTaskResponse,
   MetaComputerUseTaskData,
   MetaComputerUseStepResponse,
+  MetaComputerUseStepError,
+  MetaComputerUseStepIncompleteDetails,
+  MetaComputerUseStepReasoning,
   MetaComputerUseApiKeys,
   MetaComputerUseTaskMetadata,
 } from "./agents/meta-computer-use";

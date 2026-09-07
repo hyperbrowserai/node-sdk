@@ -74,7 +74,29 @@ const startServer = async (): Promise<TestServer> => {
       sendJson(response, 200, {
         jobId: "meta_job_123",
         status: "completed",
-        data: { steps: [], finalResult: "done" },
+        data: {
+          steps: [
+            {
+              created_at: 1788743504,
+              completed_at: 1788743511,
+              output_text: "Second sentence in the Ecology section.",
+              error: null,
+              incomplete_details: null,
+              model: "muse-spark-1.3",
+              output: [
+                {
+                  type: "function_call",
+                  name: "computer.computer",
+                  arguments: '{"actions":[{"action":"type","text":"google.com\\n"}]}',
+                  status: "completed",
+                },
+              ],
+              reasoning: { effort: "medium", summary: "concise" },
+              status: "completed",
+            },
+          ],
+          finalResult: "done",
+        },
         error: null,
         liveUrl: null,
       });
@@ -304,6 +326,16 @@ describe("client HTTP integration", () => {
     expect(started).toEqual({ jobId: "meta_job_123", liveUrl: null });
     expect(status).toEqual({ status: "completed" });
     expect(result.data?.finalResult).toBe("done");
+    expect(result.data?.steps[0]).toMatchObject({
+      created_at: 1788743504,
+      completed_at: 1788743511,
+      model: "muse-spark-1.3",
+      reasoning: { effort: "medium", summary: "concise" },
+    });
+    expect(result.data?.steps[0].output?.[0]).toMatchObject({
+      type: "function_call",
+      name: "computer.computer",
+    });
     expect(stopped).toEqual({ success: true });
     expect(server.requests).toEqual([
       {
