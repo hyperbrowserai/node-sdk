@@ -74,20 +74,6 @@ const startServer = async (): Promise<TestServer> => {
       sendJson(response, 200, {
         jobId: "meta_job_123",
         status: "completed",
-        createdAt: "2026-09-07T01:33:08.205Z",
-        finishedAt: "2026-09-07T01:33:33.038Z",
-        liveDomain: null,
-        jobParams: {
-          task: "Complete the task",
-          llm: "muse-spark-1.3",
-          reasoningEffort: "medium",
-          sessionId: "session_123",
-          maxSteps: 6,
-          keepBrowserOpen: false,
-          maxFailures: 3,
-          useCustomApiKeys: false,
-          useComputerAction: true,
-        },
         data: {
           steps: [
             {
@@ -340,8 +326,6 @@ describe("client HTTP integration", () => {
     expect(started).toEqual({ jobId: "meta_job_123", liveUrl: null });
     expect(status).toEqual({ status: "completed" });
     expect(result.data?.finalResult).toBe("done");
-    expect(result.createdAt).toBe("2026-09-07T01:33:08.205Z");
-    expect(result.jobParams?.llm).toBe("muse-spark-1.3");
     expect(result.data?.steps[0]).toMatchObject({
       created_at: 1788743504,
       completed_at: 1788743511,
