@@ -66,6 +66,8 @@ export type ClaudeComputerUseLlm =
   | "claude-sonnet-4-20250514"
   | "claude-3-7-sonnet-20250219";
 
+export type ClaudeComputerUseReasoningEffort = "low" | "medium" | "high" | "xhigh" | "max";
+
 export type CuaLlm =
   | "computer-use-preview"
   | "gpt-6-astra"
@@ -75,6 +77,8 @@ export type CuaLlm =
   | "gpt-5.5"
   | "gpt-5.4"
   | "gpt-5.4-mini";
+
+export type CuaReasoningEffort = "none" | "low" | "medium" | "high" | "xhigh" | "max";
 
 export type HyperAgentVersion = "0.8.0" | "1.1.0";
 
