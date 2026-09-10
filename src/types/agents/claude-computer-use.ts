@@ -1,4 +1,8 @@
-import { ClaudeComputerUseLlm, ClaudeComputerUseTaskStatus } from "../constants";
+import {
+  ClaudeComputerUseLlm,
+  ClaudeComputerUseReasoningEffort,
+  ClaudeComputerUseTaskStatus,
+} from "../constants";
 import { CreateSessionParams } from "../session";
 
 export interface ClaudeComputerUseApiKeys {
@@ -8,6 +12,7 @@ export interface ClaudeComputerUseApiKeys {
 export interface StartClaudeComputerUseTaskParams {
   task: string;
   llm?: ClaudeComputerUseLlm;
+  reasoningEffort?: ClaudeComputerUseReasoningEffort;
   sessionId?: string;
   maxFailures?: number;
   maxSteps?: number;

@@ -1,4 +1,4 @@
-import { CuaLlm, CuaTaskStatus } from "../constants";
+import { CuaLlm, CuaReasoningEffort, CuaTaskStatus } from "../constants";
 import { CreateSessionParams } from "../session";
 
 export interface CuaApiKeys {
@@ -12,6 +12,7 @@ export interface CuaBaseUrls {
 export interface StartCuaTaskParams {
   task: string;
   llm?: CuaLlm;
+  reasoningEffort?: CuaReasoningEffort;
   sessionId?: string;
   maxFailures?: number;
   maxSteps?: number;

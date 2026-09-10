@@ -60,6 +60,11 @@ const startServer = async (): Promise<TestServer> => {
       return;
     }
 
+    if (request.method === "POST" && request.url === "/api/task/claude-computer-use") {
+      sendJson(response, 200, { jobId: "claude_job_123", liveUrl: null });
+      return;
+    }
+
     if (request.method === "POST" && request.url === "/api/task/meta-computer-use") {
       sendJson(response, 200, { jobId: "meta_job_123", liveUrl: null });
       return;
@@ -281,6 +286,7 @@ describe("client HTTP integration", () => {
     const started = await client.agents.cua.start({
       task: "Complete the task",
       llm: "gpt-5.4-mini",
+      reasoningEffort: "high",
       useCustomApiKeys: true,
       apiKeys: { openai: "openai-key" },
       baseUrls: { openai: "https://example.openai.azure.com/openai/v1/" },
@@ -296,9 +302,40 @@ describe("client HTTP integration", () => {
         body: {
           task: "Complete the task",
           llm: "gpt-5.4-mini",
+          reasoningEffort: "high",
           useCustomApiKeys: true,
           apiKeys: { openai: "openai-key" },
           baseUrls: { openai: "https://example.openai.azure.com/openai/v1/" },
+        },
+      },
+    ]);
+  });
+
+  test("Claude Computer Use forwards reasoning effort on start", async () => {
+    const server = await startServer();
+    servers.push(server);
+    const client = new HyperbrowserClient({
+      apiKey: "test-api-key",
+      baseUrl: server.baseUrl,
+    });
+
+    const started = await client.agents.claudeComputerUse.start({
+      task: "Complete the task",
+      llm: "claude-opus-5",
+      reasoningEffort: "xhigh",
+    });
+
+    expect(started).toEqual({ jobId: "claude_job_123", liveUrl: null });
+    expect(server.requests).toEqual([
+      {
+        method: "POST",
+        url: "/api/task/claude-computer-use",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: {
+          task: "Complete the task",
+          llm: "claude-opus-5",
+          reasoningEffort: "xhigh",
         },
       },
     ]);
