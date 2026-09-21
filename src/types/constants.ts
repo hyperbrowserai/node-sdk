@@ -111,7 +111,7 @@ export type GeminiComputerUseLlm =
   | "gemini-3-flash-preview"
   | "gemini-2.5-computer-use-preview-10-2025";
 
-export type GrokComputerUseLlm = "grok-4.5";
+export type GrokComputerUseLlm = "grok-4.7" | "grok-4.6" | "grok-4.5";
 
 export type GrokReasoningEffort = "low" | "medium" | "high";
 
