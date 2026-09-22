@@ -146,9 +146,6 @@ const startServer = async (): Promise<TestServer> => {
             },
           ],
           finalResult: "Found the order",
-          reachedMaxSteps: false,
-          finalUrl: "https://example.com/orders/1",
-          warnings: [],
         },
         error: null,
         liveUrl: null,
@@ -481,7 +478,6 @@ describe("client HTTP integration", () => {
     expect(started).toEqual({ jobId: "jev_job_123", liveUrl: null });
     expect(status).toEqual({ status: "completed" });
     expect(result.data?.finalResult).toBe("Found the order");
-    expect(result.data?.finalUrl).toBe("https://example.com/orders/1");
     expect(result.data?.steps[0]).toMatchObject({
       step: 1,
       action: { kind: "click", target: "submit" },

@@ -33,9 +33,6 @@ export type JevComputerUseStepResponse = Record<string, any>;
 export interface JevComputerUseTaskData {
   steps: JevComputerUseStepResponse[];
   finalResult: string | null;
-  reachedMaxSteps?: boolean;
-  finalUrl?: string | null;
-  warnings?: string[];
 }
 
 export interface JevComputerUseTaskMetadata {
