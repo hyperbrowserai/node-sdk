@@ -474,7 +474,6 @@ describe("client HTTP integration", () => {
       startUrl: "https://example.com",
       useCustomApiKeys: true,
       apiKeys: { jev: "jev-key", google: "google-key" },
-      useComputerAction: false,
     });
     const status = await client.agents.jevComputerUse.getStatus(started.jobId);
     const result = await client.agents.jevComputerUse.get(started.jobId);
@@ -503,7 +502,6 @@ describe("client HTTP integration", () => {
           startUrl: "https://example.com",
           useCustomApiKeys: true,
           apiKeys: { jev: "jev-key", google: "google-key" },
-          useComputerAction: false,
         },
       },
       {

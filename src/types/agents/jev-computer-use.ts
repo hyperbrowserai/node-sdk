@@ -18,7 +18,6 @@ export interface StartJevComputerUseTaskParams {
   sessionOptions?: CreateSessionParams;
   useCustomApiKeys?: boolean;
   apiKeys?: JevComputerUseApiKeys;
-  useComputerAction?: false;
 }
 
 export interface StartJevComputerUseTaskResponse {
