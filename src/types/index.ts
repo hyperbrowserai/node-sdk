@@ -122,7 +122,6 @@ export {
   JevComputerUseTaskResponse,
   JevComputerUseTaskData,
   JevComputerUseStepResponse,
-  JevComputerUseAction,
   JevComputerUseApiKeys,
   JevComputerUseTaskMetadata,
 } from "./agents/jev-computer-use";

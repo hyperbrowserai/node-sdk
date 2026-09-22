@@ -28,31 +28,7 @@ export interface JevComputerUseTaskStatusResponse {
   status: JevComputerUseTaskStatus;
 }
 
-export interface JevComputerUseAction {
-  kind: string;
-  target?: string;
-  option?: string;
-}
-
-export interface JevComputerUseStepResponse {
-  step: number;
-  action: JevComputerUseAction;
-  url: string;
-  value?: string;
-  title?: string;
-  pageText?: string;
-  targetDescription?: string;
-  confidence?: number | null;
-  error?: string;
-  errorKind?: string;
-  pageChanged?: boolean | null;
-  outcome?: string;
-  after?: string;
-  beforeTab?: string;
-  afterTab?: string;
-  beforeObservation?: number;
-  afterObservation?: number;
-}
+export type JevComputerUseStepResponse = Record<string, any>;
 
 export interface JevComputerUseTaskData {
   steps: JevComputerUseStepResponse[];
