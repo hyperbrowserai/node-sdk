@@ -14,6 +14,7 @@ import { ComputerActionService } from "./services/computer-action";
 import { GeminiComputerUseService } from "./services/agents/gemini-computer-use";
 import { GrokComputerUseService } from "./services/agents/grok-computer-use";
 import { MetaComputerUseService } from "./services/agents/meta-computer-use";
+import { JevComputerUseService } from "./services/agents/jev-computer-use";
 import { WebService } from "./services/web";
 import { SandboxesService } from "./services/sandboxes";
 import { VolumesService } from "./services/volumes";
@@ -71,6 +72,7 @@ export class HyperbrowserClient {
     geminiComputerUse: GeminiComputerUseService;
     grokComputerUse: GrokComputerUseService;
     metaComputerUse: MetaComputerUseService;
+    jevComputerUse: JevComputerUseService;
   };
   public readonly team: TeamService;
   public readonly computerAction: ComputerActionService;
@@ -108,6 +110,7 @@ export class HyperbrowserClient {
       geminiComputerUse: new GeminiComputerUseService(apiKey, baseUrl, timeout),
       grokComputerUse: new GrokComputerUseService(apiKey, baseUrl, timeout),
       metaComputerUse: new MetaComputerUseService(apiKey, baseUrl, timeout),
+      jevComputerUse: new JevComputerUseService(apiKey, baseUrl, timeout),
     };
   }
 }

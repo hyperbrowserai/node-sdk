@@ -70,7 +70,10 @@ const startServer = async (): Promise<TestServer> => {
       return;
     }
 
-    if (request.method === "GET" && request.url === "/api/task/meta-computer-use/meta_job_123/status") {
+    if (
+      request.method === "GET" &&
+      request.url === "/api/task/meta-computer-use/meta_job_123/status"
+    ) {
       sendJson(response, 200, { status: "completed" });
       return;
     }
@@ -108,7 +111,49 @@ const startServer = async (): Promise<TestServer> => {
       return;
     }
 
-    if (request.method === "PUT" && request.url === "/api/task/meta-computer-use/meta_job_123/stop") {
+    if (
+      request.method === "PUT" &&
+      request.url === "/api/task/meta-computer-use/meta_job_123/stop"
+    ) {
+      sendJson(response, 200, { success: true });
+      return;
+    }
+
+    if (request.method === "POST" && request.url === "/api/task/jev") {
+      sendJson(response, 200, { jobId: "jev_job_123", liveUrl: null });
+      return;
+    }
+
+    if (request.method === "GET" && request.url === "/api/task/jev/jev_job_123/status") {
+      sendJson(response, 200, { status: "completed" });
+      return;
+    }
+
+    if (request.method === "GET" && request.url === "/api/task/jev/jev_job_123") {
+      sendJson(response, 200, {
+        jobId: "jev_job_123",
+        status: "completed",
+        data: {
+          steps: [
+            {
+              step: 1,
+              action: { kind: "click", target: "submit" },
+              url: "https://example.com",
+              title: "Example",
+              targetDescription: "Submit button",
+              outcome: "dispatched",
+              pageChanged: true,
+            },
+          ],
+          finalResult: "Found the order",
+        },
+        error: null,
+        liveUrl: null,
+      });
+      return;
+    }
+
+    if (request.method === "PUT" && request.url === "/api/task/jev/jev_job_123/stop") {
       sendJson(response, 200, { success: true });
       return;
     }
@@ -160,8 +205,7 @@ const startServer = async (): Promise<TestServer> => {
 
     if (
       request.method === "POST" &&
-      request.url ===
-        "/api/session/52dd29fb-75a2-43f9-9831-8ff377fedb0a/captcha/evaluate"
+      request.url === "/api/session/52dd29fb-75a2-43f9-9831-8ff377fedb0a/captcha/evaluate"
     ) {
       await new Promise((resolve) => setTimeout(resolve, 10));
       sendJson(response, 200, {
@@ -321,7 +365,7 @@ describe("client HTTP integration", () => {
 
     const started = await client.agents.claudeComputerUse.start({
       task: "Complete the task",
-      llm: "claude-opus-5",
+      llm: "claude-opus-5-5",
       reasoningEffort: "xhigh",
     });
 
@@ -334,7 +378,7 @@ describe("client HTTP integration", () => {
         contentType: "application/json",
         body: {
           task: "Complete the task",
-          llm: "claude-opus-5",
+          llm: "claude-opus-5-5",
           reasoningEffort: "xhigh",
         },
       },
@@ -412,6 +456,105 @@ describe("client HTTP integration", () => {
     ]);
   });
 
+  test("Jev Computer Use starts, polls, reads, and stops a task", async () => {
+    const server = await startServer();
+    servers.push(server);
+    const client = new HyperbrowserClient({
+      apiKey: "test-api-key",
+      baseUrl: server.baseUrl,
+    });
+
+    const started = await client.agents.jevComputerUse.start({
+      task: "Find the order",
+      llm: "jev-1.13.0",
+      textLlm: "gemini-3.5-flash-lite",
+      useCustomApiKeys: true,
+      apiKeys: { jev: "jev-key", google: "google-key" },
+    });
+    const status = await client.agents.jevComputerUse.getStatus(started.jobId);
+    const result = await client.agents.jevComputerUse.get(started.jobId);
+    const stopped = await client.agents.jevComputerUse.stop(started.jobId);
+
+    expect(started).toEqual({ jobId: "jev_job_123", liveUrl: null });
+    expect(status).toEqual({ status: "completed" });
+    expect(result.data?.finalResult).toBe("Found the order");
+    expect(result.data?.steps[0]).toMatchObject({
+      step: 1,
+      action: { kind: "click", target: "submit" },
+      url: "https://example.com",
+    });
+    expect(stopped).toEqual({ success: true });
+    expect(server.requests).toEqual([
+      {
+        method: "POST",
+        url: "/api/task/jev",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: {
+          task: "Find the order",
+          llm: "jev-1.13.0",
+          textLlm: "gemini-3.5-flash-lite",
+          useCustomApiKeys: true,
+          apiKeys: { jev: "jev-key", google: "google-key" },
+        },
+      },
+      {
+        method: "GET",
+        url: "/api/task/jev/jev_job_123/status",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: undefined,
+      },
+      {
+        method: "GET",
+        url: "/api/task/jev/jev_job_123",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: undefined,
+      },
+      {
+        method: "PUT",
+        url: "/api/task/jev/jev_job_123/stop",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: undefined,
+      },
+    ]);
+  });
+
+  test("OpenAI CUA accepts GPT-6 Sol and Luna models", async () => {
+    const server = await startServer();
+    servers.push(server);
+    const client = new HyperbrowserClient({
+      apiKey: "test-api-key",
+      baseUrl: server.baseUrl,
+    });
+
+    await client.agents.cua.start({
+      task: "Complete the task",
+      llm: "gpt-6-sol",
+      reasoningEffort: "max",
+    });
+    await client.agents.cua.start({
+      task: "Complete the task",
+      llm: "gpt-6-luna",
+      reasoningEffort: "none",
+    });
+
+    expect(server.requests.map((request) => request.body)).toEqual([
+      {
+        task: "Complete the task",
+        llm: "gpt-6-sol",
+        reasoningEffort: "max",
+      },
+      {
+        task: "Complete the task",
+        llm: "gpt-6-luna",
+        reasoningEffort: "none",
+      },
+    ]);
+  });
+
   test("session create can start from a snapshot", async () => {
     const server = await startServer();
     servers.push(server);
@@ -452,9 +595,7 @@ describe("client HTTP integration", () => {
       baseUrl: server.baseUrl,
     });
 
-    const snapshot = await client.sessions.createSnapshot(
-      "52dd29fb-75a2-43f9-9831-8ff377fedb0a"
-    );
+    const snapshot = await client.sessions.createSnapshot("52dd29fb-75a2-43f9-9831-8ff377fedb0a");
 
     expect(snapshot).toEqual({
       snapshotName: "browser-session-11111111-1111-4111-8111-111111111111",
@@ -487,13 +628,10 @@ describe("client HTTP integration", () => {
       timeout: 1,
     });
 
-    const result = await client.sessions.evaluateCaptcha(
-      "52dd29fb-75a2-43f9-9831-8ff377fedb0a",
-      {
-        captcha: "recaptcha-visual",
-        iterations: 5,
-      }
-    );
+    const result = await client.sessions.evaluateCaptcha("52dd29fb-75a2-43f9-9831-8ff377fedb0a", {
+      captcha: "recaptcha-visual",
+      iterations: 5,
+    });
 
     expect(result).toEqual({
       success: true,

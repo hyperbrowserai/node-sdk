@@ -116,6 +116,16 @@ export {
   MetaComputerUseTaskMetadata,
 } from "./agents/meta-computer-use";
 export {
+  StartJevComputerUseTaskParams,
+  StartJevComputerUseTaskResponse,
+  JevComputerUseTaskStatusResponse,
+  JevComputerUseTaskResponse,
+  JevComputerUseTaskData,
+  JevComputerUseStepResponse,
+  JevComputerUseApiKeys,
+  JevComputerUseTaskMetadata,
+} from "./agents/jev-computer-use";
+export {
   BasicResponse,
   BrowserMemorySize,
   SessionStatus,
@@ -261,6 +271,8 @@ export {
   GrokReasoningEffort,
   MetaComputerUseLlm,
   MetaReasoningEffort,
+  JevComputerUseLlm,
+  JevTextLlm,
   ScrapeScreenshotFormat,
   ScrapeJobStatus,
   CrawlJobStatus,
@@ -282,6 +294,7 @@ export {
   GeminiComputerUseTaskStatus,
   GrokComputerUseTaskStatus,
   MetaComputerUseTaskStatus,
+  JevComputerUseTaskStatus,
   SessionEventLogType,
   SessionRegion,
   BrowserUseVersion,
