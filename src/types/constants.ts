@@ -24,6 +24,7 @@ export type GeminiComputerUseTaskStatus =
   | "stopped";
 export type GrokComputerUseTaskStatus = "pending" | "running" | "completed" | "failed" | "stopped";
 export type MetaComputerUseTaskStatus = "pending" | "running" | "completed" | "failed" | "stopped";
+export type JevComputerUseTaskStatus = "pending" | "running" | "completed" | "failed" | "stopped";
 export type ScrapePageStatus = "completed" | "failed" | "pending" | "running";
 export type CrawlPageStatus = "completed" | "failed";
 export type ScrapeWaitUntil = "load" | "domcontentloaded" | "networkidle";
@@ -53,6 +54,7 @@ export type BrowserUseLlm =
   | "gemini-3.8-flash";
 
 export type ClaudeComputerUseLlm =
+  | "claude-opus-5-5"
   | "claude-fable-5-1"
   | "claude-opus-5"
   | "claude-opus-4-5"
@@ -71,6 +73,8 @@ export type ClaudeComputerUseReasoningEffort = "low" | "medium" | "high" | "xhig
 export type CuaLlm =
   | "computer-use-preview"
   | "gpt-6-astra"
+  | "gpt-6-sol"
+  | "gpt-6-luna"
   | "gpt-5.6-sol"
   | "gpt-5.6-terra"
   | "gpt-5.6-luna"
@@ -118,6 +122,10 @@ export type GrokReasoningEffort = "low" | "medium" | "high";
 export type MetaComputerUseLlm = "muse-spark-1.1" | "muse-spark-1.2" | "muse-spark-1.3";
 
 export type MetaReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
+
+export type JevComputerUseLlm = "jev-1.13.0" | "jev-latest";
+
+export type JevTextLlm = "gemini-3.5-flash-lite";
 
 export type SessionRegion =
   | "us"
