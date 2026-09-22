@@ -471,7 +471,6 @@ describe("client HTTP integration", () => {
       task: "Find the order",
       llm: "jev-1.13.0",
       textLlm: "gemini-3.5-flash-lite",
-      startUrl: "https://example.com",
       useCustomApiKeys: true,
       apiKeys: { jev: "jev-key", google: "google-key" },
     });
@@ -499,7 +498,6 @@ describe("client HTTP integration", () => {
           task: "Find the order",
           llm: "jev-1.13.0",
           textLlm: "gemini-3.5-flash-lite",
-          startUrl: "https://example.com",
           useCustomApiKeys: true,
           apiKeys: { jev: "jev-key", google: "google-key" },
         },

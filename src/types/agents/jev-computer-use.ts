@@ -10,7 +10,6 @@ export interface StartJevComputerUseTaskParams {
   task: string;
   llm?: JevComputerUseLlm;
   textLlm?: JevTextLlm;
-  startUrl?: string;
   sessionId?: string;
   maxFailures?: number;
   maxSteps?: number;
