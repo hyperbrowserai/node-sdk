@@ -28,6 +28,18 @@ export interface SandboxRuntimeTarget {
 }
 
 export interface Sandbox {
+  runtimeClass?: "firecracker" | "gvisor-cpu";
+  capabilities?: {
+    commands: boolean;
+    files: boolean;
+    pty: boolean;
+    gpu: boolean;
+    snapshots: boolean;
+    volumes: boolean;
+    exposedPorts: boolean;
+    internetAccess: boolean;
+    writableStorage: "memory";
+  };
   id: string;
   teamId: string;
   status: SandboxStatus;
@@ -69,6 +81,7 @@ export interface SandboxVolumeMount {
 }
 
 interface SandboxCreateCommonParams {
+  runtimeClass?: "firecracker" | "gvisor-cpu";
   region?: SessionRegion;
   enableRecording?: boolean;
   exposedPorts?: SandboxExposeParams[];
