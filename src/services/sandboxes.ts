@@ -82,6 +82,7 @@ const normalizeSandboxListResponse = (response: WireSandboxListResponse): Sandbo
 const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<string, unknown> => {
   if (typeof params.imageName === "string") {
     return {
+      runtimeClass: params.runtimeClass,
       imageName: params.imageName,
       imageId: params.imageId,
       region: params.region,
@@ -116,6 +117,7 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
   }
 
   return {
+    runtimeClass: snapshotParams.runtimeClass,
     snapshotName: snapshotParams.snapshotName,
     snapshotId: snapshotParams.snapshotId,
     region: snapshotParams.region,
