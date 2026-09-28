@@ -6,21 +6,21 @@
 import { randomUUID } from "crypto";
 import fetch from "node-fetch";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import { HyperbrowserError } from "../../../src/client";
-import type { SandboxHandle } from "../../../src/services/sandboxes";
+import { HyperbrowserError } from "../../src/client";
+import type { SandboxHandle } from "../../src/services/sandboxes";
 import {
   API_KEY,
   BASE_URL,
   createClient,
   DEFAULT_IMAGE_NAME,
-} from "../../helpers/config";
-import { expectHyperbrowserError } from "../../helpers/errors";
+} from "../helpers/config";
+import { expectHyperbrowserError } from "../helpers/errors";
 import {
   defaultSandboxParams,
   stopSandboxIfRunning,
   waitForCreatedSnapshot,
   waitForRuntimeReady,
-} from "../../helpers/sandbox";
+} from "../helpers/sandbox";
 
 const client = createClient();
 const CUSTOM_IMAGE_NAME = "node";

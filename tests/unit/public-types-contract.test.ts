@@ -14,7 +14,7 @@ import type {
   SessionRegion,
   SessionStatus,
   VolumeListResponse,
-} from "../../../src/types";
+} from "../../src/types";
 
 describe("public type compatibility", () => {
   test("keeps newly available response data optional", () => {

@@ -4,16 +4,16 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import type { SandboxHandle } from "../../../src/services/sandboxes";
-import type { SandboxTerminalConnection } from "../../../src/sandbox/terminal";
-import type { SandboxTerminalStatus } from "../../../src/types/sandbox";
-import { createClient } from "../../helpers/config";
-import { expectHyperbrowserError } from "../../helpers/errors";
+import type { SandboxHandle } from "../../src/services/sandboxes";
+import type { SandboxTerminalConnection } from "../../src/sandbox/terminal";
+import type { SandboxTerminalStatus } from "../../src/types/sandbox";
+import { createClient } from "../helpers/config";
+import { expectHyperbrowserError } from "../helpers/errors";
 import {
   defaultSandboxParams,
   stopSandboxIfRunning,
   waitForRuntimeReady,
-} from "../../helpers/sandbox";
+} from "../helpers/sandbox";
 
 async function collectTerminalSession(
   connection: SandboxTerminalConnection

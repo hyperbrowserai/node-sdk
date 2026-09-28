@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { SandboxesService } from "../../../src/services/sandboxes";
+import { SandboxesService } from "../../src/services/sandboxes";
 
 describe("sandbox control list contract", () => {
   test("list forwards status, start, end, search, page, and limit to the control API", async () => {

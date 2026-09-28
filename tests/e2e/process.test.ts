@@ -4,15 +4,15 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import type { SandboxHandle } from "../../../src/services/sandboxes";
-import type { SandboxProcessStreamEvent } from "../../../src/types";
-import { createClient } from "../../helpers/config";
-import { expectHyperbrowserError } from "../../helpers/errors";
+import type { SandboxHandle } from "../../src/services/sandboxes";
+import type { SandboxProcessStreamEvent } from "../../src/types";
+import { createClient } from "../helpers/config";
+import { expectHyperbrowserError } from "../helpers/errors";
 import {
   defaultSandboxParams,
   stopSandboxIfRunning,
   waitForRuntimeReady,
-} from "../../helpers/sandbox";
+} from "../helpers/sandbox";
 
 async function collectProcessStream(
   events: AsyncIterable<SandboxProcessStreamEvent>

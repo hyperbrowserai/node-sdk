@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from "vitest";
-import type { RuntimeSSEEvent, RuntimeSSEInit, RuntimeTransport } from "../../../src/sandbox/base";
-import { SandboxProcessesApi } from "../../../src/sandbox/process";
-import { SandboxHandle } from "../../../src/services/sandboxes";
+import type { RuntimeSSEEvent, RuntimeSSEInit, RuntimeTransport } from "../../src/sandbox/base";
+import { SandboxProcessesApi } from "../../src/sandbox/process";
+import { SandboxHandle } from "../../src/services/sandboxes";
 
 const execResponse = {
   result: {

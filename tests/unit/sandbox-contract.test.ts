@@ -1,9 +1,9 @@
 import { describe, expect, test, vi, afterEach } from "vitest";
-import { SandboxFilesApi } from "../../../src/sandbox/files";
-import { SandboxTerminalHandle } from "../../../src/sandbox/terminal";
-import * as wsModule from "../../../src/sandbox/ws";
-import { SandboxesService } from "../../../src/services/sandboxes";
-import type { SandboxExposeResult } from "../../../src/types";
+import { SandboxFilesApi } from "../../src/sandbox/files";
+import { SandboxTerminalHandle } from "../../src/sandbox/terminal";
+import * as wsModule from "../../src/sandbox/ws";
+import { SandboxesService } from "../../src/services/sandboxes";
+import type { SandboxExposeResult } from "../../src/types";
 
 const parseJsonRequestBody = (init: unknown): unknown => {
   if (!init || typeof init !== "object" || !("body" in init) || typeof init.body !== "string") {

@@ -516,8 +516,15 @@ response types remain under `@hyperbrowser/sdk/types`.
 ### Development checks
 
 The supported Node baseline is 20.20.2. Run `yarn build`, `yarn typecheck`,
-`yarn lint`, and `yarn test` for local verification. `yarn test` runs credential-free
-unit, contract, and HTTP / WebSocket tests.
+`yarn lint`, and `yarn test` for local verification. Tests share `vitest.config.ts`:
+
+- `tests/unit`: isolated logic and mocked contracts (`yarn test:unit`).
+- `tests/integration`: local HTTP, WebSocket, filesystem, and subprocess tests
+  (`yarn test:integration`).
+- `tests/e2e`: live Hyperbrowser API tests (`yarn test:e2e`).
+
+`yarn test` and `yarn test:watch` select unit and integration tests by default;
+neither requires API credentials or a Docker daemon.
 
 Live tests are opt-in: set `HYPERBROWSER_API_KEY` and `HYPERBROWSER_BASE_URL`, then
 run `yarn test:e2e`. They create remote resources and require a receiver supporting

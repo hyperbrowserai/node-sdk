@@ -20,8 +20,9 @@
     "lint": "eslint 'src/**/*.ts'",
     "prepare": "yarn build",
     "test": "vitest run",
-    "test:e2e": "vitest run --config vitest.e2e.config.ts",
-    "test:integration": "vitest run tests/integration",
+    "test:unit": "vitest run --project unit",
+    "test:e2e": "vitest run --project e2e",
+    "test:integration": "vitest run --project integration",
     "test:watch": "vitest",
     "format": "prettier --write 'src/**/*.ts'",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.tests.json"

@@ -6,15 +6,15 @@
 import { Blob } from "buffer";
 import { ReadableStream } from "node:stream/web";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import type { SandboxHandle } from "../../../src/services/sandboxes";
-import { createClient, testName } from "../../helpers/config";
-import { expectHyperbrowserError } from "../../helpers/errors";
-import { fetchSignedUrl } from "../../helpers/http";
+import type { SandboxHandle } from "../../src/services/sandboxes";
+import { createClient, testName } from "../helpers/config";
+import { expectHyperbrowserError } from "../helpers/errors";
+import { fetchSignedUrl } from "../helpers/http";
 import {
   defaultSandboxParams,
   stopSandboxIfRunning,
   waitForRuntimeReady,
-} from "../../helpers/sandbox";
+} from "../helpers/sandbox";
 
 const client = createClient();
 
