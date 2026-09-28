@@ -140,7 +140,7 @@ describe("image build failure lifetimes", () => {
   test.each(["failed", "canceled"] as const)(
     "an observed %s build is not masked by a racing deadline",
     async (status) => {
-      const service = new SandboxesService("local", "http://unused.test");
+      const service = new SandboxesService("local", "http://unused.test", 1000);
       const terminal = {
         id: "b",
         imageName: "n",
