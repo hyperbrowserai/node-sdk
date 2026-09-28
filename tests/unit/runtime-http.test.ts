@@ -322,3 +322,43 @@ test("file aliases preserve operation payloads and overwrite false", async () =>
     { path: "/c", recursive: true, runAs: "root" },
   ]);
 });
+
+test.each([false, true])("heartbeats outlive ordinary request deadlines (refresh=%s)", async (refresh) => {
+  let calls = 0;
+  const api = await setup((_req, res) => {
+    calls++;
+    if (refresh && calls === 1) { res.writeHead(401); res.end("expired"); return; }
+    res.writeHead(200, { "content-type": "text/event-stream" });
+    res.write(started);
+    const heartbeat = setInterval(() => res.write(": heartbeat\n\n"), 15);
+    const finish = setTimeout(() => res.end('event: done\ndata: {"last_seq":0}\n\n'), 150);
+    res.once("close", () => { clearInterval(heartbeat); clearTimeout(finish); });
+  }, 50);
+  const stream = await api.transport.openSSE("/processes", undefined, { method: "POST", idleTimeoutMs: 100 });
+  const events = [];
+  for await (const event of stream.events) events.push(event.event);
+  expect(events).toEqual(["started", "done"]);
+  expect(calls).toBe(refresh ? 2 : 1);
+  expect(api.refreshes()).toBe(refresh ? 1 : 0);
+});
+test("SSE response headers retain the ordinary deadline without replaying POST", async () => {
+  let requests = 0;
+  const api = await setup(() => { requests++; }, 30);
+  await expect(api.transport.openSSE("/processes", undefined, { method: "POST" })).rejects.toMatchObject({ service: "runtime", method: "POST", retryable: true });
+  await delay(15);
+  expect(requests).toBe(1);
+  expect(api.sockets.size).toBe(0);
+});
+test("canceling an upload releases its producer and socket without replay", async () => {
+  const controller = new AbortController();
+  let requests = 0; let released = false;
+  const api = await setup((req) => { requests++; req.once("data", () => controller.abort()); });
+  async function* chunks() {
+    try { for (let i = 0; i < 1000; i++) { yield Buffer.alloc(32768); await delay(5); } }
+    finally { released = true; }
+  }
+  await expect(api.files.uploadStream("/file", chunks(), { signal: controller.signal })).rejects.toMatchObject({ code: "request_aborted", retryable: false });
+  await expect.poll(() => released, { timeout: 1000 }).toBe(true);
+  await expect.poll(() => api.sockets.size, { timeout: 1000 }).toBe(0);
+  expect(requests).toBe(1);
+});

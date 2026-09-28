@@ -17,17 +17,17 @@ interface PTYStatusResponse {
 interface RawPTYStatus {
   id: string;
   command: string;
-  args?: string[];
+  args?: string[] | null;
   cwd: string;
-  pid?: number;
+  pid?: number | null;
   running: boolean;
   exitCode?: number | null;
-  error?: string;
+  error?: string | null;
   timedOut?: boolean;
   rows: number;
   cols: number;
   startedAt: number;
-  finishedAt?: number;
+  finishedAt?: number | null;
   output?: RawPTYOutput[];
 }
 
@@ -107,10 +107,12 @@ export class SandboxTerminalConnection {
           return;
         }
 
-        this.eventsQueue.push({
-          type: "exit",
-          status: normalizeTerminalStatus(parsed.status),
-        });
+        if (parsed.type === "exit") {
+          this.eventsQueue.push({
+            type: "exit",
+            status: normalizeTerminalStatus(parsed.status),
+          });
+        }
       } catch (error) {
         this.eventsQueue.fail(error);
       }

@@ -1,5 +1,17 @@
 export type HyperbrowserService = "control" | "runtime";
 
+/** Keep diagnostics useful without retaining query credentials or URL hosts. */
+export const errorRequestPath = (target: string): string => {
+  try {
+    return new URL(target, "http://sdk.invalid").pathname;
+  } catch {
+    return target.split("?", 1)[0];
+  }
+};
+
+export const networkErrorMessage = (error: unknown, fallback: string): string =>
+  error instanceof Error ? error.message || `${fallback} (${error.name || "Error"})` : fallback;
+
 export interface HyperbrowserErrorOptions {
   statusCode?: number;
   code?: string;

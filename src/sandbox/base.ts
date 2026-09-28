@@ -1,7 +1,7 @@
 import { Readable } from "stream";
 import { StringDecoder } from "string_decoder";
 import fetch, { RequestInit, Response } from "node-fetch";
-import { HyperbrowserError } from "../error";
+import { errorRequestPath, HyperbrowserError, networkErrorMessage } from "../error";
 import { isRetryableNetworkError, RETRYABLE_STATUS_CODES } from "../retry";
 import { resolveRuntimeTransportTarget } from "./ws";
 
@@ -63,12 +63,12 @@ export class RuntimeTransport {
         details: error.details,
         cause: error.cause ?? error,
         method: error.method ?? init?.method ?? "GET",
-        path: error.path ?? path.split("?", 1)[0],
+        path: error.path ?? errorRequestPath(path),
       });
     }
     const canceled = init?.signal?.aborted;
     return new HyperbrowserError(
-      error instanceof Error ? error.message : "Runtime request failed",
+      networkErrorMessage(error, "Runtime request failed"),
       {
         code: canceled ? "request_aborted" : undefined,
         statusCode: response?.status,
@@ -76,7 +76,7 @@ export class RuntimeTransport {
         service: "runtime",
         retryable: !canceled && isRetryableNetworkError(error),
         method: init?.method ?? "GET",
-        path: path.split("?", 1)[0],
+        path: errorRequestPath(path),
         cause: error,
       }
     );
@@ -101,7 +101,7 @@ export class RuntimeTransport {
           service: "runtime",
           cause,
           method: init?.method ?? "GET",
-          path: path.split("?", 1)[0],
+          path: errorRequestPath(path),
         });
       }
     } catch (error) {
@@ -207,7 +207,7 @@ export class RuntimeTransport {
         "Receiver does not support streaming command start; update the receiver. " +
           "The command may have started; do not retry it automatically.",
         { code: "streaming_not_supported", service: "runtime", retryable: false,
-          method, path: path.split("?", 1)[0], requestId: getRequestId(response), statusCode: response.status }
+          method, path: errorRequestPath(path), requestId: getRequestId(response), statusCode: response.status }
       );
     }
     const body = response.body;
@@ -376,7 +376,7 @@ export class RuntimeTransport {
             service: "runtime",
             retryable: false,
             method: init?.method ?? "GET",
-            path: path.split("?", 1)[0],
+            path: errorRequestPath(path),
             requestId: getRequestId(response),
           }
         );
@@ -488,7 +488,7 @@ export class RuntimeTransport {
       service: "runtime",
       details,
       method: init?.method ?? "GET",
-      path: path.split("?", 1)[0],
+      path: errorRequestPath(path),
     });
   }
 

@@ -1,5 +1,5 @@
 import fetch, { HeadersInit, RequestInit, Response } from "node-fetch";
-import { HyperbrowserError } from "../error";
+import { errorRequestPath, HyperbrowserError, networkErrorMessage } from "../error";
 import {
   getRetryDelayMs,
   isRetryableNetworkError,
@@ -110,7 +110,7 @@ export class BaseService {
           service: "control",
           details: errorDetails,
           method: init?.method ?? "GET",
-          path: path.split("?", 1)[0],
+          path: errorRequestPath(path),
         });
       }
 
@@ -126,7 +126,7 @@ export class BaseService {
           service: "control",
           cause,
           method: init?.method ?? "GET",
-          path: path.split("?", 1)[0],
+          path: errorRequestPath(path),
         });
       }
     } catch (error) {
@@ -135,12 +135,12 @@ export class BaseService {
       }
 
       throw new HyperbrowserError(
-        error instanceof Error ? error.message : "Unknown error occurred",
+        networkErrorMessage(error, "Unknown error occurred"),
         {
           code: init?.signal?.aborted ? "request_aborted" : undefined,
           retryable: !init?.signal?.aborted && isRetryableNetworkError(error),
           method: init?.method ?? "GET",
-          path: path.split("?", 1)[0],
+          path: errorRequestPath(path),
           service: "control",
           cause: error,
           statusCode: response?.status,

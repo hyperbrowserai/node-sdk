@@ -175,7 +175,7 @@ test("a callback can stop its own watcher without waiting on itself", async () =
   expect(api.ws.clients.size).toBe(0);
 });
 
-test("terminal attachment preserves frames sent with the HTTP upgrade", async () => {
+test.each([false, true])("terminal attachment preserves immediate frames (unknown event=%s)", async (unknownEvent) => {
   const { SandboxTerminalHandle } = await import("../../src/sandbox/terminal");
   const server = await localHTTP((_req, res) => res.end());
   const ws = new WebSocketServer({ server: server.server });
@@ -190,6 +190,7 @@ test("terminal attachment preserves frames sent with the HTTP upgrade", async ()
     exitCode: 0,
   };
   ws.on("connection", (socket) => {
+    if (unknownEvent) socket.send(JSON.stringify({ type: "keepalive" }));
     socket.send(
       JSON.stringify({
         type: "output",

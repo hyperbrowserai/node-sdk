@@ -131,9 +131,11 @@ describe.sequential("sandbox terminal e2e", () => {
     const connection = await terminal.attach();
     try {
       await connection.resize(32, 110);
-      const refreshed = await terminal.refresh();
-      expect(refreshed.current.rows).toBe(32);
-      expect(refreshed.current.cols).toBe(110);
+      // A WebSocket send completes locally; the HTTP read can overtake it.
+      await expect.poll(async () => {
+        const refreshed = await terminal.refresh();
+        return { rows: refreshed.current.rows, cols: refreshed.current.cols };
+      }, { timeout: 5_000, interval: 50 }).toEqual({ rows: 32, cols: 110 });
 
       await connection.write("exit\n");
       const result = await collectTerminalSession(connection);

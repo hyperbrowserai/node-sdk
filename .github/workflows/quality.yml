@@ -11,11 +11,15 @@ concurrency:
   cancel-in-progress: true
 jobs:
   quality:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-24.04]
         node: [20.20.2, 22.22.1, 24.15.0]
+        include:
+          - os: macos-14
+            node: 24.15.0
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v6

@@ -19,7 +19,7 @@ const normalizeInitArgs = (values: string[] | undefined | null): string[] =>
   (values ?? []).filter((value) => value);
 
 const deriveAutoImageEnv = (entries: string[]): Record<string, string> => {
-  const env: Record<string, string> = {};
+  const env = new Map<string, string>();
   for (const entry of entries) {
     const separator = entry.indexOf("=");
     if (separator === -1) {
@@ -29,9 +29,9 @@ const deriveAutoImageEnv = (entries: string[]): Record<string, string> => {
     if (!key || !IMAGE_INIT_ENV_KEY_PATTERN.test(key) || RESERVED_IMAGE_INIT_ENV_KEYS.has(key)) {
       continue;
     }
-    env[key] = entry.slice(separator + 1);
+    env.set(key, entry.slice(separator + 1));
   }
-  return env;
+  return Object.fromEntries(env);
 };
 
 const deriveAutoStartupArgs = (entrypoint: string[], cmd: string[]): string[] =>

@@ -33,16 +33,16 @@ interface ProcessListWireResponse {
   next_cursor?: string;
 }
 
-interface RawProcessSummary {
+interface RawProcessSummary extends Partial<SandboxProcessSummary> {
   id: string;
   status: SandboxProcessSummary["status"];
   command: string;
-  args?: string[];
+  args?: string[] | null;
   cwd: string;
-  pid?: number;
+  pid?: number | null;
   exit_code?: number | null;
   started_at: number;
-  completed_at?: number;
+  completed_at?: number | null;
 }
 
 const DEFAULT_PROCESS_KILL_WAIT_MS = 5_000;
@@ -55,9 +55,9 @@ const normalizeProcessSummary = (process: RawProcessSummary): SandboxProcessSumm
   args: process.args,
   cwd: process.cwd,
   pid: process.pid,
-  exitCode: process.exit_code,
-  startedAt: process.started_at,
-  completedAt: process.completed_at,
+  exitCode: process.exit_code !== undefined ? process.exit_code : process.exitCode,
+  startedAt: process.started_at ?? process.startedAt!,
+  completedAt: process.completed_at !== undefined ? process.completed_at : process.completedAt,
 });
 
 const normalizeResultToSummary = (result: SandboxProcessResult): SandboxProcessSummary => ({

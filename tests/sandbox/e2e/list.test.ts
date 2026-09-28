@@ -71,7 +71,11 @@ describe.sequential("sandbox list e2e", () => {
   });
 
   afterAll(async () => {
-    await stopSandboxIfRunning(sandbox);
+    try {
+      await stopSandboxIfRunning(sandbox);
+    } finally {
+      if (memorySnapshot) await client.sandboxes.deleteSnapshot(memorySnapshot.snapshotId);
+    }
   });
 
   test("list returns the created sandbox in the active set", async () => {

@@ -16,6 +16,9 @@ import { retryDelay } from "../../src/retry";
 import { BaseService } from "../../src/services/base";
 
 class TestService extends BaseService {
+  full<T>(path: string) {
+    return this.request<T>(path, { method: "POST" }, undefined, true);
+  }
   get<T>(path: string) {
     return this.request<T>(path);
   }
@@ -73,4 +76,14 @@ describe("control transport GET retries", () => {
     await expect(service.post("/test")).rejects.toMatchObject({ statusCode: 502 });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+});
+
+
+test("empty network errors retain their type and omit full URL credentials from context", async () => {
+  const failure = Object.assign(new Error(""), { name: "ConnectError", code: "ECONNRESET" });
+  fetchMock.mockRejectedValue(failure);
+  const service = new TestService("local", "http://unused", 1000);
+  const error = await service.full("https://user:private@api.example.com/sandbox?token=secret").catch((value) => value);
+  expect(error).toMatchObject({ message: "[Hyperbrowser]: Unknown error occurred (ConnectError)", method: "POST", path: "/sandbox", retryable: true });
+  expect(fetchMock).toHaveBeenCalledTimes(1);
 });

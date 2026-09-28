@@ -19,27 +19,27 @@ interface RawOutputEvent {
   timestamp: number;
 }
 
-export interface RawProcessResult {
+export interface RawProcessResult extends Partial<SandboxProcessResult> {
   id: string;
   status: SandboxProcessResult["status"];
   exit_code?: number | null;
   stdout: string;
   stderr: string;
   started_at: number;
-  completed_at?: number;
-  error?: string;
+  completed_at?: number | null;
+  error?: string | null;
   output_truncated?: boolean;
-  last_seq?: number;
+  last_seq?: number | null;
 }
 
 export const normalizeProcessResult = (result: RawProcessResult): SandboxProcessResult => ({
   id: result.id,
   status: result.status,
-  exitCode: result.exit_code,
+  exitCode: result.exit_code !== undefined ? result.exit_code : result.exitCode,
   stdout: result.stdout,
   stderr: result.stderr,
-  startedAt: result.started_at,
-  completedAt: result.completed_at,
+  startedAt: result.started_at ?? result.startedAt!,
+  completedAt: result.completed_at !== undefined ? result.completed_at : result.completedAt,
   error: result.error,
   outputTruncated: result.output_truncated,
   lastSeq: result.last_seq,
@@ -113,7 +113,7 @@ export class ProcessOutput {
       throw this.failure("Command output contains a sequence gap");
     }
     const stream = data.stream;
-    if (!(stream in this.decoders)) {
+    if (!Object.prototype.hasOwnProperty.call(this.decoders, stream)) {
       throw this.failure("Unknown command output stream");
     }
     const raw = this.decodePayload(data);

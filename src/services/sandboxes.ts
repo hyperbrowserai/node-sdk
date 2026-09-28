@@ -201,9 +201,29 @@ const READY_IMAGE_PAGE_SIZE = 100;
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
+const validatePagination = (params: { page?: number; limit?: number }, maxLimit?: number): void => {
+  for (const key of ["page", "limit"] as const) {
+    const value = params[key];
+    if (value !== undefined && (!Number.isSafeInteger(value) || value < 1))
+      throw new HyperbrowserError(`${key} must be a positive integer`);
+  }
+  if (maxLimit !== undefined && params.limit !== undefined && params.limit > maxLimit)
+    throw new HyperbrowserError(`limit must be at most ${maxLimit}`);
+};
+
+const validateImageBuildFormat = (params: { inputFormat?: string; sourcePlatform?: string }): void => {
+  if (params.sourcePlatform !== undefined && params.sourcePlatform !== "linux/amd64")
+    throw new HyperbrowserError("sourcePlatform must be linux/amd64");
+  if (params.inputFormat !== undefined && ![
+    "rootfs_export_tar_gz", "dockerfile_context_tar_gz",
+    "dockerfile_context_manifest_v1", "docker_image_manifest_v1",
+  ].includes(params.inputFormat)) throw new HyperbrowserError("Unsupported image build inputFormat");
+};
+
 const serializeCreateImageBuildParams = (
   params: CreateSandboxImageBuildParams
 ): Record<string, unknown> => {
+  validateImageBuildFormat(params);
   for (const key of ["builderCpus", "builderMemoryMiB", "builderScratchMiB"] as const) {
     const value = params[key];
     if (value !== undefined && (!Number.isSafeInteger(value) || value < 1)) throw new HyperbrowserError(`${key} must be a positive integer`);
@@ -625,14 +645,15 @@ export class SandboxesService extends BaseService {
   }
 
   async list(params: SandboxListParams = {}): Promise<SandboxListResponse> {
+    validatePagination(params);
     try {
       const response = await this.request<WireSandboxListResponse>("/sandboxes", undefined, {
         status: params.status,
         start: params.start,
         end: params.end,
         search: params.search,
-        page: params.page,
-        limit: params.limit,
+        page: params.page ?? 1,
+        limit: params.limit ?? 10,
       });
       return normalizeSandboxListResponse(response);
     } catch (error) {
@@ -657,6 +678,7 @@ export class SandboxesService extends BaseService {
   }
 
   async listImages(params: SandboxImageListParams = {}): Promise<SandboxImageListResponse> {
+    validatePagination(params, 100);
     try {
       return await this.request<SandboxImageListResponse>("/images", undefined, {
         source: params.source,
@@ -675,6 +697,7 @@ export class SandboxesService extends BaseService {
   async listSnapshots(
     params: SandboxSnapshotListParams = {}
   ): Promise<SandboxSnapshotListResponse> {
+    validatePagination(params, 100);
     try {
       return await this.request<SandboxSnapshotListResponse>("/snapshots", undefined, {
         status: params.status,
@@ -843,6 +866,7 @@ export class SandboxesService extends BaseService {
     buildId: string,
     params: CompleteSandboxImageBuildParams
   ): Promise<SandboxImageBuild> {
+    validateImageBuildFormat(params);
     try {
       const response = await this.request<{ build: SandboxImageBuild }>(
         `/images/builds/${encodeURIComponent(buildId)}/complete`,
@@ -878,6 +902,7 @@ export class SandboxesService extends BaseService {
   async reuseDockerImage(
     params: ReuseSandboxDockerImageParams
   ): Promise<SandboxDockerImageReuseResult> {
+    validateImageBuildFormat(params);
     try {
       return await this.request<SandboxDockerImageReuseResult>("/images/builds/reuse", {
         method: "POST",

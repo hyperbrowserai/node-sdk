@@ -133,12 +133,17 @@ describe.sequential("sandbox lifecycle e2e", () => {
   });
 
   afterAll(async () => {
-    await stopSandboxIfRunning(sandbox);
-    await stopSandboxIfRunning(staleHandle);
-    await stopSandboxIfRunning(secondary);
-    await stopSandboxIfRunning(imageSandbox);
-    await stopSandboxIfRunning(customImageSandbox);
-    await stopSandboxIfRunning(customSnapshotSandbox);
+    const stopped = await Promise.allSettled(
+      [sandbox, staleHandle, secondary, imageSandbox, customImageSandbox, customSnapshotSandbox]
+        .map(stopSandboxIfRunning)
+    );
+    const snapshots = await Promise.allSettled(
+      [memorySnapshot, customImageMemorySnapshot]
+        .filter((snapshot) => snapshot !== null)
+        .map((snapshot) => client.sandboxes.deleteSnapshot(snapshot!.snapshotId))
+    );
+    const failure = [...stopped, ...snapshots].find((result) => result.status === "rejected");
+    if (failure?.status === "rejected") throw failure.reason;
   });
 
   test("create response contains runtime auth", async () => {

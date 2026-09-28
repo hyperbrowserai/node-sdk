@@ -111,6 +111,7 @@ const compilePattern = (pattern: string): { matchType: MatchType; regexp: RegExp
   let matchType: MatchType = "exact";
   let cursor = 0;
   let tokenIndex = 0;
+  let inClass = false;
   while (cursor < pattern.length) {
     const character = pattern[cursor];
     cursor += 1;
@@ -148,8 +149,9 @@ const compilePattern = (pattern: string): { matchType: MatchType; regexp: RegExp
       parts.push("\\" + character);
     } else if (character === "\\") {
       if (cursor < pattern.length) {
-        parts.push("\\" + pattern[cursor]);
-        cursor += 1;
+        const codepoint = pattern.codePointAt(cursor)!;
+        parts.push(`\\u{${codepoint.toString(16)}}`);
+        cursor += codepoint > 0xffff ? 2 : 1;
         matchType = "regexp";
       } else {
         throw new Error(`invalid Docker ignore pattern "${pattern}": trailing escape`);
@@ -157,7 +159,9 @@ const compilePattern = (pattern: string): { matchType: MatchType; regexp: RegExp
     } else {
       // Brackets remain regex syntax because they are also filepath glob
       // syntax. All other characters are literal in the Moby compiler.
-      parts.push(character);
+      parts.push(character === "]" && !inClass ? "\\]" : character);
+      if (character === "[") inClass = true;
+      else if (character === "]") inClass = false;
       if (character === "[" || character === "]") {
         matchType = "regexp";
       }
@@ -172,7 +176,8 @@ const compilePattern = (pattern: string): { matchType: MatchType; regexp: RegExp
 
   parts.push("$");
   try {
-    return { matchType, regexp: new RegExp(parts.join("")) };
+    // Python and Go wildcards consume Unicode codepoints, not UTF-16 units.
+    return { matchType, regexp: new RegExp(parts.join(""), "u") };
   } catch (error) {
     throw new Error(
       `invalid Docker ignore pattern "${pattern}": ${error instanceof Error ? error.message : error}`

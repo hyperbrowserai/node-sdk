@@ -495,12 +495,12 @@ export interface SandboxProcessSummary {
   id: string;
   status: SandboxProcessStatus;
   command: string;
-  args?: string[];
+  args?: string[] | null;
   cwd: string;
-  pid?: number;
+  pid?: number | null;
   exitCode?: number | null;
   startedAt: number;
-  completedAt?: number;
+  completedAt?: number | null;
 }
 
 export interface SandboxProcessResult {
@@ -510,10 +510,10 @@ export interface SandboxProcessResult {
   stdout: string;
   stderr: string;
   startedAt: number;
-  completedAt?: number;
-  error?: string;
+  completedAt?: number | null;
+  error?: string | null;
   outputTruncated?: boolean;
-  lastSeq?: number;
+  lastSeq?: number | null;
 }
 
 export interface SandboxProcessListParams {
@@ -698,17 +698,17 @@ export interface SandboxTerminalOutputChunk {
 export interface SandboxTerminalStatus {
   id: string;
   command: string;
-  args?: string[];
+  args?: string[] | null;
   cwd: string;
-  pid?: number;
+  pid?: number | null;
   running: boolean;
   exitCode?: number | null;
-  error?: string;
+  error?: string | null;
   timedOut?: boolean;
   rows: number;
   cols: number;
   startedAt: number;
-  finishedAt?: number;
+  finishedAt?: number | null;
   output?: SandboxTerminalOutputChunk[];
 }
 

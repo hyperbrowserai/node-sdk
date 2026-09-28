@@ -31,6 +31,7 @@
     "dist",
     "README.md",
     "SANDBOX_PARITY.md",
+    "SANDBOX_CONFORMANCE.md",
     "LICENSE"
   ],
   "keywords": [

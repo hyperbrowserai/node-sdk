@@ -64,25 +64,23 @@ export const compareCodePoints = (a: string, b: string): number => {
 };
 
 const escapeNonAscii = (json: string): string =>
-  json.replace(/[\u0080-\uffff]/g, (character) => {
+  json.replace(/[\u007f-\uffff]/g, (character) => {
     return "\\u" + character.charCodeAt(0).toString(16).padStart(4, "0");
   });
 
-const sortKeysDeep = (value: unknown): unknown => {
-  if (Array.isArray(value)) {
-    return value.map(sortKeysDeep);
-  }
+// Serialize keys directly: assigning sorted keys to an object lets JavaScript
+// reorder integer-like keys and treats __proto__ as a setter.
+const sortedJson = (value: unknown): string => {
+  if (Array.isArray(value)) return `[${value.map((item) => sortedJson(item) ?? "null").join(",")}]`;
   if (value && typeof value === "object") {
-    const sorted: Record<string, unknown> = {};
-    for (const key of Object.keys(value as Record<string, unknown>).sort(compareCodePoints)) {
-      const item = (value as Record<string, unknown>)[key];
-      if (item !== undefined) {
-        sorted[key] = sortKeysDeep(item);
-      }
-    }
-    return sorted;
+    const record = value as Record<string, unknown>;
+    const entries = Object.keys(record).sort(compareCodePoints).flatMap((key) => {
+      const item = sortedJson(record[key]);
+      return item === undefined ? [] : [`${JSON.stringify(key)}:${item}`];
+    });
+    return `{${entries.join(",")}}`;
   }
-  return value;
+  return JSON.stringify(value);
 };
 
 /**
@@ -94,8 +92,7 @@ export const compactJson = (
   value: unknown,
   options: { sortKeys?: boolean; ensureAscii?: boolean } = {}
 ): string => {
-  const prepared = options.sortKeys ? sortKeysDeep(value) : value;
-  const json = JSON.stringify(prepared);
+  const json = options.sortKeys ? sortedJson(value) : JSON.stringify(value);
   return options.ensureAscii === false ? json : escapeNonAscii(json);
 };
 

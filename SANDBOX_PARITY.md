@@ -3,8 +3,10 @@
 Reference: Python SDK 1.9.1 (`c36d3d9`), with existing Node runtime-class support
 preserved. Scope is sandbox functionality; browser/web/agent additions are deferred.
 
-This checklist records implementation and targeted verification. It does not
-establish exhaustive behavioral parity or coverage of every Python test scenario.
+This checklist records implementation and verification. The detailed
+[conformance audit](SANDBOX_CONFORMANCE.md) maps 194 Python test functions to Node
+coverage, intentional language differences, or deferred scope. It does not claim
+exhaustive branch coverage or correctness for every possible input.
 
 | Plan area | Implemented | Verification |
 | --- | --- | --- |
@@ -52,44 +54,40 @@ establish exhaustive behavioral parity or coverage of every Python test scenario
 
 ## Release validation
 
-The local Docker validation built a scratch image, inspected its platform digest,
-parsed real OCI descriptor/config/layers from Docker save, preserved PATH / command /
-working directory, and removed its temporary image and artifacts.
+On 2026-09-28, 646 local tests passed, along with source/test typechecking,
+full-source lint, and fresh packed-package CommonJS, ESM, subpath export and
+TypeScript consumer checks. CI runs the same checks on Linux with Node
+20.20.2/22.22.1/24.15.0 and macOS 14 with Node 24.15.0.
 
-Live Hyperbrowser build → image readiness → volume mount → sandbox launch →
-streamed command → file/watch → exposure → snapshot/restore → cleanup is covered
-by `tests/sandbox/e2e/parity-smoke.test.ts`. This must pass on the intended deployment
-before release; local mocks and Docker verification do not establish receiver rollout.
-On 2026-09-28 both dev and production passed remote Dockerfile submission/upload/completion,
-ready-image reuse, sandbox launch, runtime-session refresh, complete 512 KiB command
-output, 20 MiB streaming upload/download with checksum comparison, watch resume/done,
-authenticated exposure, snapshot restore, and cleanup. Dev used the existing runtime
-proxy override to reach the local HTTP proxy; production used the public API/runtime
-endpoints. Each environment also passed 58 existing live file/process/terminal/
-exposure/sudo tests (59 live tests including the smoke). Production authentication
-used the CLI OAuth session to create a temporary sandbox-scoped SDK API key, which
-was revoked after testing.
+The conformance suite uses regenerated results from the actual pinned Python code:
+79 ignore patterns, 10 invalid patterns, 19 Dockerfile analyses, 26 image identities,
+32 filesystem fingerprints, 20 Docker initialization cases, 83 process event cases,
+53 HTTP request/response scenarios, and 18 SSE streams. Both Python sync and async
+clients produce the same expected HTTP/SSE results. Additional real HTTP,
+WebSocket and subprocess tests exercise retries, timeouts, cancellation,
+concurrent build joining, malformed archives, resource forwarding and cleanup.
 
-Both signed-in teams reject volume creation because `sandbox_volumes` is disabled,
-so the passing smoke runs explicitly used `HYPERBROWSER_SMOKE_VOLUMES=0`. Volume
-behavior is covered by local wire/type tests; live volume mounting remains a
-release gate on a team with that feature enabled.
+The local Docker validation used Docker 29.4.2 to build a scratch image, inspect its
+platform digest, parse real OCI descriptors/config/layers from Docker save, preserve
+PATH / command / working directory, and remove temporary images and artifacts.
 
-## Remaining conformance work
+All 84 live tests across nine suites passed on both dev and production after the
+source fixes. These include lifecycle/list/resource sizing, files/processes/terminals,
+exposure/sudo, and the complete remote build → ready-image reuse → sandbox launch →
+auth refresh → streamed command → 20 MiB checksum-verified transfer → watch
+resume/done → authenticated exposure → snapshot/restore → cleanup workflow.
+Dev used the existing runtime proxy override to reach the local HTTP proxy;
+production used public API/runtime endpoints. Production authentication used the
+CLI OAuth session to create a temporary sandbox-scoped SDK key, revoked after testing.
 
-- Map each distinct Python sandbox test scenario to a Node test or an explicit
-  language-specific difference. The current suites contain ported fixtures and
-  targeted regressions, but this complete traceability audit has not been done.
-- Expand direct Python/Node comparisons beyond the existing identity fixtures and
-  SSE parser fixtures to requests, responses, errors, cancellation, upload retries,
-  build completion races, and cleanup failures.
-- Complete live volume validation and rerun the dedicated lifecycle/list/resource
-  suites on the final revision; the recorded 59 live tests include selected suites
-  and the smoke test, not every live test file.
-- CI currently verifies Linux with Node 20/22/24. Local Docker validation used
-  Docker 29.4.2; other supported host/Docker combinations are not yet demonstrated.
+## Scope limits
 
-The SSE fixtures in `tests/fixtures/sse_line_endings.json` were checked against
-Python 1.9.1's actual sync and async transports. They cover LF, CRLF, bare CR,
-split CRLF, field spaces, and an unterminated final data line. This follow-up found
-and fixed parser differences after the initial local and live suites had passed.
+- Live volume tests were explicitly skipped at the user's request because the test
+  teams have `sandbox_volumes` disabled. Local volume wire/type contracts pass;
+  live volume creation/mounting is excluded from this signoff.
+- Native language differences, including TypeScript declarations versus Python's
+  Pydantic runtime model validation, are documented in the conformance audit.
+- Windows and Docker versions other than the recorded local version remain
+  unverified. The macOS CI job exercises fake Docker and filesystem behavior,
+  not a live Docker daemon.
+- Browser/web/agent feature parity is outside this sandbox work.

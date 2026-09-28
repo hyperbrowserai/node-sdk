@@ -10,6 +10,8 @@ import {
   prepareDockerImageManifestSource,
 } from "../../src/sandbox/image-build/docker-image";
 import { deriveAutoImageInit, mergeImageInit } from "../../src/sandbox/image-build/image-init";
+import { SandboxesService } from "../../src/services/sandboxes";
+import { localHTTP } from "../helpers/local-http";
 
 const sha256 = (data: Buffer): string => createHash("sha256").update(data).digest("hex");
 
@@ -36,12 +38,19 @@ const writeTar = async (entries: Array<[string, Buffer]>): Promise<string> => {
 };
 
 /** A stand-in `docker` CLI answering inspect/save from fixture files. */
-const installFakeDocker = (inspection: Record<string, unknown>, archive: string, saveExit = 0): void => {
+const installFakeDocker = (
+  inspection: Record<string, unknown>,
+  archive: string,
+  saveExit = 0
+): void => {
   const bin = path.join(workspace, "bin");
   rmSync(bin, { recursive: true, force: true });
   require("fs").mkdirSync(bin);
   writeFileSync(path.join(workspace, "inspect.json"), JSON.stringify(inspection));
   const script = `#!/bin/sh
+if [ "$1" = "buildx" ] || { [ "$1" = "image" ] && [ "$2" = "rm" ]; }; then
+  exit 0
+fi
 if [ "$1" = "image" ] && [ "$2" = "inspect" ]; then
   cat "${path.join(workspace, "inspect.json")}"
   exit 0
@@ -71,7 +80,73 @@ afterEach(() => {
 describe("docker image manifest packaging", () => {
   const configBytes = Buffer.from('{"architecture":"amd64","config":{}}');
   const layerBytes = Buffer.from("reusable-layer-tar");
-  const saveManifest = Buffer.from(JSON.stringify([{ Config: "config.json", Layers: ["layer.tar"] }]));
+  const saveManifest = Buffer.from(
+    JSON.stringify([{ Config: "config.json", Layers: ["layer.tar"] }])
+  );
+
+  test.each(
+    ["remote-dockerfile", "local-dockerfile", "image"].flatMap((source) =>
+      [false, true].map((custom) => ({ source, custom }))
+    )
+  )("forwards builder resources through $source (custom=$custom)", async ({ source, custom }) => {
+    const archive = await writeTar([
+      ["config.json", configBytes],
+      ["layer.tar", layerBytes],
+      ["manifest.json", saveManifest],
+    ]);
+    installFakeDocker(
+      { Id: `sha256:${sha256(configBytes)}`, Os: "linux", Architecture: "amd64", Config: {} },
+      archive
+    );
+    writeFileSync(path.join(workspace, "Dockerfile"), "FROM scratch\n");
+    let captured: Record<string, unknown> | undefined;
+    const build = { id: "b", imageName: "n", status: "completed", imageId: "image" };
+    const server = await localHTTP(async (req, res) => {
+      const chunks: Buffer[] = [];
+      for await (const chunk of req) chunks.push(Buffer.from(chunk));
+      if (req.url === "/api/images/builds/reuse") {
+        res.end('{"hit":false}');
+        return;
+      }
+      if (req.url === "/api/images/builds") {
+        captured = JSON.parse(Buffer.concat(chunks).toString());
+        res.end(JSON.stringify({ build, uploads: [] }));
+        return;
+      }
+      expect(req.url).toBe("/api/images/builds/b/complete");
+      res.end(JSON.stringify({ build }));
+    });
+    try {
+      const sdk = new SandboxesService("test", server.url, 1000);
+      const options = {
+        imageName: "n",
+        wait: false,
+        ...(custom
+          ? {
+              builderCpus: 8,
+              builderMemoryMiB: 16384,
+              builderScratchMiB: 65536,
+            }
+          : {}),
+      };
+      const result =
+        source === "image"
+          ? await sdk.buildImageFromDockerImage({ ...options, dockerImage: "local/app" })
+          : await sdk.buildImageFromDockerfile({
+              ...options,
+              contextPath: workspace,
+              remote: source === "remote-dockerfile",
+            });
+      expect(result.id).toBe("b");
+      expect(captured).toBeDefined();
+      expect(captured!.vcpus).toBe(custom ? 8 : undefined);
+      expect(captured!.memMiB).toBe(custom ? 16384 : undefined);
+      expect(captured!.scratchMiB).toBe(custom ? 65536 : undefined);
+      expect(captured).not.toHaveProperty("builderCpus");
+    } finally {
+      await server.close();
+    }
+  });
 
   test("streams docker save into verified reusable layers plus a manifest", async () => {
     const archive = await writeTar([
@@ -107,7 +182,10 @@ describe("docker image manifest packaging", () => {
 
   test("rejects non-amd64 local images with rebuild guidance", async () => {
     const archive = await writeTar([]);
-    installFakeDocker({ Id: `sha256:${"a".repeat(64)}`, Os: "linux", Architecture: "arm64", Config: {} }, archive);
+    installFakeDocker(
+      { Id: `sha256:${"a".repeat(64)}`, Os: "linux", Architecture: "arm64", Config: {} },
+      archive
+    );
     await expect(dockerImageDigest("local/app:latest")).rejects.toThrow(/expected linux\/amd64/);
   });
 
@@ -117,7 +195,10 @@ describe("docker image manifest packaging", () => {
       const archive = await writeTar([
         ["config.json", configBytes],
         [unsafe, layerBytes],
-        ["manifest.json", Buffer.from(JSON.stringify([{ Config: "config.json", Layers: [unsafe] }]))],
+        [
+          "manifest.json",
+          Buffer.from(JSON.stringify([{ Config: "config.json", Layers: [unsafe] }])),
+        ],
       ]);
       const digest = `sha256:${sha256(configBytes)}`;
       installFakeDocker({ Id: digest, Os: "linux", Architecture: "amd64", Config: {} }, archive);
@@ -173,7 +254,11 @@ describe("image init derivation", () => {
       { env: { A: "auto", B: "auto" }, workingDir: "/auto" },
       { env: { B: "explicit" }, command: "/bin/sh" }
     );
-    expect(merged).toMatchObject({ env: { A: "auto", B: "explicit" }, workingDir: "/auto", command: "/bin/sh" });
+    expect(merged).toMatchObject({
+      env: { A: "auto", B: "explicit" },
+      workingDir: "/auto",
+      command: "/bin/sh",
+    });
     expect(mergeImageInit(undefined, undefined)).toBeUndefined();
   });
 });

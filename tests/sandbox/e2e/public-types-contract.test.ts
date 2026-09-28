@@ -58,5 +58,8 @@ describe("public type compatibility", () => {
     expectTypeOf<SandboxImageBuildListParams["status"]>().toEqualTypeOf<
       SandboxImageBuildStatus | undefined
     >();
+    expectTypeOf<"cancelled">().not.toExtend<SandboxImageBuildStatus>();
+    expectTypeOf<"BUILDING">().not.toExtend<SandboxImageBuildStatus>();
+    expectTypeOf<"canceled">().toExtend<SandboxImageBuildStatus>();
   });
 });

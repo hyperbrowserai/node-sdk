@@ -1,0 +1,275 @@
+[
+  {
+    "name": "leading field spaces",
+    "chunks": [
+      "6576656e743a2020206f75747075740a646174613a20207b2264617461223a226f6b227d0a0a"
+    ],
+    "expected": [
+      {
+        "event": "output",
+        "data": {
+          "data": "ok"
+        },
+        "id": null
+      }
+    ]
+  },
+  {
+    "name": "LF",
+    "chunks": [
+      "6576656e743a206f75747075740a646174613a207b2264617461223a226f6b227d0a0a"
+    ],
+    "expected": [
+      {
+        "event": "output",
+        "data": {
+          "data": "ok"
+        },
+        "id": null
+      }
+    ]
+  },
+  {
+    "name": "CRLF",
+    "chunks": [
+      "6576656e743a206f75747075740d0a646174613a207b2264617461223a226f6b227d0d0a0d0a"
+    ],
+    "expected": [
+      {
+        "event": "output",
+        "data": {
+          "data": "ok"
+        },
+        "id": null
+      }
+    ]
+  },
+  {
+    "name": "CR",
+    "chunks": [
+      "6576656e743a206f75747075740d646174613a207b2264617461223a226f6b227d0d0d"
+    ],
+    "expected": [
+      {
+        "event": "output",
+        "data": {
+          "data": "ok"
+        },
+        "id": null
+      }
+    ]
+  },
+  {
+    "name": "split CRLF",
+    "chunks": [
+      "6576656e743a206f75747075740d",
+      "0a646174613a207b2264617461223a226f6b227d0d",
+      "0a0d",
+      "0a"
+    ],
+    "expected": [
+      {
+        "event": "output",
+        "data": {
+          "data": "ok"
+        },
+        "id": null
+      }
+    ]
+  },
+  {
+    "name": "unterminated final data line",
+    "chunks": [
+      "6576656e743a206f75747075740a646174613a207b2264617461223a226f6b227d"
+    ],
+    "expected": [
+      {
+        "event": "output",
+        "data": {
+          "data": "ok"
+        },
+        "id": null
+      }
+    ]
+  },
+  {
+    "name": "comments and unknown fields",
+    "chunks": [
+      "3a206865617274626561740a72657472793a2031320a756e6b6e6f776e3a2069676e6f7265640a0a646174613a206f6b0a0a"
+    ],
+    "expected": [
+      {
+        "event": "message",
+        "data": "ok",
+        "id": null
+      }
+    ]
+  },
+  {
+    "name": "multiline data",
+    "chunks": [
+      "6576656e743a20746578740a69643a20637572736f720a646174613a206f6e650a646174613a2074776f0a0a"
+    ],
+    "expected": [
+      {
+        "event": "text",
+        "data": "one\ntwo",
+        "id": "cursor"
+      }
+    ]
+  },
+  {
+    "name": "empty fields",
+    "chunks": [
+      "6576656e740a69640a646174610a0a"
+    ],
+    "expected": [
+      {
+        "event": "message",
+        "data": "",
+        "id": ""
+      }
+    ]
+  },
+  {
+    "name": "id only",
+    "chunks": [
+      "69643a20340a0a"
+    ],
+    "expected": [
+      {
+        "event": "message",
+        "data": "",
+        "id": "4"
+      }
+    ]
+  },
+  {
+    "name": "event only",
+    "chunks": [
+      "6576656e743a206b656570616c6976650a0a"
+    ],
+    "expected": [
+      {
+        "event": "keepalive",
+        "data": "",
+        "id": null
+      }
+    ]
+  },
+  {
+    "name": "reset metadata",
+    "chunks": [
+      "69643a20610a6576656e743a206f6e650a646174613a20310a0a646174613a2066616c73650a0a"
+    ],
+    "expected": [
+      {
+        "event": "one",
+        "data": 1,
+        "id": "a"
+      },
+      {
+        "event": "message",
+        "data": false,
+        "id": null
+      }
+    ]
+  },
+  {
+    "name": "JSON values",
+    "chunks": [
+      "646174613a206e756c6c0a0a646174613a205b312c325d0a0a646174613a20747275650a0a"
+    ],
+    "expected": [
+      {
+        "event": "message",
+        "data": null,
+        "id": null
+      },
+      {
+        "event": "message",
+        "data": [
+          1,
+          2
+        ],
+        "id": null
+      },
+      {
+        "event": "message",
+        "data": true,
+        "id": null
+      }
+    ]
+  },
+  {
+    "name": "leading tab preserved",
+    "chunks": [
+      "646174613a09746578740a0a"
+    ],
+    "expected": [
+      {
+        "event": "message",
+        "data": "\ttext",
+        "id": null
+      }
+    ]
+  },
+  {
+    "name": "all empty lines",
+    "chunks": [
+      "0d0a0d0a0a"
+    ],
+    "expected": []
+  },
+  {
+    "name": "empty input",
+    "chunks": [
+      ""
+    ],
+    "expected": []
+  },
+  {
+    "name": "every UTF8 byte split",
+    "chunks": [
+      "64",
+      "61",
+      "74",
+      "61",
+      "3a",
+      "20",
+      "22",
+      "e2",
+      "82",
+      "ac",
+      "f0",
+      "9f",
+      "98",
+      "80",
+      "22",
+      "0d",
+      "0a",
+      "0d",
+      "0a"
+    ],
+    "expected": [
+      {
+        "event": "message",
+        "data": "€😀",
+        "id": null
+      }
+    ]
+  },
+  {
+    "name": "incomplete UTF8 at EOF",
+    "chunks": [
+      "646174613a20e2"
+    ],
+    "expected": [
+      {
+        "event": "message",
+        "data": "�",
+        "id": null
+      }
+    ]
+  }
+]
