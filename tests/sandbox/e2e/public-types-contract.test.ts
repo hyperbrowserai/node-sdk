@@ -25,7 +25,7 @@ describe("public type compatibility", () => {
     expect(imageResponse.totalCount).toBeUndefined();
     expect(snapshotResponse.page).toBeUndefined();
     expect(volumeResponse.perPage).toBeUndefined();
-    expectTypeOf<Sandbox["network"]>().toEqualTypeOf<SandboxNetworkPolicy | undefined>();
+    expectTypeOf<Sandbox["network"]>().toEqualTypeOf<SandboxNetworkPolicy | null | undefined>();
   });
 
   test("includes public server region and status values", () => {

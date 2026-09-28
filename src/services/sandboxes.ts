@@ -1,4 +1,4 @@
-import { HyperbrowserError } from "../client";
+import { HyperbrowserError } from "../error";
 import { SandboxFilesApi } from "../sandbox/files";
 import { RuntimeConnection, RuntimeTransport } from "../sandbox/base";
 import { runtimeSessionIdFromPath } from "../sandbox/runtime-path";
@@ -12,7 +12,6 @@ import {
   DockerImageBuildArtifact,
   IMAGE_BUILD_SOURCE_PLATFORM,
   imageBuildName,
-  isTerminalImageBuildStatus,
   makeTempDockerTag,
   matchingImageBuild,
   mergeImageInit,
@@ -29,6 +28,9 @@ import {
   CompleteSandboxImageBuildParams,
   CreateSandboxImageBuildParams,
   CreateSandboxParams,
+  StartSandboxFromSnapshotParams,
+  SandboxRuntimeSession,
+  SandboxRuntimeTarget,
   GetOrBuildSandboxImageOptions,
   ReuseSandboxDockerImageParams,
   SandboxDockerImageReuseResult,
@@ -61,6 +63,8 @@ import {
   SandboxSnapshotSummary,
   SandboxUnexposeResult,
 } from "../types/sandbox";
+import { retryDelay } from "../retry";
+import { optionalInteger, optionalNumber } from "./normalize";
 import { BaseService } from "./base";
 
 const RUNTIME_SESSION_REFRESH_BUFFER_MS = 60_000;
@@ -85,9 +89,18 @@ const normalizeSandbox = (sandbox: WireSandbox): Sandbox => {
   const { vcpus, memMiB, diskSizeMiB, ...rest } = sandbox;
   return {
     ...rest,
-    cpu: vcpus,
-    memoryMiB: memMiB,
-    diskMiB: diskSizeMiB,
+    cpu: optionalInteger(vcpus),
+    memoryMiB: optionalInteger(memMiB),
+    diskMiB: optionalInteger(diskSizeMiB),
+    endTime: optionalInteger(rest.endTime),
+    startTime: optionalInteger(rest.startTime),
+    dataConsumed: optionalInteger(rest.dataConsumed),
+    proxyDataConsumed: optionalInteger(rest.proxyDataConsumed),
+    proxyBytesUsed: optionalInteger(rest.proxyBytesUsed),
+    timeoutMinutes: optionalInteger(rest.timeoutMinutes),
+    creditsUsed: optionalNumber(rest.creditsUsed) ?? null,
+    exposedPorts: rest.exposedPorts ?? [],
+    network: rest.network ? { ...rest.network, allowOut: rest.network.allowOut ?? [], denyOut: rest.network.denyOut ?? [] } : rest.network,
   };
 };
 
@@ -95,8 +108,8 @@ const normalizeSandboxDetail = (detail: WireSandboxDetail): SandboxDetail => {
   const { token, tokenExpiresAt, ...sandbox } = detail;
   return {
     ...normalizeSandbox(sandbox),
-    token,
-    tokenExpiresAt,
+    token: token || null,
+    tokenExpiresAt: tokenExpiresAt || null,
   };
 };
 
@@ -106,6 +119,30 @@ const normalizeSandboxListResponse = (response: WireSandboxListResponse): Sandbo
 });
 
 const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<string, unknown> => {
+  if (!params || typeof params !== "object")
+    throw new HyperbrowserError("Sandbox launch parameters are required");
+  for (const name of ["imageName", "snapshotName", "imageId", "snapshotId"] as const) {
+    const value = params[name];
+    if (value !== undefined && (typeof value !== "string" || !value.trim()))
+      throw new HyperbrowserError(`${name} must be a nonempty string`);
+  }
+  if (params.imageId !== undefined && !params.imageName)
+    throw new HyperbrowserError("imageId requires imageName");
+  if (params.snapshotId !== undefined && !params.snapshotName)
+    throw new HyperbrowserError("snapshotId requires snapshotName");
+  if (Boolean(params.imageName) === Boolean(params.snapshotName))
+    throw new HyperbrowserError("Provide exactly one start source: snapshotName or imageName");
+  for (const name of ["cpu", "memoryMiB", "diskMiB"] as const) {
+    const value = params[name];
+    if (value !== undefined && (!Number.isSafeInteger(value) || value < 1))
+      throw new HyperbrowserError(`${name} must be a positive integer`);
+  }
+  if (
+    params.runtimeClass !== undefined &&
+    params.runtimeClass !== "firecracker" &&
+    params.runtimeClass !== "gvisor-cpu"
+  )
+    throw new HyperbrowserError("Unsupported sandbox runtimeClass");
   if (typeof params.imageName === "string") {
     return {
       runtimeClass: params.runtimeClass,
@@ -166,7 +203,12 @@ const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout
 
 const serializeCreateImageBuildParams = (
   params: CreateSandboxImageBuildParams
-): Record<string, unknown> => ({
+): Record<string, unknown> => {
+  for (const key of ["builderCpus", "builderMemoryMiB", "builderScratchMiB"] as const) {
+    const value = params[key];
+    if (value !== undefined && (!Number.isSafeInteger(value) || value < 1)) throw new HyperbrowserError(`${key} must be a positive integer`);
+  }
+  return ({
   imageName: params.imageName,
   inputSha256: params.inputSha256,
   inputSizeBytes: params.inputSizeBytes,
@@ -181,6 +223,7 @@ const serializeCreateImageBuildParams = (
   contextManifest: params.contextManifest,
   dockerImageManifest: params.dockerImageManifest,
 });
+};
 
 const normalizeImageBuildPlatform = (platform: string | undefined): string => {
   const normalized = (platform ?? IMAGE_BUILD_SOURCE_PLATFORM).trim().toLowerCase();
@@ -190,14 +233,7 @@ const normalizeImageBuildPlatform = (platform: string | undefined): string => {
   return normalized;
 };
 
-type SandboxRuntimeState = {
-  sandboxId: string;
-  status: SandboxDetail["status"];
-  region: SandboxDetail["region"];
-  token: string;
-  tokenExpiresAt: string | null;
-  runtime: SandboxDetail["runtime"];
-};
+type SandboxRuntimeState = SandboxRuntimeSession;
 
 const resolveSandboxRuntimeSessionHost = (
   runtime: SandboxDetail["runtime"],
@@ -355,7 +391,7 @@ export class SandboxHandle {
   }
 
   async expose(params: SandboxExposeParams): Promise<SandboxExposeResult> {
-    const exposure = await this.service.expose(this.id, params);
+    const exposure = await this.service.expose(this.id, params, this.runtime);
     this.detail = {
       ...this.detail,
       exposedPorts: upsertExposedPort(this.detail.exposedPorts ?? [], exposure),
@@ -456,6 +492,13 @@ export class SandboxHandle {
     return expiresAt - Date.now() <= RUNTIME_SESSION_REFRESH_BUFFER_MS;
   }
 
+  async createRuntimeSession(
+    options: { forceRefresh?: boolean } = {}
+  ): Promise<SandboxRuntimeSession> {
+    const session = await this.ensureRuntimeSession(options.forceRefresh);
+    return { ...session, runtime: { ...session.runtime } };
+  }
+
   private async ensureRuntimeSession(forceRefresh: boolean = false): Promise<SandboxRuntimeState> {
     this.assertRuntimeAvailable();
 
@@ -544,6 +587,30 @@ export class SandboxesService extends BaseService {
   async create(params: CreateSandboxParams): Promise<SandboxHandle> {
     const detail = await this.createDetail(params);
     return this.attach(detail);
+  }
+
+  async startFromSnapshot(params: StartSandboxFromSnapshotParams): Promise<SandboxHandle> {
+    if (!params?.snapshotName) throw new HyperbrowserError("snapshotName is required");
+    return this.create(params);
+  }
+
+  async getRuntimeSession(id: string): Promise<SandboxRuntimeSession> {
+    const detail = await this.getDetail(id);
+    if (!detail.token || ["closed", "close-error", "error"].includes(detail.status)) {
+      throw new HyperbrowserError(`Sandbox ${id} is not running`, {
+        statusCode: 409,
+        code: "sandbox_not_running",
+        service: "runtime",
+      });
+    }
+    return {
+      sandboxId: id,
+      status: detail.status,
+      region: detail.region,
+      token: detail.token,
+      tokenExpiresAt: detail.tokenExpiresAt,
+      runtime: { ...detail.runtime },
+    };
   }
 
   async get(id: string): Promise<SandboxHandle> {
@@ -670,12 +737,22 @@ export class SandboxesService extends BaseService {
     }
   }
 
-  async expose(id: string, params: SandboxExposeParams): Promise<SandboxExposeResult> {
+  async expose(
+    id: string,
+    params: SandboxExposeParams,
+    runtime?: SandboxRuntimeTarget
+  ): Promise<SandboxExposeResult> {
     try {
-      return await this.request<SandboxExposeResult>(`/sandbox/${id}/expose`, {
+      const exposure = await this.request<SandboxExposeResult>(`/sandbox/${id}/expose`, {
         method: "POST",
         body: JSON.stringify(params),
       });
+      if (!exposure.url)
+        exposure.url = buildSandboxExposedUrl(
+          runtime ?? (await this.getDetail(id)).runtime,
+          exposure.port
+        );
+      return exposure;
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
@@ -728,10 +805,14 @@ export class SandboxesService extends BaseService {
     }
   }
 
-  async getImageBuild(buildId: string): Promise<SandboxImageBuild> {
+  async getImageBuild(
+    buildId: string,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<SandboxImageBuild> {
     try {
       const response = await this.request<{ build: SandboxImageBuild }>(
-        `/images/builds/${encodeURIComponent(buildId)}`
+        `/images/builds/${encodeURIComponent(buildId)}`,
+        { signal: options.signal }
       );
       return response.build;
     } catch (error) {
@@ -846,26 +927,50 @@ export class SandboxesService extends BaseService {
     const pollInterval = options.pollInterval ?? IMAGE_BUILD_DEFAULT_POLL_INTERVAL_SECONDS;
     const timeout =
       options.timeout === undefined ? IMAGE_BUILD_DEFAULT_WAIT_TIMEOUT_SECONDS : options.timeout;
-    const deadline = timeout === null ? null : Date.now() + timeout * 1000;
-    for (;;) {
-      const build = await this.getImageBuild(buildId);
-      if (build.status === "completed") {
-        return build;
-      }
-      if (build.status === "failed") {
-        let message = build.errorMessage || "image build failed";
-        if (build.errorCode) {
-          message = `image build failed [${build.errorCode}]: ${message}`;
+    if (
+      !Number.isFinite(pollInterval) ||
+      pollInterval < 0 ||
+      (timeout !== null && (!Number.isFinite(timeout) || timeout < 0))
+    ) {
+      throw new HyperbrowserError(
+        "Image build wait timeout and interval must be nonnegative finite seconds"
+      );
+    }
+    const controller = new AbortController();
+    let timedOut = false;
+    const deadlineTimer =
+      timeout === null
+        ? undefined
+        : setTimeout(() => {
+            timedOut = true;
+            controller.abort();
+          }, timeout * 1000);
+    const cancel = () => controller.abort();
+    options.signal?.addEventListener("abort", cancel, { once: true });
+    if (options.signal?.aborted) cancel();
+    try {
+      for (;;) {
+        const build = await this.getImageBuild(buildId, { signal: controller.signal });
+        if (build.status === "completed") return build;
+        if (build.status === "failed" || build.status === "canceled") {
+          throw new HyperbrowserError(
+            build.errorMessage || `Image build ${buildId} ${build.status}`,
+            { code: build.errorCode || "image_build_failed", service: "control", details: build }
+          );
         }
-        throw new HyperbrowserError(message);
+        await retryDelay(pollInterval * 1000, controller.signal);
       }
-      if (isTerminalImageBuildStatus(build.status)) {
-        throw new HyperbrowserError(`image build ${build.status}`);
-      }
-      if (deadline !== null && Date.now() >= deadline) {
-        throw new HyperbrowserError(`timed out waiting for image build ${buildId}`);
-      }
-      await sleep(pollInterval * 1000);
+    } catch (error) {
+      if (timedOut)
+        throw new HyperbrowserError(`Timed out waiting for image build ${buildId}`, {
+          code: "wait_timeout",
+          service: "control",
+          cause: error,
+        });
+      throw error;
+    } finally {
+      clearTimeout(deadlineTimer);
+      options.signal?.removeEventListener("abort", cancel);
     }
   }
 
@@ -952,6 +1057,7 @@ export class SandboxesService extends BaseService {
   async buildImageFromDockerfile(
     options: BuildSandboxImageFromDockerfileOptions
   ): Promise<SandboxImageBuild> {
+    options = { ...options, platform: normalizeImageBuildPlatform(options.platform) };
     const remote = options.remote ?? true;
     if (remote) {
       if (
@@ -989,6 +1095,7 @@ export class SandboxesService extends BaseService {
         wait: options.wait,
         pollInterval: options.pollInterval,
         waitTimeout: options.waitTimeout,
+        signal: options.signal,
         tempDir: options.tempDir,
         uploadTimeout: options.uploadTimeout,
       });
@@ -1071,7 +1178,7 @@ export class SandboxesService extends BaseService {
       builderMemoryMiB: options.builderMemoryMiB,
       builderScratchMiB: options.builderScratchMiB,
       wait: false,
-      uploadTimeout: options.uploadTimeout,
+      uploadTimeout: options.uploadTimeout === undefined ? 600 : options.uploadTimeout,
       tempDir: options.tempDir,
     };
     let outcome: SandboxImageBuildResolution["outcome"] = "created";
@@ -1107,7 +1214,8 @@ export class SandboxesService extends BaseService {
     if (wait && build.status !== "completed") {
       build = await this.waitForImageBuild(build.id, {
         pollInterval: options.pollInterval,
-        timeout: options.waitTimeout === undefined ? undefined : options.waitTimeout,
+        timeout: options.waitTimeout,
+        signal: options.signal,
       });
     }
     return { outcome, imageName, imageId: completedImageId(build), build };
@@ -1158,6 +1266,7 @@ export class SandboxesService extends BaseService {
       wait?: boolean;
       pollInterval?: number;
       waitTimeout?: number | null;
+      signal?: AbortSignal;
       uploadTimeout?: number | null;
     }
   ): Promise<SandboxImageBuild> {
@@ -1176,6 +1285,7 @@ export class SandboxesService extends BaseService {
         return await this.waitForImageBuild(build.id, {
           pollInterval: options.pollInterval,
           timeout: options.waitTimeout,
+          signal: options.signal,
         });
       }
       return build;

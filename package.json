@@ -17,17 +17,20 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "lint": "eslint src/**/*.ts",
+    "lint": "eslint 'src/**/*.ts'",
     "prepare": "yarn build",
     "test": "vitest run",
-    "test:e2e": "vitest run tests/sandbox/e2e",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "test:integration": "vitest run tests/integration",
     "test:watch": "vitest",
-    "format": "prettier --write 'src/**/*.ts'"
+    "format": "prettier --write 'src/**/*.ts'",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.tests.json",
+    "test:package": "node scripts/check-package.cjs"
   },
   "files": [
     "dist",
     "README.md",
+    "SANDBOX_PARITY.md",
     "LICENSE"
   ],
   "keywords": [
@@ -73,6 +76,14 @@
     "./tools": {
       "types": "./dist/tools/index.d.ts",
       "default": "./dist/tools/index.js"
+    },
+    "./image-builds": {
+      "types": "./dist/image-builds.d.ts",
+      "default": "./dist/image-builds.js"
+    },
+    "./sandbox": {
+      "types": "./dist/sandbox/index.d.ts",
+      "default": "./dist/sandbox/index.js"
     }
   },
   "typesVersions": {
@@ -82,7 +93,16 @@
       ],
       "tools": [
         "./dist/tools/index.d.ts"
+      ],
+      "image-builds": [
+        "./dist/image-builds.d.ts"
+      ],
+      "sandbox": [
+        "./dist/sandbox/index.d.ts"
       ]
     }
+  },
+  "engines": {
+    "node": ">=20.20.2"
   }
 }

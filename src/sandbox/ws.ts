@@ -1,6 +1,6 @@
 import type { IncomingMessage } from "http";
 import WebSocket from "ws";
-import { HyperbrowserError } from "../client";
+import { HyperbrowserError } from "../error";
 import { runtimeBaseUrlSessionId } from "./runtime-path";
 
 export class AsyncEventQueue<T> implements AsyncIterable<T> {
@@ -252,31 +252,56 @@ const buildHandshakeError = async (response: IncomingMessage): Promise<Hyperbrow
 
 export const openRuntimeWebSocket = async (
   target: RuntimeTransportTarget,
-  headers: Record<string, string>
+  headers: Record<string, string>,
+  options: { signal?: AbortSignal; timeoutMs?: number } = {}
 ): Promise<WebSocket> =>
   new Promise<WebSocket>((resolve, reject) => {
     let settled = false;
-
+    let response: IncomingMessage | undefined;
+    if (options.signal?.aborted) {
+      reject(new HyperbrowserError("Runtime websocket request canceled", {
+        code: "request_aborted", service: "runtime", retryable: false,
+      }));
+      return;
+    }
     const socket = new WebSocket(target.url, { headers });
-
+    const cleanup = () => {
+      clearTimeout(timer);
+      options.signal?.removeEventListener("abort", abort);
+    };
     const rejectOnce = (error: unknown) => {
       if (settled) {
         return;
       }
       settled = true;
+      cleanup();
+      response?.destroy();
+      socket.terminate();
       reject(normalizeWebSocketError(error));
     };
+    const abort = () => rejectOnce(new HyperbrowserError("Runtime websocket request canceled", {
+      code: "request_aborted", service: "runtime", retryable: false,
+    }));
+    const timer = setTimeout(() => rejectOnce(new HyperbrowserError("Runtime websocket handshake timed out", {
+      code: "request_timeout", service: "runtime", retryable: true,
+    })), options.timeoutMs ?? 30_000);
+    timer.unref?.();
+    options.signal?.addEventListener("abort", abort, { once: true });
 
     socket.once("open", () => {
       if (settled) {
         return;
       }
       settled = true;
+      cleanup();
+      // Frames can arrive with the upgrade response, before an awaiting caller resumes.
+      socket.pause();
       resolve(socket);
     });
 
-    socket.once("unexpected-response", (_request, response) => {
-      void buildHandshakeError(response).then(rejectOnce).catch(rejectOnce);
+    socket.once("unexpected-response", (_request, incoming) => {
+      response = incoming;
+      void buildHandshakeError(incoming).then(rejectOnce).catch(rejectOnce);
     });
 
     socket.once("error", rejectOnce);

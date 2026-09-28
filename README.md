@@ -403,3 +403,128 @@ const terminal = await sandbox.terminal.create({
 
 const connection = await terminal.attach(10);
 ```
+
+### Streaming file transfers and watches
+
+`read({ format: "stream" })` retains its buffered behavior. Use `uploadStream()`
+and `downloadStream()` for large transfers with backpressure and bounded memory:
+
+```typescript
+import { createReadStream, createWriteStream } from "node:fs";
+import { pipeline } from "node:stream/promises";
+
+await sandbox.files.withRunAs("root").uploadStream(
+  "/tmp/archive.tar", createReadStream("./archive.tar"),
+);
+await pipeline(sandbox.files.downloadStream("/tmp/archive.tar"), createWriteStream("./copy.tar"));
+```
+
+Uploads accept a Node readable or iterable of string/byte chunks and optional
+`{ contentLength, signal }`. Downloads return an async generator of buffers and
+accept `{ signal }`. Breaking download iteration closes the request. After an
+authentication failure, a consumed upload is rejected with `stream_not_replayable`;
+open a fresh source to retry it. `files.stat`, `mkdir`, `move`, and `delete` are
+aliases; `rename(oldPath, newPath, { overwrite: false })` forwards overwrite policy.
+
+```typescript
+const watch = await sandbox.files.watch("/workspace", { recursive: true });
+try {
+  for await (const message of watch.events({ cursor: 0, route: "ws" })) {
+    if (message.type === "done") break;
+    console.log(message.event.seq, message.event.path, message.event.op);
+  }
+} finally {
+  await watch.stop();
+}
+// Persist watch.id and the last event sequence to resume an existing watch:
+const resumed = await sandbox.files.getWatch(watch.id, true);
+await resumed.refresh(true);
+console.log(resumed.current, resumed.toJSON());
+```
+
+Both watch routes (`ws` and `stream`) use WebSocket transport. Watch events include
+an explicit `done` envelope. `watchDir()` remains the callback convenience API.
+Stopping a watcher stops the remote watch; breaking event iteration only closes
+that connection. Watch timestamps remain milliseconds; existing file metadata
+continues to expose `modifiedTime` as a `Date`.
+
+### Image identities, snapshots, and runtime sessions
+
+Offline identity helpers are available from the package root and
+`@hyperbrowser/sdk/image-builds`:
+
+```typescript
+import {
+  dockerBuildContextFingerprint, imageBuildName, DockerBuildContextChangedError,
+} from "@hyperbrowser/sdk/image-builds";
+
+const fingerprint = await dockerBuildContextFingerprint("./app");
+const imageName = imageBuildName({ source: "dockerfile", fingerprint });
+try {
+  await client.sandboxes.buildImageFromDockerfile({
+    contextPath: "./app", imageName, expectedContextFingerprint: fingerprint,
+    builderCpus: 4, builderMemoryMiB: 8192, builderScratchMiB: 20480,
+  });
+} catch (error) {
+  if (error instanceof DockerBuildContextChangedError) {
+    // Recompute identity after a local edit, then retry explicitly.
+  } else throw error;
+}
+
+const restored = await client.sandboxes.startFromSnapshot({ snapshotName: "saved" });
+const session = await restored.createRuntimeSession({ forceRefresh: true });
+// Also available without keeping a handle:
+await client.sandboxes.getRuntimeSession(restored.id);
+```
+
+Remote Dockerfile builds need no local Docker. Local builds/imports require Docker;
+platform-specific digest lookup requires Docker API 1.49+ (Docker 28.1+). Imports
+preserve image `PATH`, entrypoint/CMD, working directory, and supported environment
+variables; explicit image initialization overrides take precedence. Names include
+context/digest, platform, and initialization overrides. Mutable base tags and
+network downloads are not resolved by fingerprinting; use `forceBuild` when needed.
+
+Only `linux/amd64` image builds are supported. Sandbox creation preserves
+`runtimeClass: "firecracker" | "gvisor-cpu"`; use response capabilities when choosing
+snapshot, volume, or exposure operations. Snapshot launches cannot override image
+resources. Invalid or conflicting launch sources fail before a network request.
+
+### Timeouts, cancellation, and compatibility
+
+- Client `timeout` is milliseconds. Normal runtime requests have separate header
+  and body budgets. Streaming transfers reset inactivity budgets as data moves.
+- Process `timeoutMs` / `timeoutSec` limit remote execution. `wait({ timeoutMs })`
+  only limits local waiting and leaves collection running.
+- `exec()` / `processes.start()` accept an `AbortSignal`. Aborting stops local
+  collection and closes its connection; the detached remote process continues.
+  Use `signal()` or `kill()` when you intend to stop the command.
+- Process stream inactivity is limited to 60 seconds; receiver keepalives reset it.
+  Incomplete output, exceeded output limits, and unsupported receivers produce
+  structured errors. A failed streaming start is never automatically re-executed.
+- Image polling `pollInterval`, `waitTimeout`, and `uploadTimeout` are seconds.
+  `getOrBuildImage()` defaults uploads to 600 seconds of inactivity and polling to
+  35 minutes. Explicit `null` disables the corresponding timeout. Polling deadlines
+  include control GET retries. A polling `signal` or timeout leaves accepted builds
+  running for other callers. Lower-level build helpers leave upload timeouts unset
+  unless explicitly supplied.
+- `HYPERBROWSER_BASE_URL` supplies the API base URL when `baseUrl` is not provided.
+
+Public handle classes are available from `@hyperbrowser/sdk/sandbox`; request and
+response types remain under `@hyperbrowser/sdk/types`. See
+[SANDBOX_PARITY.md](./SANDBOX_PARITY.md) for the parity checklist and release validation.
+
+### Development checks
+
+The supported Node baseline is 20.20.2; CI checks Node 20.20.2, 22.22.1, and 24.15.0.
+Run `yarn build`, `yarn typecheck`, `yarn lint`, `yarn test`, and `yarn test:package`
+for local verification. `yarn test` runs credential-free unit, contract, and HTTP /
+WebSocket tests. `yarn test:package` installs the packed SDK into a temporary
+consumer and checks CommonJS, ESM, public exports, and TypeScript declarations.
+
+Live tests are opt-in: set `HYPERBROWSER_API_KEY` and `HYPERBROWSER_BASE_URL`, then
+run `yarn test:e2e`. They create remote resources and require a receiver supporting
+streamed process starts. The focused build-to-restore smoke test is
+`yarn test:e2e tests/sandbox/e2e/parity-smoke.test.ts`.
+The smoke test requires the team's sandbox volume feature. For a partial run on
+an environment without it, set `HYPERBROWSER_SMOKE_VOLUMES=0`; this does not validate
+volume mounts or satisfy the full release gate.

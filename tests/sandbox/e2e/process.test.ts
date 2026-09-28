@@ -139,9 +139,10 @@ describe.sequential("sandbox process e2e", () => {
     const result = await noisyProcess.result();
     expect(result.stdout.length).toBeGreaterThan(3 * 1024 * 1024);
 
+    const reattached = await sandbox!.processes.get(noisyProcess.id);
     await expectHyperbrowserError(
       "process replay window expired",
-      () => collectProcessStream(noisyProcess.stream(1)),
+      () => collectProcessStream(reattached.stream(1)),
       {
         statusCode: 410,
         code: "replay_window_expired",
@@ -162,10 +163,10 @@ describe.sequential("sandbox process e2e", () => {
       "process wait timeout",
       () => timeoutProcess.wait({ timeoutMs: 100 }),
       {
-        statusCode: 408,
+        code: "wait_timeout",
         service: "runtime",
         retryable: false,
-        messageIncludes: "timed out",
+        messageIncludes: "Timed out",
       }
     );
 

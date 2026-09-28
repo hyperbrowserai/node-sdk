@@ -1,7 +1,7 @@
 /** Collection and validation of the receiver's command event stream. */
 
 import { StringDecoder } from "string_decoder";
-import { HyperbrowserError } from "../client";
+import { HyperbrowserError } from "../error";
 import { SandboxProcessOutputEvent, SandboxProcessResult } from "../types/sandbox";
 import { RuntimeSSEEvent } from "./base";
 

@@ -1,6 +1,6 @@
 /** Shared identity and validation for opt-in image resolution. */
 
-import { HyperbrowserError } from "../../client";
+import { HyperbrowserError } from "../../error";
 import { SandboxImageBuild, SandboxImageInit } from "../../types/sandbox";
 import { blake2b } from "./blake2b";
 import { compactJson, isRecord } from "./common";

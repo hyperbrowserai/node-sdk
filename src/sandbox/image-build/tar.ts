@@ -28,10 +28,13 @@ const TYPE_FLAGS: Record<TarEntryType, string> = {
   symlink: "2",
 };
 
+// Tar header validation intentionally includes NUL.
+// eslint-disable-next-line no-control-regex
 const isAscii = (value: string): boolean => /^[\x00-\x7f]*$/.test(value);
 
 /** Python `stn`: encode with ASCII "replace" errors, then NUL-pad or truncate. */
 const stringField = (value: string, length: number): Buffer => {
+  // eslint-disable-next-line no-control-regex
   const encoded = Buffer.from(value.replace(/[^\x00-\x7f]/g, "?"), "latin1");
   const field = Buffer.alloc(length);
   encoded.copy(field, 0, 0, Math.min(encoded.length, length));
@@ -315,6 +318,7 @@ const parsePaxRecords = (payload: Buffer): Map<string, string> => {
  */
 export async function* readTarEntries(source: Readable): AsyncGenerator<TarStreamEntry> {
   const reader = new ByteReader(source);
+  const globalPax = new Map<string, string>();
   let paxOverrides: Map<string, string> | null = null;
   let gnuLongName: string | null = null;
   let gnuLongLink: string | null = null;
@@ -326,6 +330,8 @@ export async function* readTarEntries(source: Readable): AsyncGenerator<TarStrea
     }
     const typeflag = header.subarray(156, 157).toString("ascii");
     const size = parseOctal(header.subarray(124, 136));
+    if (!Number.isSafeInteger(size) || size < 0) throw new Error("invalid tar entry size");
+    if (["x", "g", "L", "K"].includes(typeflag) && size > 16 * 1024 * 1024) throw new Error("tar metadata exceeds the size limit");
     const padded = size + (BLOCK_SIZE - (size % BLOCK_SIZE || BLOCK_SIZE));
 
     if (typeflag === "x" || typeflag === "g") {
@@ -335,6 +341,10 @@ export async function* readTarEntries(source: Readable): AsyncGenerator<TarStrea
       }
       if (typeflag === "x") {
         paxOverrides = parsePaxRecords(payload.subarray(0, size));
+      } else {
+        for (const [key, value] of parsePaxRecords(payload.subarray(0, size))) {
+          if (value) globalPax.set(key, value); else globalPax.delete(key);
+        }
       }
       continue;
     }
@@ -367,6 +377,7 @@ export async function* readTarEntries(source: Readable): AsyncGenerator<TarStrea
     }
     const mode = parseOctal(header.subarray(100, 108)) & 0o7777;
     let entrySize = size;
+    paxOverrides = new Map([...globalPax, ...(paxOverrides ?? [])]);
     if (paxOverrides) {
       const path = paxOverrides.get("path");
       if (path !== undefined) {

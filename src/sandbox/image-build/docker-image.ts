@@ -1,5 +1,7 @@
 /** Local Docker image inspection and layer-manifest packaging for prebuilt imports. */
 
+import { Readable } from "stream";
+import { pipeline } from "stream/promises";
 import { execFile, spawn, ChildProcess } from "child_process";
 import { createHash } from "crypto";
 import { createWriteStream, mkdtempSync, readFileSync } from "fs";
@@ -302,20 +304,14 @@ const storeStreamedEntry = async (
   const hasher = createHash("sha256");
   const output = createWriteStream(destination, { flags: "wx" });
   let written = 0;
-  try {
+  async function* chunks() {
     for await (const chunk of source) {
       hasher.update(chunk);
       written += chunk.length;
-      if (!output.write(chunk)) {
-        await once(output, "drain");
-      }
+      yield chunk;
     }
-    output.end();
-    await once(output, "finish");
-  } catch (error) {
-    output.destroy();
-    throw error;
   }
+  await pipeline(Readable.from(chunks(), { objectMode: false }), output);
   if (written !== expectedSize) {
     throw new Error(`docker image save entry "${name}" has truncated content`);
   }

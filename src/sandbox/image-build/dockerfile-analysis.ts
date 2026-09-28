@@ -33,6 +33,8 @@ const INSTRUCTION_PATTERN = /^([A-Za-z]+)(?:[ \t]+(.*))?$/s;
 const DIRECTIVE_PATTERN = /^\s*#\s*(escape|syntax)\s*=\s*(\S+)/gim;
 const FLAG_NAME_PATTERN = /^[a-z][a-z0-9-]*$/;
 const SCP_GIT_SOURCE_PATTERN = /^git@[^:/\s]+:.+/;
+// Python splitlines includes these control separators.
+// eslint-disable-next-line no-control-regex
 const LINE_SEPARATOR_PATTERN = /\r\n|[\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029]/;
 
 class AnalysisFallback extends Error {

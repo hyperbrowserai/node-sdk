@@ -409,3 +409,18 @@ export {
   BrandingConfidence,
   BrandingColorScheme,
 } from "./web/branding";
+
+export type {
+  StartSandboxFromSnapshotParams,
+  SandboxRuntimeSession,
+  SandboxFileUploadStream,
+  SandboxFileUploadStreamOptions,
+  SandboxFileDownloadStreamOptions,
+  SandboxFileMoveParams,
+  SandboxFileRenameOptions,
+  SandboxFileWatchParams,
+  SandboxFileWatchEvent,
+  SandboxFileWatchStatus,
+  SandboxFileWatchEventsParams,
+  SandboxFileWatchStreamEvent,
+} from "./sandbox";

@@ -142,18 +142,24 @@ export const uploadMissingImageBuildArtifacts = async (
   }
 
   let next = 0;
+  let failed = false;
   const worker = async (): Promise<void> => {
-    while (next < requested.length) {
+    while (!failed && next < requested.length) {
       const [upload, artifact, digest] = requested[next];
       next += 1;
       try {
         await uploadImageBuildArtifact(upload, artifact.path, { timeout: options.timeout });
       } catch (error) {
+        failed = true;
         throw new Error(
           `upload ${options.label} ${digest}: ${error instanceof Error ? error.message : error}`
         );
       }
     }
   };
-  await Promise.all(Array.from({ length: Math.min(4, requested.length) }, () => worker()));
+  const results = await Promise.allSettled(
+    Array.from({ length: Math.min(4, requested.length) }, () => worker())
+  );
+  const failure = results.find((result) => result.status === "rejected");
+  if (failure?.status === "rejected") throw failure.reason;
 };

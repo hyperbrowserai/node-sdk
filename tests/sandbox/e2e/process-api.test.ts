@@ -22,7 +22,14 @@ const startedEvent: RuntimeSSEEvent = {
 
 const doneEvent: RuntimeSSEEvent = {
   event: "done",
-  data: { id: "proc_start", status: "exited", exit_code: 0, started_at: 1, completed_at: 2, last_seq: 0 },
+  data: {
+    id: "proc_start",
+    status: "exited",
+    exit_code: 0,
+    started_at: 1,
+    completed_at: 2,
+    last_seq: 0,
+  },
 };
 
 /** Every start opens one streamed POST whose body is the runtime payload. */
@@ -127,7 +134,11 @@ describe("sandbox process api", () => {
   test("sandbox handle exec forwards string options to processes.exec", async () => {
     const exec = vi.fn().mockResolvedValue(execResponse.result);
 
-    await SandboxHandle.prototype.exec.call(
+    const execString = SandboxHandle.prototype.exec as (
+      input: string,
+      options?: { runAs?: string }
+    ) => Promise<unknown>;
+    await execString.call(
       {
         processes: { exec },
       },

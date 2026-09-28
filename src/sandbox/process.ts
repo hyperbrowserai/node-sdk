@@ -1,4 +1,4 @@
-import { HyperbrowserError } from "../client";
+import { HyperbrowserError } from "../error";
 import { RuntimeSSEEvent, RuntimeSSEStream, RuntimeTransport } from "./base";
 import {
   DEFAULT_MAX_PROCESS_OUTPUT_BYTES,
@@ -497,6 +497,7 @@ export class SandboxProcessesApi {
     const stream = await this.transport.openSSE("/sandbox/processes", undefined, {
       method: "POST",
       body: JSON.stringify(buildProcessPayload(params)),
+      signal: params.signal,
     });
     let handle: SandboxProcessHandle;
     try {

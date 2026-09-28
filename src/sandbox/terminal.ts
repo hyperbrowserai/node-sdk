@@ -290,7 +290,9 @@ export class SandboxTerminalHandle {
 
     const ws = await openRuntimeWebSocket(target, headers);
 
-    return new SandboxTerminalConnection(ws);
+    const connection = new SandboxTerminalConnection(ws);
+    ws.resume?.();
+    return connection;
   }
 }
 

@@ -6,7 +6,7 @@ import { SessionLaunchState, SessionStatus } from "./session";
 export type SandboxStatus = SessionStatus;
 
 export interface SandboxNetworkPolicy {
-  allowInternetAccess: boolean;
+  allowInternetAccess?: boolean | null;
   allowOut: string[];
   denyOut: string[];
 }
@@ -48,21 +48,21 @@ export interface Sandbox {
   createdAt: string;
   updatedAt: string;
   closeReason?: string | null;
-  dataConsumed?: number;
-  proxyDataConsumed?: number;
-  usageType?: string;
+  dataConsumed?: number | null;
+  proxyDataConsumed?: number | null;
+  usageType?: string | null;
   jobId?: string | null;
   launchState?: SessionLaunchState | null;
   creditsUsed: number | null;
   region: SessionRegion;
   sessionUrl: string;
   duration: number;
-  proxyBytesUsed: number;
+  proxyBytesUsed?: number | null;
   cpu?: number | null;
   memoryMiB?: number | null;
   diskMiB?: number | null;
   timeoutMinutes?: number | null;
-  network?: SandboxNetworkPolicy;
+  network?: SandboxNetworkPolicy | null;
   runtime: SandboxRuntimeTarget;
   exposedPorts: SandboxExposeResult[];
 }
@@ -176,7 +176,7 @@ export interface SandboxSnapshotSummary {
   vcpus?: number | null;
   memMiB?: number | null;
   diskSizeMiB?: number | null;
-  compatibilityTag: string;
+  compatibilityTag?: string | null;
   metadata: Record<string, unknown>;
   uploaded: boolean;
   createdAt: string;
@@ -356,6 +356,7 @@ export interface SandboxImageBuildResolution {
 }
 
 export interface SandboxImageBuildWaitOptions {
+  signal?: AbortSignal;
   /** Seconds between status polls. Defaults to 3. */
   pollInterval?: number;
   /** Seconds to wait before giving up. `null` waits forever. Defaults to 35 minutes. */
@@ -363,6 +364,8 @@ export interface SandboxImageBuildWaitOptions {
 }
 
 interface SandboxImageBuildCommonOptions {
+  /** Cancel this caller's polling; accepted builds and uploads continue independently. */
+  signal?: AbortSignal;
   imageName: string;
   platform?: string;
   imageInit?: SandboxImageInit;
@@ -397,6 +400,8 @@ export interface BuildSandboxImageFromDockerfileOptions extends SandboxImageBuil
 }
 
 export interface GetOrBuildSandboxImageOptions {
+  /** Cancel this caller's polling; accepted builds and uploads continue independently. */
+  signal?: AbortSignal;
   contextPath?: string;
   dockerImage?: string;
   imageNamePrefix?: string;
@@ -450,7 +455,7 @@ export interface SandboxExposeResult {
   port: number;
   auth: boolean;
   url: string;
-  browserUrl?: string;
+  browserUrl?: string | null;
   browserUrlExpiresAt?: string | null;
 }
 
@@ -468,6 +473,8 @@ export type SandboxProcessStatus =
   | "timed_out";
 
 export interface SandboxExecParams {
+  /** Cancel local collection without killing the detached command. */
+  signal?: AbortSignal;
   command: string;
   /** Maximum combined stdout/stderr bytes collected locally. Defaults to 64 MiB. */
   maxOutputBytes?: number;
@@ -723,3 +730,63 @@ export type SandboxTerminalEvent =
       type: "exit";
       status: SandboxTerminalStatus;
     };
+
+/** True streaming transfer inputs; strings in iterable chunks are UTF-8. */
+export type SandboxFileUploadStream =
+  | AsyncIterable<Uint8Array | string>
+  | Iterable<Uint8Array | string>;
+export interface SandboxFileUploadStreamOptions {
+  contentLength?: number;
+  signal?: AbortSignal;
+}
+export interface SandboxFileDownloadStreamOptions {
+  signal?: AbortSignal;
+}
+export interface SandboxFileMoveParams {
+  source: string;
+  destination: string;
+  overwrite?: boolean;
+}
+export interface SandboxFileRenameOptions {
+  overwrite?: boolean;
+}
+export interface SandboxFileWatchParams {
+  recursive?: boolean;
+}
+export interface SandboxFileWatchEvent {
+  seq: number;
+  path: string;
+  op: string;
+  timestamp: number;
+}
+export interface SandboxFileWatchStatus {
+  id: string;
+  path: string;
+  recursive: boolean;
+  active: boolean;
+  error?: string | null;
+  createdAt: number;
+  stoppedAt?: number | null;
+  oldestSeq?: number;
+  lastSeq?: number;
+  eventCount?: number;
+  events?: SandboxFileWatchEvent[] | null;
+}
+export interface SandboxFileWatchEventsParams {
+  cursor?: number;
+  route?: "ws" | "stream";
+  signal?: AbortSignal;
+}
+export type SandboxFileWatchStreamEvent =
+  | { type: "event"; event: SandboxFileWatchEvent }
+  | { type: "done"; status: SandboxFileWatchStatus };
+
+export type StartSandboxFromSnapshotParams = Extract<CreateSandboxParams, { snapshotName: string }>;
+export interface SandboxRuntimeSession {
+  sandboxId: string;
+  status: SandboxStatus;
+  region: SessionRegion;
+  token: string;
+  tokenExpiresAt: string | null;
+  runtime: SandboxRuntimeTarget;
+}

@@ -2,10 +2,20 @@ import { Blob, Buffer } from "buffer";
 import nodePath from "path";
 import { ReadableStream } from "node:stream/web";
 import WebSocket from "ws";
-import { HyperbrowserError } from "../client";
+import { Readable } from "stream";
+import { HyperbrowserError } from "../error";
 import { RuntimeTransport } from "./base";
 import { AsyncEventQueue, openRuntimeWebSocket, toWebSocketUrl } from "./ws";
 import {
+  SandboxFileUploadStream,
+  SandboxFileUploadStreamOptions,
+  SandboxFileDownloadStreamOptions,
+  SandboxFileMoveParams,
+  SandboxFileRenameOptions,
+  SandboxFileWatchParams,
+  SandboxFileWatchStatus,
+  SandboxFileWatchEventsParams,
+  SandboxFileWatchStreamEvent,
   SandboxFileChmodParams,
   SandboxFileChownParams,
   SandboxFileCopyParams,
@@ -78,27 +88,7 @@ interface FileMoveCopyWireResponse {
 }
 
 interface FileWatchStatusResponse {
-  watch: RawFileWatchStatus;
-}
-
-interface RawFileWatchEvent {
-  seq: number;
-  path: string;
-  op: string;
-  timestamp: number;
-}
-
-interface RawFileWatchStatus {
-  id: string;
-  path: string;
-  recursive: boolean;
-  active: boolean;
-  error?: string;
-  createdAt: number;
-  stoppedAt?: number;
-  oldestSeq?: number;
-  lastSeq?: number;
-  eventCount?: number;
+  watch: SandboxFileWatchStatus;
 }
 
 interface RuntimeConnectionInfo {
@@ -245,11 +235,12 @@ const encodeWriteData = async (
   throw new Error("Unsupported write data type");
 };
 
-class RuntimeFileWatchHandle {
+export class SandboxFileWatchHandle {
+  private readonly connections = new Set<WebSocket>();
   constructor(
     private readonly transport: RuntimeTransport,
     private readonly getConnectionInfo: () => Promise<RuntimeConnectionInfo>,
-    private readonly status: RawFileWatchStatus,
+    private status: SandboxFileWatchStatus,
     private readonly runtimeProxyOverride?: string
   ) {}
 
@@ -261,20 +252,55 @@ class RuntimeFileWatchHandle {
     return this.status.path;
   }
 
-  async stop(): Promise<void> {
-    await this.transport.requestJSON<{ success: boolean }>(
-      `/sandbox/files/watch/${this.status.id}`,
-      {
-        method: "DELETE",
-      }
-    );
+  get current(): SandboxFileWatchStatus {
+    return this.toJSON();
   }
 
-  async *events(cursor?: number): AsyncGenerator<RawFileWatchEvent> {
+  toJSON(): SandboxFileWatchStatus {
+    return {
+      ...this.status,
+      ...(this.status.events ? { events: this.status.events.map((event) => ({ ...event })) } : {}),
+    };
+  }
+
+  async refresh(includeEvents = false): Promise<this> {
+    const response = await this.transport.requestJSON<FileWatchStatusResponse>(
+      `/sandbox/files/watch/${encodeURIComponent(this.id)}`,
+      undefined,
+      includeEvents ? { includeEvents: true } : undefined
+    );
+    this.status = response.watch;
+    return this;
+  }
+
+  async stop(): Promise<void> {
+    try {
+      await this.transport.requestJSON(`/sandbox/files/watch/${encodeURIComponent(this.id)}`, {
+        method: "DELETE",
+      });
+    } catch (error) {
+      if (!(error instanceof HyperbrowserError) || ![404, 409].includes(error.statusCode ?? 0))
+        throw error;
+    }
+    this.status = { ...this.status, active: false, stoppedAt: this.status.stoppedAt || Date.now() };
+    for (const socket of this.connections) socket.terminate();
+  }
+
+  async *events(
+    options: SandboxFileWatchEventsParams = {}
+  ): AsyncGenerator<SandboxFileWatchStreamEvent> {
+    const { cursor, route = "ws", signal } = options;
+    if (route !== "ws" && route !== "stream")
+      throw new HyperbrowserError("Watch route must be ws or stream");
+    if (signal?.aborted)
+      throw new HyperbrowserError("Watch canceled", {
+        code: "request_aborted",
+        service: "runtime",
+      });
     const connectionInfo = await this.getConnectionInfo();
     const target = toWebSocketUrl(
       connectionInfo.baseUrl,
-      `/sandbox/files/watch/${this.status.id}/ws?sessionId=${encodeURIComponent(
+      `/sandbox/files/watch/${encodeURIComponent(this.status.id)}/${route}?sessionId=${encodeURIComponent(
         connectionInfo.sandboxId
       )}${cursor !== undefined ? `&cursor=${encodeURIComponent(String(cursor))}` : ""}`,
       this.runtimeProxyOverride
@@ -287,14 +313,22 @@ class RuntimeFileWatchHandle {
       headers.Host = target.hostHeader;
     }
 
-    const ws = await openRuntimeWebSocket(target, headers);
-    const queue = new AsyncEventQueue<RawFileWatchEvent>();
+    const ws = await openRuntimeWebSocket(target, headers, { signal });
+    this.connections.add(ws);
+    const queue = new AsyncEventQueue<SandboxFileWatchStreamEvent>();
+    const abort = () => {
+      queue.fail(
+        new HyperbrowserError("Watch canceled", { code: "request_aborted", service: "runtime" })
+      );
+      ws.terminate();
+    };
+    signal?.addEventListener("abort", abort, { once: true });
+    if (signal?.aborted) abort();
 
     ws.on("message", (data) => {
       try {
         const parsed = JSON.parse(data.toString()) as
-          | { type: "event"; event: RawFileWatchEvent }
-          | { type: "done"; status: RawFileWatchStatus }
+          | SandboxFileWatchStreamEvent
           | { error: string; code?: string };
 
         if ("error" in parsed) {
@@ -310,10 +344,17 @@ class RuntimeFileWatchHandle {
         }
 
         if (parsed.type === "event") {
-          queue.push(parsed.event);
+          this.status = {
+            ...this.status,
+            oldestSeq: this.status.oldestSeq || parsed.event.seq,
+            lastSeq: Math.max(this.status.lastSeq ?? 0, parsed.event.seq),
+          };
+          queue.push(parsed);
           return;
         }
 
+        this.status = parsed.status;
+        queue.push({ type: "done", status: this.current });
         queue.close();
       } catch (error) {
         queue.fail(error);
@@ -322,18 +363,17 @@ class RuntimeFileWatchHandle {
 
     ws.on("close", () => queue.close());
     ws.on("error", (error) => queue.fail(error));
+    ws.resume?.();
 
     try {
       for await (const event of queue) {
         yield event;
       }
     } finally {
-      if (ws.readyState !== WebSocket.CLOSING && ws.readyState !== WebSocket.CLOSED) {
-        await new Promise<void>((resolve) => {
-          ws.once("close", () => resolve());
-          ws.close();
-        });
-      }
+      signal?.removeEventListener("abort", abort);
+      this.connections.delete(ws);
+      // terminate also releases peers which never acknowledge a close frame.
+      if (ws.readyState !== WebSocket.CLOSED) ws.terminate();
     }
   }
 }
@@ -343,20 +383,23 @@ export class SandboxWatchDirHandle {
   private timeout?: NodeJS.Timeout;
   private stopRequested = false;
   private exitNotified = false;
+  private invokingCallback = false;
 
   constructor(
-    private readonly watch: RuntimeFileWatchHandle,
+    private readonly watch: SandboxFileWatchHandle,
     onEvent: (event: SandboxFileSystemEvent) => void | Promise<void>,
     private readonly onExit?: (error?: Error) => void | Promise<void>,
     timeoutMs?: number
   ) {
     if (timeoutMs !== undefined && timeoutMs > 0) {
       this.timeout = setTimeout(() => {
-        void this.stop();
+        void this.stop().catch(() => undefined);
       }, timeoutMs);
       this.timeout.unref?.();
     }
     this.runPromise = this.run(onEvent);
+    // Callback failures must not become unhandled background rejections.
+    this.runPromise.catch(() => undefined);
   }
 
   async stop(): Promise<void> {
@@ -369,7 +412,7 @@ export class SandboxWatchDirHandle {
       this.timeout = undefined;
     }
     await this.watch.stop();
-    await this.runPromise.catch(() => undefined);
+    if (!this.invokingCallback) await this.runPromise.catch(() => undefined);
   }
 
   private async run(
@@ -377,15 +420,19 @@ export class SandboxWatchDirHandle {
   ): Promise<void> {
     let exitError: Error | undefined;
     try {
-      for await (const event of this.watch.events()) {
+      for await (const message of this.watch.events()) {
+        if (message.type === "done") break;
+        const event = message.event;
         const type = normalizeEventType(event.op);
         if (!type) {
           continue;
         }
-        await onEvent({
-          type,
-          name: relativeWatchName(this.watch.path, event.path),
-        });
+        this.invokingCallback = true;
+        try {
+          await onEvent({ type, name: relativeWatchName(this.watch.path, event.path) });
+        } finally {
+          this.invokingCallback = false;
+        }
       }
     } catch (error) {
       exitError = error as Error;
@@ -396,7 +443,12 @@ export class SandboxWatchDirHandle {
       }
       if (!this.exitNotified) {
         this.exitNotified = true;
-        await this.onExit?.(exitError);
+        this.invokingCallback = true;
+        try {
+          await this.onExit?.(exitError);
+        } finally {
+          this.invokingCallback = false;
+        }
       }
     }
   }
@@ -622,7 +674,11 @@ export class SandboxFilesApi {
     return Boolean(response.created);
   }
 
-  async rename(oldPath: string, newPath: string): Promise<SandboxFileInfo> {
+  async rename(
+    oldPath: string,
+    newPath: string,
+    options: SandboxFileRenameOptions = {}
+  ): Promise<SandboxFileInfo> {
     const response = await this.transport.requestJSON<FileMoveCopyWireResponse>(
       "/sandbox/files/move",
       {
@@ -630,6 +686,7 @@ export class SandboxFilesApi {
         body: this.withRunAsBody({
           from: oldPath,
           to: newPath,
+          overwrite: options.overwrite,
         }),
         headers: {
           "content-type": "application/json",
@@ -698,28 +755,98 @@ export class SandboxFilesApi {
     onEvent: (event: SandboxFileSystemEvent) => void | Promise<void>,
     options: SandboxWatchDirOptions = {}
   ): Promise<SandboxWatchDirHandle> {
+    const watch = await this.watch(path, options);
+    return new SandboxWatchDirHandle(watch, onEvent, options.onExit, options.timeoutMs);
+  }
+
+  async watch(path: string, options: SandboxFileWatchParams = {}): Promise<SandboxFileWatchHandle> {
     const response = await this.transport.requestJSON<FileWatchStatusResponse>(
       "/sandbox/files/watch",
       {
         method: "POST",
-        body: this.withRunAsBody({
-          path,
-          recursive: options.recursive,
-        }),
-        headers: {
-          "content-type": "application/json",
-        },
+        body: this.withRunAsBody({ path, recursive: options.recursive }),
+        headers: { "content-type": "application/json" },
       }
     );
-
-    const watch = new RuntimeFileWatchHandle(
+    return new SandboxFileWatchHandle(
       this.transport,
       this.getConnectionInfo,
       response.watch,
       this.runtimeProxyOverride
     );
+  }
 
-    return new SandboxWatchDirHandle(watch, onEvent, options.onExit, options.timeoutMs);
+  async getWatch(id: string, includeEvents = false): Promise<SandboxFileWatchHandle> {
+    const response = await this.transport.requestJSON<FileWatchStatusResponse>(
+      `/sandbox/files/watch/${encodeURIComponent(id)}`,
+      undefined,
+      includeEvents ? { includeEvents: true } : undefined
+    );
+    return new SandboxFileWatchHandle(
+      this.transport,
+      this.getConnectionInfo,
+      response.watch,
+      this.runtimeProxyOverride
+    );
+  }
+
+  stat(path: string): Promise<SandboxFileInfo> {
+    return this.getInfo(path);
+  }
+  mkdir(path: string, options: SandboxFileMakeDirOptions = {}): Promise<boolean> {
+    return this.makeDir(path, options);
+  }
+  move(params: SandboxFileMoveParams): Promise<SandboxFileInfo> {
+    return this.rename(params.source, params.destination, params);
+  }
+  delete(path: string, options: { recursive?: boolean } = {}): Promise<void> {
+    return this.remove(path, options);
+  }
+
+  /** Upload without buffering; the source is closed on completion, rejection or cancellation. */
+  async uploadStream(
+    path: string,
+    source: SandboxFileUploadStream,
+    options: SandboxFileUploadStreamOptions = {}
+  ): Promise<SandboxFileTransferResult> {
+    if (
+      options.contentLength !== undefined &&
+      (!Number.isSafeInteger(options.contentLength) || options.contentLength < 0)
+    ) {
+      throw new HyperbrowserError("contentLength must be a nonnegative safe integer");
+    }
+    const body = Readable.from(source, { objectMode: false, highWaterMark: 64 * 1024 });
+    try {
+      return await this.transport.requestJSON<SandboxFileTransferResult>(
+        "/sandbox/files/upload",
+        {
+          method: "PUT",
+          body,
+          signal: options.signal,
+          headers: {
+            "content-type": "application/octet-stream",
+            ...(options.contentLength !== undefined
+              ? { "content-length": String(options.contentLength) }
+              : {}),
+          },
+        },
+        this.withRunAsQuery({ path })
+      );
+    } finally {
+      body.destroy();
+    }
+  }
+
+  /** Pull-based download; consume with for-await or Readable.from(). */
+  downloadStream(
+    path: string,
+    options: SandboxFileDownloadStreamOptions = {}
+  ): AsyncGenerator<Buffer> {
+    return this.transport.streamBytes(
+      "/sandbox/files/download",
+      { signal: options.signal },
+      this.withRunAsQuery({ path })
+    );
   }
 
   async uploadUrl(

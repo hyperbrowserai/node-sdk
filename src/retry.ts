@@ -1,4 +1,4 @@
-import { HyperbrowserError } from "./client";
+import { HyperbrowserError } from "./error";
 
 export const RETRYABLE_STATUS_CODES = new Set([429, 502, 503, 504]);
 export const GET_RETRY_MAX_ATTEMPTS = 3;
@@ -42,5 +42,26 @@ export const getRetryDelayMs = (failedAttempt: number): number => {
   return maximumDelay / 2 + Math.random() * (maximumDelay / 2);
 };
 
-export const retryDelay = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+export const retryDelay = (
+  ms: number,
+  signal?: {
+    readonly aborted: boolean;
+    addEventListener: AbortSignal["addEventListener"];
+    removeEventListener: AbortSignal["removeEventListener"];
+  }
+): Promise<void> =>
+  new Promise((resolve, reject) => {
+    const aborted = () => {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", aborted);
+      reject(
+        new HyperbrowserError("Request canceled", { code: "request_aborted", service: "control" })
+      );
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", aborted);
+      resolve();
+    }, ms);
+    if (signal?.aborted) aborted();
+    else signal?.addEventListener("abort", aborted, { once: true });
+  });

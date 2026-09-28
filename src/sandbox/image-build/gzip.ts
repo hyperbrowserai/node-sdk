@@ -42,12 +42,16 @@ export const writeGzipTar = async (
   populate: (writer: PaxTarWriter) => Promise<void>
 ): Promise<GzipTarResult> => {
   const output = createWriteStream(path, { flags: "wx" });
+  // Observe write errors immediately, including failures before the first drain.
+  let outputError: Error | undefined;
+  output.on("error", (error) => { outputError = error; deflate.destroy(error); });
   const hasher = createHash("sha256");
   let compressedSize = 0;
   let crc = 0;
   let uncompressedSize = 0;
 
   const writeOutput = async (chunk: Buffer): Promise<void> => {
+    if (outputError) throw outputError;
     hasher.update(chunk);
     compressedSize += chunk.length;
     if (!output.write(chunk)) {
@@ -61,6 +65,8 @@ export const writeGzipTar = async (
       await writeOutput(chunk as Buffer);
     }
   })();
+  // A source failure can occur while compression is still draining.
+  void drainDeflate.catch(() => undefined);
 
   try {
     await writeOutput(GZIP_HEADER);
@@ -84,6 +90,7 @@ export const writeGzipTar = async (
   } catch (error) {
     deflate.destroy();
     output.destroy();
+    await drainDeflate.catch(() => undefined);
     throw error;
   }
 

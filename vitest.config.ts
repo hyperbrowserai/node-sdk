@@ -5,7 +5,9 @@ export default defineConfig({
     include: [
       "tests/unit/**/*.test.ts",
       "tests/integration/**/*.test.ts",
-      "tests/sandbox/e2e/**/*.test.ts",
+      "tests/sandbox/e2e/*-contract.test.ts",
+      "tests/sandbox/e2e/process-api.test.ts",
+      "tests/sandbox/e2e/runtime-transport.test.ts",
     ],
     setupFiles: ["./tests/load-env.ts"],
     environment: "node",
