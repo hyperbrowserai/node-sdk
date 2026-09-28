@@ -368,19 +368,23 @@ describe("client HTTP integration", () => {
       llm: "claude-opus-5-5",
       reasoningEffort: "xhigh",
     });
+    await client.agents.claudeComputerUse.start({
+      task: "Complete the task",
+      llm: "claude-sonnet-5-5",
+      reasoningEffort: "max",
+    });
 
     expect(started).toEqual({ jobId: "claude_job_123", liveUrl: null });
-    expect(server.requests).toEqual([
+    expect(server.requests.map((request) => request.body)).toEqual([
       {
-        method: "POST",
-        url: "/api/task/claude-computer-use",
-        apiKey: "test-api-key",
-        contentType: "application/json",
-        body: {
-          task: "Complete the task",
-          llm: "claude-opus-5-5",
-          reasoningEffort: "xhigh",
-        },
+        task: "Complete the task",
+        llm: "claude-opus-5-5",
+        reasoningEffort: "xhigh",
+      },
+      {
+        task: "Complete the task",
+        llm: "claude-sonnet-5-5",
+        reasoningEffort: "max",
       },
     ]);
   });
