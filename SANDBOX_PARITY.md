@@ -57,13 +57,17 @@ Live Hyperbrowser build → image readiness → volume mount → sandbox launch 
 streamed command → file/watch → exposure → snapshot/restore → cleanup is covered
 by `tests/sandbox/e2e/parity-smoke.test.ts`. This must pass on the intended deployment
 before release; local mocks and Docker verification do not establish receiver rollout.
-On 2026-09-28 the dev profile passed remote Dockerfile submission/upload/completion,
+On 2026-09-28 both dev and production passed remote Dockerfile submission/upload/completion,
 ready-image reuse, sandbox launch, runtime-session refresh, complete 512 KiB command
 output, 20 MiB streaming upload/download with checksum comparison, watch resume/done,
-authenticated exposure, snapshot restore, and cleanup. It used the existing runtime
-proxy override to reach the local HTTP proxy.
+authenticated exposure, snapshot restore, and cleanup. Dev used the existing runtime
+proxy override to reach the local HTTP proxy; production used the public API/runtime
+endpoints. Each environment also passed 58 existing live file/process/terminal/
+exposure/sudo tests (59 live tests including the smoke). Production authentication
+used the CLI OAuth session to create a temporary sandbox-scoped SDK API key, which
+was revoked after testing.
 
-The dev team does not enable `sandbox_volumes`, so this run explicitly used
-`HYPERBROWSER_SMOKE_VOLUMES=0`. Volume behavior is covered by local wire/type tests;
-live volume mounting remains a release gate. Production validation requires a
-configured API key; the local CLI's default profile currently has no saved auth.
+Both signed-in teams reject volume creation because `sandbox_volumes` is disabled,
+so the passing smoke runs explicitly used `HYPERBROWSER_SMOKE_VOLUMES=0`. Volume
+behavior is covered by local wire/type tests; live volume mounting remains a
+release gate on a team with that feature enabled.

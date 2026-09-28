@@ -137,4 +137,29 @@ describe("image build failure lifetimes", () => {
     expect((await first).code).toBe("request_aborted");
     expect((await second).code).toBe("wait_timeout");
   });
+  test.each(["failed", "canceled"] as const)(
+    "an observed %s build is not masked by a racing deadline",
+    async (status) => {
+      const service = new SandboxesService("local", "http://unused.test");
+      const terminal = {
+        id: "b",
+        imageName: "n",
+        status,
+        errorCode: "builder_terminal",
+        errorMessage: "Build terminated",
+      };
+      vi.spyOn(service, "getImageBuild").mockImplementationOnce(async (_id, options) => {
+        // Model a status response becoming available as cancellation is delivered.
+        await new Promise<void>((resolve) =>
+          options!.signal!.addEventListener("abort", () => resolve(), { once: true })
+        );
+        return terminal;
+      });
+      await expect(service.waitForImageBuild("b", { timeout: 0.001 })).rejects.toMatchObject({
+        code: "builder_terminal",
+        details: terminal,
+        message: "[Hyperbrowser]: Build terminated",
+      });
+    }
+  );
 });

@@ -87,6 +87,8 @@ test("breaking watch iteration releases the WebSocket", async () => {
   const watch = await api.files.withRunAs("root").watch("/tmp", { recursive: true });
   for await (const message of watch.events()) {
     expect(message.type).toBe("event");
+    // Match the receiver and Python: oldestSeq=0 is an empty-buffer sentinel.
+    expect(watch.current.oldestSeq).toBe(4);
     break;
   }
   await delay(20);

@@ -948,19 +948,7 @@ export class SandboxesService extends BaseService {
     const cancel = () => controller.abort();
     options.signal?.addEventListener("abort", cancel, { once: true });
     if (options.signal?.aborted) cancel();
-    try {
-      for (;;) {
-        const build = await this.getImageBuild(buildId, { signal: controller.signal });
-        if (build.status === "completed") return build;
-        if (build.status === "failed" || build.status === "canceled") {
-          throw new HyperbrowserError(
-            build.errorMessage || `Image build ${buildId} ${build.status}`,
-            { code: build.errorCode || "image_build_failed", service: "control", details: build }
-          );
-        }
-        await retryDelay(pollInterval * 1000, controller.signal);
-      }
-    } catch (error) {
+    const waitFailure = (error: unknown): never => {
       if (timedOut)
         throw new HyperbrowserError(`Timed out waiting for image build ${buildId}`, {
           code: "wait_timeout",
@@ -968,6 +956,19 @@ export class SandboxesService extends BaseService {
           cause: error,
         });
       throw error;
+    };
+    try {
+      for (;;) {
+        const build = await this.getImageBuild(buildId, { signal: controller.signal }).catch(waitFailure);
+        if (build.status === "completed") return build;
+        if (build.status === "failed" || build.status === "canceled") {
+          throw new HyperbrowserError(
+            build.errorMessage || `Image build ${buildId} ${build.status}`,
+            { code: build.errorCode || "image_build_failed", service: "control", details: build }
+          );
+        }
+        await retryDelay(pollInterval * 1000, controller.signal).catch(waitFailure);
+      }
     } finally {
       clearTimeout(deadlineTimer);
       options.signal?.removeEventListener("abort", cancel);

@@ -346,6 +346,7 @@ export class SandboxFileWatchHandle {
         if (parsed.type === "event") {
           this.status = {
             ...this.status,
+            // Receiver sequences start at 1; zero denotes an empty buffer.
             oldestSeq: this.status.oldestSeq || parsed.event.seq,
             lastSeq: Math.max(this.status.lastSeq ?? 0, parsed.event.seq),
           };
