@@ -1,30 +1,15 @@
 import fetch, { HeadersInit, RequestInit, Response } from "node-fetch";
 import { HyperbrowserError } from "../client";
-
-const RETRYABLE_STATUS_CODES = new Set([429, 502, 503, 504]);
-const RETRYABLE_NETWORK_CODES = new Set([
-  "ECONNRESET",
-  "ECONNREFUSED",
-  "EAI_AGAIN",
-  "ETIMEDOUT",
-  "ESOCKETTIMEDOUT",
-]);
+import {
+  getRetryDelayMs,
+  isRetryableNetworkError,
+  RETRYABLE_STATUS_CODES,
+  retryDelay,
+  shouldRetryGet,
+} from "../retry";
 
 const getRequestId = (response: Response): string | undefined => {
   return response.headers.get("x-request-id") || response.headers.get("request-id") || undefined;
-};
-
-const isRetryableNetworkError = (error: unknown): boolean => {
-  if (!(error instanceof Error)) {
-    return false;
-  }
-
-  const networkError = error as Error & { code?: string; type?: string };
-  return (
-    networkError.name === "AbortError" ||
-    networkError.type === "request-timeout" ||
-    (networkError.code ? RETRYABLE_NETWORK_CODES.has(networkError.code) : false)
-  );
 };
 
 export class BaseService {
@@ -34,7 +19,32 @@ export class BaseService {
     protected readonly timeout: number = 30000
   ) {}
 
+  /** Transient GET failures (429/502/503/504, network errors) retry up to three attempts. */
   protected async request<T>(
+    path: string,
+    init?: RequestInit,
+    params?: Record<string, string | number | string[] | undefined>,
+    fullUrl: boolean = false
+  ): Promise<T> {
+    const method = (init?.method ?? "GET").toUpperCase();
+    let failedAttempt = 1;
+    for (;;) {
+      try {
+        return await this.requestOnce<T>(path, init, params, fullUrl);
+      } catch (error) {
+        if (
+          !(error instanceof HyperbrowserError) ||
+          !shouldRetryGet(method, error, failedAttempt)
+        ) {
+          throw error;
+        }
+        await retryDelay(getRetryDelayMs(failedAttempt));
+        failedAttempt += 1;
+      }
+    }
+  }
+
+  private async requestOnce<T>(
     path: string,
     init?: RequestInit,
     params?: Record<string, string | number | string[] | undefined>,

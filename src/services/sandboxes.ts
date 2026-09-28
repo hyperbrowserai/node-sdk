@@ -4,11 +4,37 @@ import { RuntimeConnection, RuntimeTransport } from "../sandbox/base";
 import { runtimeSessionIdFromPath } from "../sandbox/runtime-path";
 import { SandboxProcessHandle, SandboxProcessesApi } from "../sandbox/process";
 import { SandboxTerminalApi } from "../sandbox/terminal";
+import {
+  buildDockerImageFromDockerfile,
+  completedImageId,
+  dockerBuildContextFingerprint,
+  dockerImageDigest,
+  DockerImageBuildArtifact,
+  IMAGE_BUILD_SOURCE_PLATFORM,
+  imageBuildName,
+  isTerminalImageBuildStatus,
+  makeTempDockerTag,
+  matchingImageBuild,
+  mergeImageInit,
+  packageDockerBuildContextManifest,
+  packageDockerImageManifest,
+  prepareDockerImageManifestSource,
+  removeDockerImage,
+  uploadMissingImageBuildArtifacts,
+} from "../sandbox/image-build";
 import { BasicResponse } from "../types/session";
 import {
+  BuildSandboxImageFromDockerImageOptions,
+  BuildSandboxImageFromDockerfileOptions,
   CompleteSandboxImageBuildParams,
   CreateSandboxImageBuildParams,
   CreateSandboxParams,
+  GetOrBuildSandboxImageOptions,
+  ReuseSandboxDockerImageParams,
+  SandboxDockerImageReuseResult,
+  SandboxImageBuildResolution,
+  SandboxImageBuildWaitOptions,
+  SandboxImageSummary,
   Sandbox,
   SandboxDetail,
   SandboxExposeParams,
@@ -127,6 +153,39 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
     allowOut: snapshotParams.allowOut,
     denyOut: snapshotParams.denyOut,
   };
+};
+
+const IMAGE_BUILD_DEFAULT_POLL_INTERVAL_SECONDS = 3;
+const IMAGE_BUILD_DEFAULT_WAIT_TIMEOUT_SECONDS = 35 * 60;
+const IMAGE_BUILD_COMPLETE_RETRY_DELAY_MS = 2_000;
+const READY_IMAGE_PAGE_SIZE = 100;
+
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
+const serializeCreateImageBuildParams = (
+  params: CreateSandboxImageBuildParams
+): Record<string, unknown> => ({
+  imageName: params.imageName,
+  inputSha256: params.inputSha256,
+  inputSizeBytes: params.inputSizeBytes,
+  vcpus: params.builderCpus,
+  memMiB: params.builderMemoryMiB,
+  scratchMiB: params.builderScratchMiB,
+  inputFormat: params.inputFormat,
+  sourcePlatform: params.sourcePlatform,
+  imageConfigUser: params.imageConfigUser,
+  imageInit: params.imageInit,
+  dockerfilePath: params.dockerfilePath,
+  contextManifest: params.contextManifest,
+  dockerImageManifest: params.dockerImageManifest,
+});
+
+const normalizeImageBuildPlatform = (platform: string | undefined): string => {
+  const normalized = (platform ?? IMAGE_BUILD_SOURCE_PLATFORM).trim().toLowerCase();
+  if (normalized !== IMAGE_BUILD_SOURCE_PLATFORM) {
+    throw new HyperbrowserError(`Image builds require platform '${IMAGE_BUILD_SOURCE_PLATFORM}'`);
+  }
+  return normalized;
 };
 
 type SandboxRuntimeState = {
@@ -657,7 +716,7 @@ export class SandboxesService extends BaseService {
     try {
       return await this.request<SandboxImageBuildCreateResult>("/images/builds", {
         method: "POST",
-        body: JSON.stringify(params),
+        body: JSON.stringify(serializeCreateImageBuildParams(params)),
       });
     } catch (error) {
       if (error instanceof HyperbrowserError) {
@@ -730,6 +789,430 @@ export class SandboxesService extends BaseService {
         throw error;
       }
       throw new HyperbrowserError(`Failed to cancel image build ${buildId}`);
+    }
+  }
+
+  async reuseDockerImage(
+    params: ReuseSandboxDockerImageParams
+  ): Promise<SandboxDockerImageReuseResult> {
+    try {
+      return await this.request<SandboxDockerImageReuseResult>("/images/builds/reuse", {
+        method: "POST",
+        body: JSON.stringify(params),
+      });
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError("Failed to reuse Docker image");
+    }
+  }
+
+  /** Find an exact ready team image, including revisions awaiting backup. */
+  async findReadyImage(imageName: string): Promise<SandboxImageSummary | null> {
+    let page = 1;
+    for (;;) {
+      const response = await this.listImages({
+        search: imageName,
+        source: ["team"],
+        page,
+        limit: READY_IMAGE_PAGE_SIZE,
+      });
+      for (const image of response.images) {
+        if (image.imageName === imageName && (image.uploaded || image.ready === true)) {
+          return image;
+        }
+      }
+      if (response.images.length < READY_IMAGE_PAGE_SIZE) {
+        return null;
+      }
+      if (
+        typeof response.totalCount === "number" &&
+        page * READY_IMAGE_PAGE_SIZE >= response.totalCount
+      ) {
+        return null;
+      }
+      page += 1;
+    }
+  }
+
+  /** Poll an image build until it completes, rejecting on failure or timeout. */
+  async waitForImageBuild(
+    buildId: string,
+    options: SandboxImageBuildWaitOptions = {}
+  ): Promise<SandboxImageBuild> {
+    const pollInterval = options.pollInterval ?? IMAGE_BUILD_DEFAULT_POLL_INTERVAL_SECONDS;
+    const timeout =
+      options.timeout === undefined ? IMAGE_BUILD_DEFAULT_WAIT_TIMEOUT_SECONDS : options.timeout;
+    const deadline = timeout === null ? null : Date.now() + timeout * 1000;
+    for (;;) {
+      const build = await this.getImageBuild(buildId);
+      if (build.status === "completed") {
+        return build;
+      }
+      if (build.status === "failed") {
+        let message = build.errorMessage || "image build failed";
+        if (build.errorCode) {
+          message = `image build failed [${build.errorCode}]: ${message}`;
+        }
+        throw new HyperbrowserError(message);
+      }
+      if (isTerminalImageBuildStatus(build.status)) {
+        throw new HyperbrowserError(`image build ${build.status}`);
+      }
+      if (deadline !== null && Date.now() >= deadline) {
+        throw new HyperbrowserError(`timed out waiting for image build ${buildId}`);
+      }
+      await sleep(pollInterval * 1000);
+    }
+  }
+
+  /** Import a local Docker image as reusable layers, reusing exact cached imports. */
+  async buildImageFromDockerImage(
+    options: BuildSandboxImageFromDockerImageOptions
+  ): Promise<SandboxImageBuild> {
+    const platform = normalizeImageBuildPlatform(options.platform);
+    const source = await prepareDockerImageManifestSource(options.dockerImage, { platform });
+    try {
+      if (
+        options.expectedImageDigest !== undefined &&
+        source.imageDigest !== options.expectedImageDigest.toLowerCase()
+      ) {
+        throw new HyperbrowserError(
+          "Docker image changed after its cache identity was computed. " +
+            "Retry with a fresh image digest."
+        );
+      }
+      const imageInit = mergeImageInit(source.imageInit, options.imageInit);
+      const imageConfigUser = options.imageConfigUser ?? source.imageConfigUser;
+      let reused: SandboxDockerImageReuseResult | null = null;
+      try {
+        reused = await this.reuseDockerImage({
+          imageName: options.imageName,
+          sourceImageDigest: source.imageDigest,
+          sourcePlatform: "linux/amd64",
+          imageConfigUser,
+          imageInit,
+        });
+      } catch (error) {
+        if (!(error instanceof HyperbrowserError) || error.statusCode !== 404) {
+          throw error;
+        }
+      }
+      if (reused?.hit) {
+        if (!reused.build) {
+          throw new HyperbrowserError("exact image cache response is missing its completed build");
+        }
+        return reused.build;
+      }
+
+      const packaged = await packageDockerImageManifest(
+        options.dockerImage,
+        source.imageDigest,
+        source.config,
+        { platform, tempDir: options.tempDir }
+      );
+      try {
+        return await this.submitImageBuild(
+          {
+            imageName: options.imageName,
+            inputSha256: packaged.artifact.sha256Hex,
+            inputSizeBytes: packaged.artifact.sizeBytes,
+            inputFormat: packaged.artifact.inputFormat,
+            sourcePlatform: "linux/amd64",
+            imageConfigUser,
+            imageInit,
+            dockerImageManifest: packaged.manifest,
+            builderCpus: options.builderCpus,
+            builderMemoryMiB: options.builderMemoryMiB,
+            builderScratchMiB: options.builderScratchMiB,
+          },
+          packaged.artifact,
+          packaged.layers,
+          "Docker image layer",
+          options
+        );
+      } finally {
+        packaged.cleanup();
+      }
+    } finally {
+      await source.cleanup();
+    }
+  }
+
+  /**
+   * Build a Dockerfile into a sandbox image.
+   *
+   * Remote builds (default) upload only the effective build context and build
+   * on Hyperbrowser. `remote: false` builds with local Docker and imports the
+   * resulting image instead.
+   */
+  async buildImageFromDockerfile(
+    options: BuildSandboxImageFromDockerfileOptions
+  ): Promise<SandboxImageBuild> {
+    const remote = options.remote ?? true;
+    if (remote) {
+      if (
+        options.dockerTag !== undefined ||
+        (options.buildArgs && Object.keys(options.buildArgs).length > 0)
+      ) {
+        throw new HyperbrowserError(
+          "dockerTag and buildArgs require remote: false; remote Dockerfile builds " +
+            "send the build context to Hyperbrowser"
+        );
+      }
+      return this.buildImageFromRemoteDockerfile(options);
+    }
+    if (options.expectedContextFingerprint !== undefined) {
+      throw new HyperbrowserError("expectedContextFingerprint requires remote: true");
+    }
+    const tag = options.dockerTag ?? makeTempDockerTag();
+    try {
+      await buildDockerImageFromDockerfile({
+        contextPath: options.contextPath,
+        dockerfile: options.dockerfile,
+        tag,
+        platform: options.platform,
+        buildArgs: options.buildArgs,
+      });
+      return await this.buildImageFromDockerImage({
+        dockerImage: tag,
+        imageName: options.imageName,
+        platform: options.platform,
+        imageInit: options.imageInit,
+        imageConfigUser: options.imageConfigUser,
+        builderCpus: options.builderCpus,
+        builderMemoryMiB: options.builderMemoryMiB,
+        builderScratchMiB: options.builderScratchMiB,
+        wait: options.wait,
+        pollInterval: options.pollInterval,
+        waitTimeout: options.waitTimeout,
+        tempDir: options.tempDir,
+        uploadTimeout: options.uploadTimeout,
+      });
+    } finally {
+      if (options.dockerTag === undefined) {
+        await removeDockerImage(tag);
+      }
+    }
+  }
+
+  /**
+   * Reuse, join, or build content-derived remote Dockerfile/image inputs.
+   *
+   * Supply exactly one of `contextPath` or `dockerImage`. Names include source
+   * contents, platform and image initialization overrides. `forceBuild` skips
+   * ready-image lookup, but joins matching active builds and retains builder
+   * layer/artifact caches. Canceling polling never cancels the backend build.
+   * `waitTimeout` applies to this caller's polling, independently of uploads.
+   * This composes existing APIs; lookup plus creation is not server-atomic.
+   */
+  async getOrBuildImage(
+    options: GetOrBuildSandboxImageOptions
+  ): Promise<SandboxImageBuildResolution> {
+    const platform = normalizeImageBuildPlatform(options.platform);
+    const dockerfile = options.dockerfile ?? "Dockerfile";
+    const remoteFullContext = options.remoteFullContext ?? false;
+    const { contextPath, dockerImage } = options;
+    if ((contextPath === undefined) === (dockerImage === undefined)) {
+      throw new HyperbrowserError("Supply exactly one of contextPath or dockerImage");
+    }
+    let fingerprint: string;
+    let source: "dockerfile" | "prebuilt";
+    let inputFormat: string;
+    if (contextPath !== undefined) {
+      if (options.expectedImageDigest !== undefined) {
+        throw new HyperbrowserError("expectedImageDigest requires dockerImage");
+      }
+      fingerprint =
+        options.expectedContextFingerprint ??
+        (await dockerBuildContextFingerprint(contextPath, {
+          dockerfile,
+          forceFullContext: remoteFullContext,
+        }));
+      source = "dockerfile";
+      inputFormat = "dockerfile_context_manifest_v1";
+    } else {
+      if (
+        options.expectedContextFingerprint !== undefined ||
+        remoteFullContext ||
+        dockerfile !== "Dockerfile"
+      ) {
+        throw new HyperbrowserError("Dockerfile context options require contextPath");
+      }
+      fingerprint =
+        options.expectedImageDigest ??
+        (await dockerImageDigest(dockerImage as string, { platform }));
+      source = "prebuilt";
+      inputFormat = "docker_image_manifest_v1";
+    }
+    const imageName = imageBuildName({
+      source,
+      fingerprint,
+      namePrefix: options.imageNamePrefix,
+      platform,
+      imageInit: options.imageInit,
+      imageConfigUser: options.imageConfigUser,
+    });
+    if (!options.forceBuild) {
+      const image = await this.findReadyImage(imageName);
+      if (image !== null) {
+        return { outcome: "reused", imageName, imageId: image.id };
+      }
+    }
+    const common = {
+      imageName,
+      platform,
+      imageInit: options.imageInit,
+      imageConfigUser: options.imageConfigUser,
+      builderCpus: options.builderCpus,
+      builderMemoryMiB: options.builderMemoryMiB,
+      builderScratchMiB: options.builderScratchMiB,
+      wait: false,
+      uploadTimeout: options.uploadTimeout,
+      tempDir: options.tempDir,
+    };
+    let outcome: SandboxImageBuildResolution["outcome"] = "created";
+    let build: SandboxImageBuild;
+    try {
+      build =
+        contextPath !== undefined
+          ? await this.buildImageFromDockerfile({
+              ...common,
+              contextPath,
+              dockerfile,
+              remote: true,
+              remoteFullContext,
+              expectedContextFingerprint: fingerprint,
+            })
+          : await this.buildImageFromDockerImage({
+              ...common,
+              dockerImage: dockerImage as string,
+              expectedImageDigest: fingerprint,
+            });
+    } catch (error) {
+      if (!(error instanceof HyperbrowserError)) {
+        throw error;
+      }
+      const existing = matchingImageBuild(error, imageName, inputFormat);
+      if (existing === null) {
+        throw error;
+      }
+      build = existing;
+      outcome = "joined";
+    }
+    const wait = options.wait ?? true;
+    if (wait && build.status !== "completed") {
+      build = await this.waitForImageBuild(build.id, {
+        pollInterval: options.pollInterval,
+        timeout: options.waitTimeout === undefined ? undefined : options.waitTimeout,
+      });
+    }
+    return { outcome, imageName, imageId: completedImageId(build), build };
+  }
+
+  private async buildImageFromRemoteDockerfile(
+    options: BuildSandboxImageFromDockerfileOptions
+  ): Promise<SandboxImageBuild> {
+    const packaged = await packageDockerBuildContextManifest(options.contextPath, {
+      dockerfile: options.dockerfile,
+      forceFullContext: options.remoteFullContext,
+      expectedContextFingerprint: options.expectedContextFingerprint,
+      tempDir: options.tempDir,
+    });
+    try {
+      return await this.submitImageBuild(
+        {
+          imageName: options.imageName,
+          inputSha256: packaged.artifact.sha256Hex,
+          inputSizeBytes: packaged.artifact.sizeBytes,
+          inputFormat: packaged.artifact.inputFormat,
+          sourcePlatform: "linux/amd64",
+          dockerfilePath: packaged.manifest.dockerfilePath,
+          imageConfigUser: options.imageConfigUser,
+          imageInit: options.imageInit,
+          contextManifest: packaged.manifest,
+          builderCpus: options.builderCpus,
+          builderMemoryMiB: options.builderMemoryMiB,
+          builderScratchMiB: options.builderScratchMiB,
+        },
+        packaged.artifact,
+        packaged.bundles,
+        "build context bundle",
+        options
+      );
+    } finally {
+      packaged.cleanup();
+    }
+  }
+
+  /** Create a build, upload requested artifacts, complete it, and optionally wait. */
+  private async submitImageBuild(
+    params: CreateSandboxImageBuildParams,
+    artifact: DockerImageBuildArtifact,
+    artifacts: Record<string, DockerImageBuildArtifact>,
+    label: string,
+    options: {
+      wait?: boolean;
+      pollInterval?: number;
+      waitTimeout?: number | null;
+      uploadTimeout?: number | null;
+    }
+  ): Promise<SandboxImageBuild> {
+    let buildId: string | null = null;
+    let buildStarted = false;
+    try {
+      const createResult = await this.createImageBuild(params);
+      buildId = createResult.build.id;
+      await uploadMissingImageBuildArtifacts(createResult.uploads, artifacts, {
+        label,
+        timeout: options.uploadTimeout,
+      });
+      const build = await this.completeImageBuildResilient(buildId, artifact);
+      buildStarted = true;
+      if (options.wait ?? true) {
+        return await this.waitForImageBuild(build.id, {
+          pollInterval: options.pollInterval,
+          timeout: options.waitTimeout,
+        });
+      }
+      return build;
+    } catch (error) {
+      if (buildId !== null && !buildStarted) {
+        try {
+          await this.cancelImageBuild(buildId);
+        } catch {
+          // Best-effort cancellation; surface the original error.
+        }
+      }
+      throw error;
+    }
+  }
+
+  private async completeImageBuildResilient(
+    buildId: string,
+    artifact: DockerImageBuildArtifact
+  ): Promise<SandboxImageBuild> {
+    const params: CompleteSandboxImageBuildParams = {
+      inputSha256: artifact.sha256Hex,
+      inputSizeBytes: artifact.sizeBytes,
+      inputFormat: artifact.inputFormat,
+    };
+    try {
+      return await this.completeImageBuild(buildId, params);
+    } catch (error) {
+      if (!(error instanceof HyperbrowserError) || error.statusCode !== 409) {
+        throw error;
+      }
+      if (error.message.toLowerCase().includes("already in progress")) {
+        return this.getImageBuild(buildId);
+      }
+      const current = await this.getImageBuild(buildId);
+      if (current.status !== "awaiting_upload" && current.status !== "upload_verified") {
+        throw error;
+      }
+      await sleep(IMAGE_BUILD_COMPLETE_RETRY_DELAY_MS);
+      return this.completeImageBuild(buildId, params);
     }
   }
 

@@ -241,6 +241,70 @@ await sandbox.stop();
 
 `connect()` refreshes runtime auth and throws if the sandbox is no longer running.
 
+Run commands and stream complete output. `exec()` and `processes.start()` open a
+single streamed request and collect stdout/stderr from process start, so output is
+complete even beyond the receiver's replay window. `wait()` timeouts are local and
+keep collecting; `disconnect()` stops collecting without killing the process.
+
+```typescript
+const result = await sandbox.exec("npm test", {
+  cwd: "/workspace",
+  maxOutputBytes: 128 * 1024 * 1024, // default 64 MiB; exceeding it fails, never truncates
+});
+console.log(result.exitCode, result.stdout);
+
+const proc = await sandbox.processes.start("tail -f /var/log/app.log");
+try {
+  await proc.wait({ timeoutSec: 5 });
+} catch (error) {
+  // Local wait timeout: the process is still running and output is still collected.
+}
+for await (const event of proc.stream()) {
+  if (event.type === "stdout") process.stdout.write(event.data);
+  if (event.type === "exit") console.log(event.result.exitCode);
+}
+proc.disconnect();
+```
+
+Build a custom sandbox image from a Dockerfile or a local Docker image. `getOrBuildImage()`
+derives a content-based image name, reuses a ready image with the same identity, joins a
+matching in-progress build, or creates a new one. Dockerfile builds package the effective
+build context (Dockerfile sources, `.dockerignore`) and build remotely; no local Docker is
+required. `dockerImage` imports a local `linux/amd64` image via the Docker CLI.
+
+```typescript
+const resolved = await client.sandboxes.getOrBuildImage({
+  contextPath: "./services/api",
+  dockerfile: "Dockerfile", // relative to contextPath
+  imageInit: { env: { NODE_ENV: "production" }, workingDir: "/app" },
+  builderCpus: 4,
+  builderMemoryMiB: 8192,
+  builderScratchMiB: 20480,
+});
+console.log(resolved.outcome, resolved.imageName, resolved.imageId); // "reused" | "joined" | "created"
+
+const sandbox = await client.sandboxes.create({ imageName: resolved.imageName });
+
+// Import a local Docker image instead (requires docker CLI, linux/amd64 image):
+const imported = await client.sandboxes.getOrBuildImage({ dockerImage: "myorg/app:1.2.3" });
+
+// Detached build: return immediately and poll later.
+const pending = await client.sandboxes.getOrBuildImage({ contextPath: ".", wait: false });
+if (pending.build) {
+  const build = await client.sandboxes.waitForImageBuild(pending.build.id, {
+    pollInterval: 3,
+    timeout: 35 * 60,
+  });
+  console.log(build.status, build.imageId);
+}
+```
+
+Lower-level helpers are also available: `buildImageFromDockerfile()`,
+`buildImageFromDockerImage()`, `findReadyImage()`, `reuseDockerImage()`, plus the raw
+`createImageBuild()` / `completeImageBuild()` / `getImageBuild()` / `listImageBuilds()` /
+`cancelImageBuild()` APIs. Control-plane `GET` requests retry transient failures
+(429/502/503/504 and network errors) up to three times with jittered backoff.
+
 Create a sandbox with pre-exposed ports:
 
 ```typescript

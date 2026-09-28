@@ -117,13 +117,21 @@ export interface SandboxListResponse {
 
 export type SandboxImageSource = "public" | "team";
 
+export interface SandboxImageInit {
+  env?: Record<string, string>;
+  command?: string;
+  args?: string[];
+  workingDir?: string;
+}
+
 export interface SandboxImageSummary {
   id: string;
   imageName: string;
   namespace: string;
   source?: SandboxImageSource;
-  imageInit?: Record<string, unknown> | null;
+  imageInit?: SandboxImageInit | Record<string, unknown> | null;
   uploaded: boolean;
+  ready?: boolean | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -198,7 +206,16 @@ export type SandboxImageBuildStatus =
   | "failed"
   | "canceled";
 
+export type SandboxImageBuildInputFormat =
+  | "rootfs_export_tar_gz"
+  | "dockerfile_context_tar_gz"
+  | "dockerfile_context_manifest_v1"
+  | "docker_image_manifest_v1";
+
+export type SandboxImageBuildSourcePlatform = "linux/amd64";
+
 export interface SandboxImageBuildUpload {
+  sha256?: string | null;
   url: string;
   method: string;
   headers: Record<string, string>;
@@ -230,29 +247,162 @@ export interface SandboxImageBuild {
   updatedAt?: string | null;
 }
 
+export interface SandboxBuildContextBundle {
+  sha256: string;
+  sizeBytes: number;
+  uncompressedSizeBytes: number;
+  entryCount: number;
+}
+
+export type SandboxBuildContextMode = "sparse" | "full";
+
+export interface SandboxBuildContextManifest {
+  version: 1;
+  dockerfilePath: string;
+  contextMode: SandboxBuildContextMode;
+  fallbackReason?: string;
+  bundles: SandboxBuildContextBundle[];
+}
+
+export interface SandboxDockerImageConfig {
+  sha256: string;
+  sizeBytes: number;
+  dataBase64: string;
+}
+
+export interface SandboxDockerImageLayer {
+  sha256: string;
+  sizeBytes: number;
+}
+
+export interface SandboxDockerImageManifest {
+  version: 1;
+  imageDigest: string;
+  descriptor?: SandboxDockerImageConfig;
+  config: SandboxDockerImageConfig;
+  layers: SandboxDockerImageLayer[];
+}
+
 export interface CreateSandboxImageBuildParams {
   imageName: string;
   inputSha256: string;
   inputSizeBytes: number;
-  inputFormat?: "rootfs_export_tar_gz";
-  sourcePlatform?: "linux/amd64";
+  /** Builder vCPUs (sent as `vcpus`). */
+  builderCpus?: number;
+  /** Builder memory in MiB (sent as `memMiB`). */
+  builderMemoryMiB?: number;
+  /** Builder scratch disk in MiB (sent as `scratchMiB`). */
+  builderScratchMiB?: number;
+  inputFormat?: SandboxImageBuildInputFormat;
+  sourcePlatform?: SandboxImageBuildSourcePlatform;
   imageConfigUser?: string;
-  imageInit?: {
-    env?: Record<string, string>;
-    command?: string;
-    args?: string[];
-  };
+  imageInit?: SandboxImageInit;
+  dockerfilePath?: string;
+  contextManifest?: SandboxBuildContextManifest;
+  dockerImageManifest?: SandboxDockerImageManifest;
+}
+
+export interface ReuseSandboxDockerImageParams {
+  imageName: string;
+  sourceImageDigest: string;
+  sourcePlatform?: SandboxImageBuildSourcePlatform;
+  imageConfigUser?: string;
+  imageInit?: SandboxImageInit;
 }
 
 export interface CompleteSandboxImageBuildParams {
   inputSha256: string;
   inputSizeBytes: number;
-  inputFormat?: "rootfs_export_tar_gz";
+  inputFormat?: SandboxImageBuildInputFormat;
 }
 
 export interface SandboxImageBuildCreateResult {
   build: SandboxImageBuild;
-  upload: SandboxImageBuildUpload;
+  upload?: SandboxImageBuildUpload | null;
+  uploads?: SandboxImageBuildUpload[];
+}
+
+export interface SandboxDockerImageReuseResult {
+  hit: boolean;
+  build?: SandboxImageBuild | null;
+}
+
+export type SandboxImageBuildResolutionOutcome = "reused" | "joined" | "created";
+
+/**
+ * The result of resolving content-derived image inputs.
+ *
+ * `imageId` is populated only for a ready image. With `wait: false`, `build`
+ * identifies the submitted or joined build, which the caller can poll later.
+ */
+export interface SandboxImageBuildResolution {
+  outcome: SandboxImageBuildResolutionOutcome;
+  imageName: string;
+  imageId?: string;
+  build?: SandboxImageBuild;
+}
+
+export interface SandboxImageBuildWaitOptions {
+  /** Seconds between status polls. Defaults to 3. */
+  pollInterval?: number;
+  /** Seconds to wait before giving up. `null` waits forever. Defaults to 35 minutes. */
+  timeout?: number | null;
+}
+
+interface SandboxImageBuildCommonOptions {
+  imageName: string;
+  platform?: string;
+  imageInit?: SandboxImageInit;
+  imageConfigUser?: string;
+  builderCpus?: number;
+  builderMemoryMiB?: number;
+  builderScratchMiB?: number;
+  /** Wait for the build to complete. Defaults to true. */
+  wait?: boolean;
+  pollInterval?: number;
+  waitTimeout?: number | null;
+  /** Directory for temporary packaging artifacts. */
+  tempDir?: string;
+  /** Per-upload inactivity timeout in seconds. */
+  uploadTimeout?: number | null;
+}
+
+export interface BuildSandboxImageFromDockerImageOptions extends SandboxImageBuildCommonOptions {
+  dockerImage: string;
+  expectedImageDigest?: string;
+}
+
+export interface BuildSandboxImageFromDockerfileOptions extends SandboxImageBuildCommonOptions {
+  contextPath: string;
+  dockerfile?: string;
+  /** Send the build context to Hyperbrowser (default) instead of building with local Docker. */
+  remote?: boolean;
+  remoteFullContext?: boolean;
+  expectedContextFingerprint?: string;
+  dockerTag?: string;
+  buildArgs?: Record<string, string>;
+}
+
+export interface GetOrBuildSandboxImageOptions {
+  contextPath?: string;
+  dockerImage?: string;
+  imageNamePrefix?: string;
+  dockerfile?: string;
+  platform?: string;
+  remoteFullContext?: boolean;
+  expectedContextFingerprint?: string;
+  expectedImageDigest?: string;
+  imageInit?: SandboxImageInit;
+  imageConfigUser?: string;
+  builderCpus?: number;
+  builderMemoryMiB?: number;
+  builderScratchMiB?: number;
+  forceBuild?: boolean;
+  wait?: boolean;
+  pollInterval?: number;
+  waitTimeout?: number | null;
+  uploadTimeout?: number | null;
+  tempDir?: string;
 }
 
 export interface SandboxImageBuildListParams {
@@ -306,6 +456,8 @@ export type SandboxProcessStatus =
 
 export interface SandboxExecParams {
   command: string;
+  /** Maximum combined stdout/stderr bytes collected locally. Defaults to 64 MiB. */
+  maxOutputBytes?: number;
   /** @deprecated Legacy compatibility only. Converted into a single shell command string. */
   args?: string[];
   cwd?: string;
@@ -340,6 +492,8 @@ export interface SandboxProcessResult {
   startedAt: number;
   completedAt?: number;
   error?: string;
+  outputTruncated?: boolean;
+  lastSeq?: number;
 }
 
 export interface SandboxProcessListParams {
@@ -368,17 +522,19 @@ export interface SandboxProcessStdinParams {
   eof?: boolean;
 }
 
-export type SandboxProcessStreamEvent =
-  | {
-      type: "stdout" | "stderr" | "system";
-      seq: number;
-      data: string;
-      timestamp: number;
-    }
-  | {
-      type: "exit";
-      result: SandboxProcessResult;
-    };
+export interface SandboxProcessOutputEvent {
+  type: "stdout" | "stderr" | "system";
+  seq: number;
+  data: string;
+  timestamp: number;
+}
+
+export interface SandboxProcessExitEvent {
+  type: "exit";
+  result: SandboxProcessResult;
+}
+
+export type SandboxProcessStreamEvent = SandboxProcessOutputEvent | SandboxProcessExitEvent;
 
 export type SandboxFileType = "file" | "dir";
 

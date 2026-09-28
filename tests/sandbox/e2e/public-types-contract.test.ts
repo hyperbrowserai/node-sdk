@@ -3,8 +3,11 @@ import type {
   CompleteSandboxImageBuildParams,
   CreateSandboxImageBuildParams,
   Sandbox,
+  SandboxExecParams,
+  SandboxImageBuildInputFormat,
   SandboxImageBuildListParams,
   SandboxImageBuildStatus,
+  SandboxProcessResult,
   SandboxImageListResponse,
   SandboxNetworkPolicy,
   SandboxSnapshotListResponse,
@@ -33,16 +36,25 @@ describe("public type compatibility", () => {
     expect(status).toBe("close-error");
   });
 
-  test("only accepts the image build format and platform supported by the server", () => {
+  test("only accepts the image build formats and platform supported by the server", () => {
     expectTypeOf<CreateSandboxImageBuildParams["inputFormat"]>().toEqualTypeOf<
-      "rootfs_export_tar_gz" | undefined
+      SandboxImageBuildInputFormat | undefined
+    >();
+    expectTypeOf<SandboxImageBuildInputFormat>().toEqualTypeOf<
+      | "rootfs_export_tar_gz"
+      | "dockerfile_context_tar_gz"
+      | "dockerfile_context_manifest_v1"
+      | "docker_image_manifest_v1"
     >();
     expectTypeOf<CreateSandboxImageBuildParams["sourcePlatform"]>().toEqualTypeOf<
       "linux/amd64" | undefined
     >();
     expectTypeOf<CompleteSandboxImageBuildParams["inputFormat"]>().toEqualTypeOf<
-      "rootfs_export_tar_gz" | undefined
+      SandboxImageBuildInputFormat | undefined
     >();
+    expectTypeOf<CreateSandboxImageBuildParams["builderCpus"]>().toEqualTypeOf<number | undefined>();
+    expectTypeOf<SandboxExecParams["maxOutputBytes"]>().toEqualTypeOf<number | undefined>();
+    expectTypeOf<SandboxProcessResult["outputTruncated"]>().toEqualTypeOf<boolean | undefined>();
     expectTypeOf<SandboxImageBuildListParams["status"]>().toEqualTypeOf<
       SandboxImageBuildStatus | undefined
     >();

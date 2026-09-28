@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import type { RuntimeTransport } from "../../../src/sandbox/base";
+import type { RuntimeSSEEvent, RuntimeSSEInit, RuntimeTransport } from "../../../src/sandbox/base";
 import { SandboxProcessesApi } from "../../../src/sandbox/process";
 import { SandboxHandle } from "../../../src/services/sandboxes";
 
@@ -7,33 +7,42 @@ const execResponse = {
   result: {
     id: "proc_exec",
     status: "exited" as const,
-    exit_code: 0,
+    exitCode: 0,
     stdout: "ok\n",
     stderr: "",
-    started_at: 1,
-    completed_at: 2,
+    startedAt: 1,
+    completedAt: 2,
   },
 };
 
-const startResponse = {
-  process: {
-    id: "proc_start",
-    status: "running" as const,
-    command: "sleep 30",
-    cwd: "/tmp",
-    started_at: 1,
-  },
+const startedEvent: RuntimeSSEEvent = {
+  event: "started",
+  data: { id: "proc_start", status: "running", command: "sleep 30", cwd: "/tmp", started_at: 1 },
 };
+
+const doneEvent: RuntimeSSEEvent = {
+  event: "done",
+  data: { id: "proc_start", status: "exited", exit_code: 0, started_at: 1, completed_at: 2, last_seq: 0 },
+};
+
+/** Every start opens one streamed POST whose body is the runtime payload. */
+const streamingTransport = () => {
+  const openSSE = vi.fn(async (_path: string, _params: unknown, _init?: RuntimeSSEInit) => ({
+    events: (async function* () {
+      yield startedEvent;
+      yield doneEvent;
+    })(),
+    close: () => undefined,
+  }));
+  return { openSSE, transport: { openSSE } as unknown as RuntimeTransport };
+};
+
+const payloadOf = (openSSE: ReturnType<typeof vi.fn>, index: number) =>
+  JSON.parse((openSSE.mock.calls[index][2] as RuntimeSSEInit).body ?? "");
 
 describe("sandbox process api", () => {
   test("exec string overload forwards runAs in the runtime payload", async () => {
-    const requestJSON = vi
-      .fn()
-      .mockResolvedValueOnce(execResponse)
-      .mockResolvedValueOnce(startResponse);
-    const transport = {
-      requestJSON,
-    } as unknown as RuntimeTransport;
+    const { openSSE, transport } = streamingTransport();
     const api = new SandboxProcessesApi(transport);
 
     await api.exec("whoami", {
@@ -47,39 +56,25 @@ describe("sandbox process api", () => {
       runAs: "root",
     });
 
-    expect(requestJSON).toHaveBeenNthCalledWith(
-      1,
-      "/sandbox/exec",
-      expect.objectContaining({
-        method: "POST",
-        body: JSON.stringify({
-          command: "whoami",
-          cwd: "/tmp",
-          env: { FOO: "bar" },
-          timeoutMs: 5_000,
-          runAs: "root",
-        }),
-      })
-    );
-    expect(requestJSON).toHaveBeenNthCalledWith(
-      2,
-      "/sandbox/processes",
-      expect.objectContaining({
-        method: "POST",
-        body: JSON.stringify({
-          command: "sleep 30",
-          cwd: "/tmp",
-          runAs: "root",
-        }),
-      })
-    );
+    expect(openSSE).toHaveBeenCalledTimes(2);
+    expect(openSSE.mock.calls[0][0]).toBe("/sandbox/processes");
+    expect(openSSE.mock.calls[0][2]).toMatchObject({ method: "POST" });
+    expect(payloadOf(openSSE, 0)).toEqual({
+      command: "whoami",
+      cwd: "/tmp",
+      env: { FOO: "bar" },
+      timeoutMs: 5_000,
+      runAs: "root",
+    });
+    expect(payloadOf(openSSE, 1)).toEqual({
+      command: "sleep 30",
+      cwd: "/tmp",
+      runAs: "root",
+    });
   });
 
   test("exec object form preserves runAs in the runtime payload", async () => {
-    const requestJSON = vi.fn().mockResolvedValue(execResponse);
-    const transport = {
-      requestJSON,
-    } as unknown as RuntimeTransport;
+    const { openSSE, transport } = streamingTransport();
     const api = new SandboxProcessesApi(transport);
 
     await api.exec({
@@ -88,27 +83,15 @@ describe("sandbox process api", () => {
       timeoutSec: 5,
     });
 
-    expect(requestJSON).toHaveBeenCalledWith(
-      "/sandbox/exec",
-      expect.objectContaining({
-        method: "POST",
-        body: JSON.stringify({
-          command: "whoami",
-          timeout_sec: 5,
-          runAs: "root",
-        }),
-      })
-    );
+    expect(payloadOf(openSSE, 0)).toEqual({
+      command: "whoami",
+      timeout_sec: 5,
+      runAs: "root",
+    });
   });
 
   test("legacy args and useShell are normalized out of process payloads", async () => {
-    const requestJSON = vi
-      .fn()
-      .mockResolvedValueOnce(execResponse)
-      .mockResolvedValueOnce(startResponse);
-    const transport = {
-      requestJSON,
-    } as unknown as RuntimeTransport;
+    const { openSSE, transport } = streamingTransport();
     const api = new SandboxProcessesApi(transport);
 
     await api.exec({
@@ -124,7 +107,7 @@ describe("sandbox process api", () => {
       cwd: "/tmp",
     });
 
-    const execPayload = JSON.parse(requestJSON.mock.calls[0][1].body);
+    const execPayload = payloadOf(openSSE, 0);
     expect(execPayload).toEqual({
       command: "/bin/echo 'legacy args value'",
       runAs: "root",
@@ -132,7 +115,7 @@ describe("sandbox process api", () => {
     expect(execPayload).not.toHaveProperty("args");
     expect(execPayload).not.toHaveProperty("useShell");
 
-    const startPayload = JSON.parse(requestJSON.mock.calls[1][1].body);
+    const startPayload = payloadOf(openSSE, 1);
     expect(startPayload).toEqual({
       command: "bash -lc 'echo process-started'",
       cwd: "/tmp",
