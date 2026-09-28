@@ -240,6 +240,7 @@ export class RuntimeTransport {
     }
 
     let buffer = "";
+    let skipLineFeed = false;
     const decoder = new StringDecoder("utf8");
     let eventName = "message";
     let eventId: string | undefined;
@@ -270,6 +271,27 @@ export class RuntimeTransport {
       eventId = undefined;
       dataLines = [];
       return event;
+    };
+
+    const readLine = (line: string): RuntimeSSEEvent | null => {
+      if (line === "") return flushEvent();
+      if (line.startsWith(":")) return null;
+      const separator = line.indexOf(":");
+      const field = separator === -1 ? line : line.slice(0, separator);
+      // Match the Python transport's field-value space normalization.
+      const value = separator === -1 ? "" : line.slice(separator + 1).replace(/^ +/, "");
+      switch (field) {
+        case "event":
+          eventName = value || "message";
+          break;
+        case "data":
+          dataLines.push(value);
+          break;
+        case "id":
+          eventId = value;
+          break;
+      }
+      return null;
     };
 
     const iterator = (body as AsyncIterable<Buffer | string>)[Symbol.asyncIterator]();
@@ -303,49 +325,27 @@ export class RuntimeTransport {
         buffer += decoder.write(Buffer.from(next.value));
 
         while (true) {
-          const newlineIndex = buffer.indexOf("\n");
+          if (skipLineFeed) {
+            if (!buffer) break;
+            if (buffer.startsWith("\n")) buffer = buffer.slice(1);
+            skipLineFeed = false;
+          }
+          const newlineIndex = buffer.search(/[\r\n]/);
           if (newlineIndex === -1) {
             break;
           }
 
-          let line = buffer.slice(0, newlineIndex);
+          const line = buffer.slice(0, newlineIndex);
+          // Deliver bare CR immediately; absorb a following LF even across chunks.
+          skipLineFeed = buffer[newlineIndex] === "\r";
           buffer = buffer.slice(newlineIndex + 1);
-          if (line.endsWith("\r")) {
-            line = line.slice(0, -1);
-          }
-
-          if (line === "") {
-            const event = flushEvent();
-            if (event) {
-              yield event;
-            }
-            continue;
-          }
-
-          if (line.startsWith(":")) {
-            continue;
-          }
-
-          const separator = line.indexOf(":");
-          const field = separator === -1 ? line : line.slice(0, separator);
-          const value = separator === -1 ? "" : line.slice(separator + 1).replace(/^ /, "");
-
-          switch (field) {
-            case "event":
-              eventName = value || "message";
-              break;
-            case "data":
-              dataLines.push(value);
-              break;
-            case "id":
-              eventId = value;
-              break;
-            default:
-              break;
-          }
+          const event = readLine(line);
+          if (event) yield event;
         }
       }
 
+      buffer += decoder.end();
+      if (buffer) readLine(buffer);
       const trailing = flushEvent();
       if (trailing) {
         yield trailing;

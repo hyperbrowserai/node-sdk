@@ -1,0 +1,14 @@
+[
+  {
+    "name": "leading field spaces",
+    "chunks": ["event:   output\ndata:  {\"data\":\"ok\"}\n\n"]
+  },
+  { "name": "LF", "chunks": ["event: output\ndata: {\"data\":\"ok\"}\n\n"] },
+  { "name": "CRLF", "chunks": ["event: output\r\ndata: {\"data\":\"ok\"}\r\n\r\n"] },
+  { "name": "CR", "chunks": ["event: output\rdata: {\"data\":\"ok\"}\r\r"] },
+  {
+    "name": "split CRLF",
+    "chunks": ["event: output\r", "\ndata: {\"data\":\"ok\"}\r", "\n\r", "\n"]
+  },
+  { "name": "unterminated final data line", "chunks": ["event: output\ndata: {\"data\":\"ok\"}"] }
+]

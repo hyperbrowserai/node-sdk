@@ -3,6 +3,9 @@
 Reference: Python SDK 1.9.1 (`c36d3d9`), with existing Node runtime-class support
 preserved. Scope is sandbox functionality; browser/web/agent additions are deferred.
 
+This checklist records implementation and targeted verification. It does not
+establish exhaustive behavioral parity or coverage of every Python test scenario.
+
 | Plan area | Implemented | Verification |
 | --- | --- | --- |
 | G1 processes | Start-time SSE collection; complete output or structured failure; limits; replay; local waits; disconnect and AbortSignal | Collection fixtures and real HTTP lifetime/heartbeat/cancellation tests |
@@ -71,3 +74,22 @@ Both signed-in teams reject volume creation because `sandbox_volumes` is disable
 so the passing smoke runs explicitly used `HYPERBROWSER_SMOKE_VOLUMES=0`. Volume
 behavior is covered by local wire/type tests; live volume mounting remains a
 release gate on a team with that feature enabled.
+
+## Remaining conformance work
+
+- Map each distinct Python sandbox test scenario to a Node test or an explicit
+  language-specific difference. The current suites contain ported fixtures and
+  targeted regressions, but this complete traceability audit has not been done.
+- Expand direct Python/Node comparisons beyond the existing identity fixtures and
+  SSE parser fixtures to requests, responses, errors, cancellation, upload retries,
+  build completion races, and cleanup failures.
+- Complete live volume validation and rerun the dedicated lifecycle/list/resource
+  suites on the final revision; the recorded 59 live tests include selected suites
+  and the smoke test, not every live test file.
+- CI currently verifies Linux with Node 20/22/24. Local Docker validation used
+  Docker 29.4.2; other supported host/Docker combinations are not yet demonstrated.
+
+The SSE fixtures in `tests/fixtures/sse_line_endings.json` were checked against
+Python 1.9.1's actual sync and async transports. They cover LF, CRLF, bare CR,
+split CRLF, field spaces, and an unterminated final data line. This follow-up found
+and fixed parser differences after the initial local and live suites had passed.
