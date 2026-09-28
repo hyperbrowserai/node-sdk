@@ -4,7 +4,6 @@ import { SandboxProcessesApi } from "../../src/sandbox/process";
 import { SandboxFilesApi } from "../../src/sandbox/files";
 import { BaseService } from "../../src/services/base";
 import { delay, localHTTP } from "../helpers/local-http";
-import lineEndings from "../fixtures/sse_line_endings.json";
 
 const started =
   'event: started\ndata: {"id":"p","status":"running","command":"sleep 300","cwd":"/tmp","started_at":1}\n\n';
@@ -30,20 +29,6 @@ async function setup(handler: Parameters<typeof localHTTP>[0], timeout = 1000) {
   };
 }
 describe("runtime HTTP lifetime", () => {
-  test.each(lineEndings)("SSE parser matches Python for $name", async ({ chunks }) => {
-    const api = await setup(async (_req, res) => {
-      res.writeHead(200, { "content-type": "text/event-stream" });
-      for (const chunk of chunks) {
-        res.write(chunk);
-        await delay(5);
-      }
-      res.end();
-    });
-    const stream = await api.transport.openSSE("/stream");
-    const events = [];
-    for await (const event of stream.events) events.push(event);
-    expect(events).toEqual([{ event: "output", data: { data: "ok" }, id: undefined }]);
-  });
   test("CR-only events are delivered before the response ends", async () => {
     const api = await setup((_req, res) => {
       res.writeHead(200, { "content-type": "text/event-stream" });

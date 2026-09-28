@@ -2,6 +2,7 @@ import { afterEach, expect, test } from "vitest";
 import fixtures from "../fixtures/python_sse_reference.json";
 import { RuntimeTransport } from "../../src/sandbox/base";
 import { localHTTP } from "../helpers/local-http";
+// Golden decoding results captured from Python SDK 1.9.1 (c36d3d9).
 const cleanup: Array<() => Promise<void>> = [];
 afterEach(async () => {
   for (const close of cleanup.splice(0)) await close();

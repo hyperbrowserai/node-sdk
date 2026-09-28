@@ -31,55 +31,6 @@
         }
       }
     ],
-    "response": {
-      "id": "sbx_123",
-      "teamId": "team_1",
-      "status": "active",
-      "endTime": null,
-      "startTime": 123,
-      "createdAt": "2026-03-12T00:00:00Z",
-      "updatedAt": "2026-03-12T00:00:01Z",
-      "closeReason": null,
-      "dataConsumed": 1,
-      "proxyDataConsumed": 2,
-      "usageType": "sandbox",
-      "jobId": null,
-      "launchState": null,
-      "creditsUsed": 0.1,
-      "region": "us",
-      "sessionUrl": "https://example.com/session",
-      "duration": 10,
-      "proxyBytesUsed": 3,
-      "vcpus": 2,
-      "memMiB": 2048,
-      "diskSizeMiB": 8192,
-      "timeoutMinutes": 30,
-      "runtime": {
-        "transport": "regional_proxy",
-        "host": "https://runtime.example.com",
-        "baseUrl": "https://runtime.example.com/sandbox/sbx_123"
-      },
-      "exposedPorts": [
-        {
-          "port": 3000,
-          "auth": true,
-          "url": "https://3000-sbx_123.runtime.example.com/",
-          "browserUrl": "https://3000-sbx_123.runtime.example.com/_hb/auth?grant=test&next=%2F",
-          "browserUrlExpiresAt": "2026-03-12T02:00:00Z"
-        }
-      ],
-      "network": {
-        "allowInternetAccess": false,
-        "allowOut": [
-          "1.1.1.1"
-        ],
-        "denyOut": [
-          "0.0.0.0/0"
-        ]
-      },
-      "token": "tok",
-      "tokenExpiresAt": "2026-03-12T01:00:00Z"
-    },
     "requests": [
       {
         "method": "POST",
@@ -219,55 +170,6 @@
         "timeoutMinutes": 20
       }
     ],
-    "response": {
-      "id": "sbx_123",
-      "teamId": "team_1",
-      "status": "active",
-      "endTime": null,
-      "startTime": 123,
-      "createdAt": "2026-03-12T00:00:00Z",
-      "updatedAt": "2026-03-12T00:00:01Z",
-      "closeReason": null,
-      "dataConsumed": 1,
-      "proxyDataConsumed": 2,
-      "usageType": "sandbox",
-      "jobId": null,
-      "launchState": null,
-      "creditsUsed": 0.1,
-      "region": "us",
-      "sessionUrl": "https://example.com/session",
-      "duration": 10,
-      "proxyBytesUsed": 3,
-      "vcpus": 2,
-      "memMiB": 2048,
-      "diskSizeMiB": 8192,
-      "timeoutMinutes": 30,
-      "runtime": {
-        "transport": "regional_proxy",
-        "host": "https://runtime.example.com",
-        "baseUrl": "https://runtime.example.com/sandbox/sbx_123"
-      },
-      "exposedPorts": [
-        {
-          "port": 3000,
-          "auth": true,
-          "url": "https://3000-sbx_123.runtime.example.com/",
-          "browserUrl": "https://3000-sbx_123.runtime.example.com/_hb/auth?grant=test&next=%2F",
-          "browserUrlExpiresAt": "2026-03-12T02:00:00Z"
-        }
-      ],
-      "network": {
-        "allowInternetAccess": false,
-        "allowOut": [
-          "1.1.1.1"
-        ],
-        "denyOut": [
-          "0.0.0.0/0"
-        ]
-      },
-      "token": "tok",
-      "tokenExpiresAt": "2026-03-12T01:00:00Z"
-    },
     "requests": [
       {
         "method": "POST",
@@ -382,55 +284,6 @@
     "nodeArgs": [
       "sbx_123"
     ],
-    "response": {
-      "id": "sbx_123",
-      "teamId": "team_1",
-      "status": "active",
-      "endTime": null,
-      "startTime": 123,
-      "createdAt": "2026-03-12T00:00:00Z",
-      "updatedAt": "2026-03-12T00:00:01Z",
-      "closeReason": null,
-      "dataConsumed": 1,
-      "proxyDataConsumed": 2,
-      "usageType": "sandbox",
-      "jobId": null,
-      "launchState": null,
-      "creditsUsed": 0.1,
-      "region": "us",
-      "sessionUrl": "https://example.com/session",
-      "duration": 10,
-      "proxyBytesUsed": 3,
-      "vcpus": 2,
-      "memMiB": 2048,
-      "diskSizeMiB": 8192,
-      "timeoutMinutes": 30,
-      "runtime": {
-        "transport": "regional_proxy",
-        "host": "https://runtime.example.com",
-        "baseUrl": "https://runtime.example.com/sandbox/sbx_123"
-      },
-      "exposedPorts": [
-        {
-          "port": 3000,
-          "auth": true,
-          "url": "https://3000-sbx_123.runtime.example.com/",
-          "browserUrl": "https://3000-sbx_123.runtime.example.com/_hb/auth?grant=test&next=%2F",
-          "browserUrlExpiresAt": "2026-03-12T02:00:00Z"
-        }
-      ],
-      "network": {
-        "allowInternetAccess": false,
-        "allowOut": [
-          "1.1.1.1"
-        ],
-        "denyOut": [
-          "0.0.0.0/0"
-        ]
-      },
-      "token": "tok",
-      "tokenExpiresAt": "2026-03-12T01:00:00Z"
-    },
     "requests": [
       {
         "method": "GET",
@@ -541,9 +394,6 @@
     "nodeArgs": [
       "sbx_123"
     ],
-    "response": {
-      "success": true
-    },
     "requests": [
       {
         "method": "PUT",
@@ -566,54 +416,6 @@
     "nodeArgs": [
       {}
     ],
-    "response": {
-      "sandboxes": [
-        {
-          "id": "sbx_123",
-          "teamId": "team_1",
-          "status": "active",
-          "endTime": null,
-          "startTime": 123,
-          "createdAt": "2026-03-12T00:00:00Z",
-          "updatedAt": "2026-03-12T00:00:01Z",
-          "closeReason": null,
-          "dataConsumed": 1,
-          "proxyDataConsumed": 2,
-          "usageType": "sandbox",
-          "jobId": null,
-          "launchState": null,
-          "creditsUsed": 0.1,
-          "region": "us",
-          "sessionUrl": "https://example.com/session",
-          "duration": 10,
-          "proxyBytesUsed": 3,
-          "vcpus": 2,
-          "memMiB": 2048,
-          "diskSizeMiB": 8192,
-          "runtime": {
-            "transport": "regional_proxy",
-            "host": "https://runtime.example.com",
-            "baseUrl": "https://runtime.example.com/sandbox/sbx_123"
-          },
-          "exposedPorts": [
-            {
-              "port": 3000,
-              "auth": false,
-              "url": "https://3000-sbx_123.runtime.example.com/",
-              "browserUrl": "https://3000-sbx_123.runtime.example.com/"
-            }
-          ],
-          "network": {
-            "allowInternetAccess": true,
-            "allowOut": [],
-            "denyOut": []
-          }
-        }
-      ],
-      "totalCount": 1,
-      "page": 2,
-      "perPage": 5
-    },
     "requests": [
       {
         "method": "GET",
@@ -736,54 +538,6 @@
         "limit": 5
       }
     ],
-    "response": {
-      "sandboxes": [
-        {
-          "id": "sbx_123",
-          "teamId": "team_1",
-          "status": "active",
-          "endTime": null,
-          "startTime": 123,
-          "createdAt": "2026-03-12T00:00:00Z",
-          "updatedAt": "2026-03-12T00:00:01Z",
-          "closeReason": null,
-          "dataConsumed": 1,
-          "proxyDataConsumed": 2,
-          "usageType": "sandbox",
-          "jobId": null,
-          "launchState": null,
-          "creditsUsed": 0.1,
-          "region": "us",
-          "sessionUrl": "https://example.com/session",
-          "duration": 10,
-          "proxyBytesUsed": 3,
-          "vcpus": 2,
-          "memMiB": 2048,
-          "diskSizeMiB": 8192,
-          "runtime": {
-            "transport": "regional_proxy",
-            "host": "https://runtime.example.com",
-            "baseUrl": "https://runtime.example.com/sandbox/sbx_123"
-          },
-          "exposedPorts": [
-            {
-              "port": 3000,
-              "auth": false,
-              "url": "https://3000-sbx_123.runtime.example.com/",
-              "browserUrl": "https://3000-sbx_123.runtime.example.com/"
-            }
-          ],
-          "network": {
-            "allowInternetAccess": true,
-            "allowOut": [],
-            "denyOut": []
-          }
-        }
-      ],
-      "totalCount": 1,
-      "page": 2,
-      "perPage": 5
-    },
     "requests": [
       {
         "method": "GET",
@@ -911,28 +665,6 @@
     "nodeArgs": [
       {}
     ],
-    "response": {
-      "images": [
-        {
-          "id": "img_123",
-          "imageName": "node",
-          "namespace": "team_1",
-          "source": "registry",
-          "imageInit": {
-            "args": [
-              "node",
-              "server.js"
-            ]
-          },
-          "uploaded": true,
-          "createdAt": "2026-03-12T00:00:00Z",
-          "updatedAt": "2026-03-12T00:00:01Z"
-        }
-      ],
-      "totalCount": 1,
-      "page": 2,
-      "perPage": 5
-    },
     "requests": [
       {
         "method": "GET",
@@ -1001,28 +733,6 @@
         "limit": 5
       }
     ],
-    "response": {
-      "images": [
-        {
-          "id": "img_123",
-          "imageName": "node",
-          "namespace": "team_1",
-          "source": "registry",
-          "imageInit": {
-            "args": [
-              "node",
-              "server.js"
-            ]
-          },
-          "uploaded": true,
-          "createdAt": "2026-03-12T00:00:00Z",
-          "updatedAt": "2026-03-12T00:00:01Z"
-        }
-      ],
-      "totalCount": 1,
-      "page": 2,
-      "perPage": 5
-    },
     "requests": [
       {
         "method": "GET",
@@ -1097,12 +807,6 @@
     "nodeArgs": [
       "img_123"
     ],
-    "response": {
-      "deleted": true,
-      "id": "img_123",
-      "imageName": "node",
-      "uploaded": true
-    },
     "requests": [
       {
         "method": "DELETE",
@@ -1135,30 +839,6 @@
         "limit": 100
       }
     ],
-    "response": {
-      "snapshots": [
-        {
-          "id": "snap_123",
-          "snapshotName": "snapshot-1",
-          "namespace": "team_1",
-          "imageNamespace": "team_1",
-          "imageName": "node",
-          "imageId": "img_123",
-          "status": "created",
-          "vcpus": 2,
-          "memMiB": 2048,
-          "diskSizeMiB": 8192,
-          "compatibilityTag": null,
-          "metadata": {},
-          "uploaded": true,
-          "createdAt": "2026-03-12T00:00:00Z",
-          "updatedAt": "2026-03-12T00:00:01Z"
-        }
-      ],
-      "totalCount": 1,
-      "page": 2,
-      "perPage": 5
-    },
     "requests": [
       {
         "method": "GET",
@@ -1232,25 +912,6 @@
     "nodeArgs": [
       "sid"
     ],
-    "response": {
-      "snapshot": {
-        "id": "snap_123",
-        "snapshotName": "snapshot-1",
-        "namespace": "team_1",
-        "imageNamespace": "team_1",
-        "imageName": "node",
-        "imageId": "img_123",
-        "status": "created",
-        "vcpus": 2,
-        "memMiB": 2048,
-        "diskSizeMiB": 8192,
-        "compatibilityTag": null,
-        "metadata": {},
-        "uploaded": true,
-        "createdAt": "2026-03-12T00:00:00Z",
-        "updatedAt": "2026-03-12T00:00:01Z"
-      }
-    },
     "requests": [
       {
         "method": "GET",
@@ -1302,9 +963,6 @@
     "nodeArgs": [
       "sid"
     ],
-    "response": {
-      "deleted": true
-    },
     "requests": [
       {
         "method": "DELETE",
@@ -1330,15 +988,6 @@
         "snapshotName": "snap"
       }
     ],
-    "response": {
-      "snapshotName": "snap",
-      "snapshotId": "sid",
-      "namespace": "ns",
-      "status": "ready",
-      "imageName": "img",
-      "imageId": "iid",
-      "imageNamespace": "ins"
-    },
     "requests": [
       {
         "method": "POST",
@@ -1378,17 +1027,6 @@
         "allowInternetAccess": true
       }
     ],
-    "response": {
-      "network": {
-        "allowInternetAccess": false,
-        "allowOut": [
-          "1.1.1.1"
-        ],
-        "denyOut": [
-          "0.0.0.0/0"
-        ]
-      }
-    },
     "requests": [
       {
         "method": "PUT",
@@ -1433,17 +1071,6 @@
         "denyOut": []
       }
     ],
-    "response": {
-      "network": {
-        "allowInternetAccess": false,
-        "allowOut": [
-          "1.1.1.1"
-        ],
-        "denyOut": [
-          "0.0.0.0/0"
-        ]
-      }
-    },
     "requests": [
       {
         "method": "PUT",
@@ -1491,17 +1118,6 @@
         ]
       }
     ],
-    "response": {
-      "network": {
-        "allowInternetAccess": false,
-        "allowOut": [
-          "1.1.1.1"
-        ],
-        "denyOut": [
-          "0.0.0.0/0"
-        ]
-      }
-    },
     "requests": [
       {
         "method": "PUT",
@@ -1549,13 +1165,6 @@
         "auth": false
       }
     ],
-    "response": {
-      "port": 3000,
-      "auth": true,
-      "url": "https://3000-sbx_123.runtime.example.com/",
-      "browserUrl": "https://3000-sbx_123.runtime.example.com/_hb/auth?grant=test&next=%2F",
-      "browserUrlExpiresAt": "2026-03-12T02:00:00Z"
-    },
     "requests": [
       {
         "method": "POST",
@@ -1645,10 +1254,6 @@
       "sbx_123",
       3000
     ],
-    "response": {
-      "port": 3000,
-      "exposed": false
-    },
     "requests": [
       {
         "method": "POST",
@@ -1679,40 +1284,6 @@
         "inputSizeBytes": 100
       }
     ],
-    "response": {
-      "build": {
-        "id": "build-123",
-        "teamId": "team_1",
-        "userId": "user_1",
-        "namespace": "team_1",
-        "imageName": "custom_node",
-        "imageId": "",
-        "status": "awaiting_upload",
-        "inputBucket": "bucket",
-        "inputKey": "input/key",
-        "inputSha256": "abc123",
-        "inputSizeBytes": 123,
-        "outputBucket": "out",
-        "outputKey": "output/key",
-        "vmId": "vm_123",
-        "errorCode": "",
-        "errorMessage": "",
-        "metadata": {},
-        "completedAt": null,
-        "createdAt": "2026-03-12T00:00:00Z",
-        "updatedAt": "2026-03-12T00:00:01Z"
-      },
-      "upload": {
-        "url": "https://upload.example.com/rootfs",
-        "method": "PUT",
-        "headers": {
-          "x-upload": "yes"
-        },
-        "objectKey": "input/key",
-        "expiresInSeconds": 900,
-        "maxUploadBytes": 1000
-      }
-    },
     "requests": [
       {
         "method": "POST",
@@ -1805,30 +1376,6 @@
         "inputFormat": "rootfs_export_tar_gz"
       }
     ],
-    "response": {
-      "build": {
-        "id": "build-123",
-        "teamId": "team_1",
-        "userId": "user_1",
-        "namespace": "team_1",
-        "imageName": "custom_node",
-        "imageId": "img_123",
-        "status": "upload_verified",
-        "inputBucket": "bucket",
-        "inputKey": "input/key",
-        "inputSha256": "abc123",
-        "inputSizeBytes": 123,
-        "outputBucket": "out",
-        "outputKey": "output/key",
-        "vmId": "vm_123",
-        "errorCode": "",
-        "errorMessage": "",
-        "metadata": {},
-        "completedAt": null,
-        "createdAt": "2026-03-12T00:00:00Z",
-        "updatedAt": "2026-03-12T00:00:01Z"
-      }
-    },
     "requests": [
       {
         "method": "POST",
@@ -1894,30 +1441,6 @@
     "nodeArgs": [
       "b"
     ],
-    "response": {
-      "build": {
-        "id": "build-123",
-        "teamId": "team_1",
-        "userId": "user_1",
-        "namespace": "team_1",
-        "imageName": "custom_node",
-        "imageId": "img_123",
-        "status": "upload_verified",
-        "inputBucket": "bucket",
-        "inputKey": "input/key",
-        "inputSha256": "abc123",
-        "inputSizeBytes": 123,
-        "outputBucket": "out",
-        "outputKey": "output/key",
-        "vmId": "vm_123",
-        "errorCode": "",
-        "errorMessage": "",
-        "metadata": {},
-        "completedAt": null,
-        "createdAt": "2026-03-12T00:00:00Z",
-        "updatedAt": "2026-03-12T00:00:01Z"
-      }
-    },
     "requests": [
       {
         "method": "GET",
@@ -1979,30 +1502,6 @@
     "nodeArgs": [
       "b"
     ],
-    "response": {
-      "build": {
-        "id": "build-123",
-        "teamId": "team_1",
-        "userId": "user_1",
-        "namespace": "team_1",
-        "imageName": "custom_node",
-        "imageId": "img_123",
-        "status": "upload_verified",
-        "inputBucket": "bucket",
-        "inputKey": "input/key",
-        "inputSha256": "abc123",
-        "inputSizeBytes": 123,
-        "outputBucket": "out",
-        "outputKey": "output/key",
-        "vmId": "vm_123",
-        "errorCode": "",
-        "errorMessage": "",
-        "metadata": {},
-        "completedAt": null,
-        "createdAt": "2026-03-12T00:00:00Z",
-        "updatedAt": "2026-03-12T00:00:01Z"
-      }
-    },
     "requests": [
       {
         "method": "POST",
@@ -2067,186 +1566,6 @@
         "limit": 0
       }
     ],
-    "response": {
-      "builds": [
-        {
-          "id": "build-0",
-          "teamId": "team_1",
-          "userId": "user_1",
-          "namespace": "team_1",
-          "imageName": "custom_node",
-          "imageId": "img_123",
-          "status": "awaiting_upload",
-          "inputBucket": "bucket",
-          "inputKey": "input/key",
-          "inputSha256": "abc123",
-          "inputSizeBytes": 123,
-          "outputBucket": "out",
-          "outputKey": "output/key",
-          "vmId": "vm_123",
-          "errorCode": "",
-          "errorMessage": "",
-          "metadata": {},
-          "completedAt": null,
-          "createdAt": "2026-03-12T00:00:00Z",
-          "updatedAt": "2026-03-12T00:00:01Z"
-        },
-        {
-          "id": "build-1",
-          "teamId": "team_1",
-          "userId": "user_1",
-          "namespace": "team_1",
-          "imageName": "custom_node",
-          "imageId": "img_123",
-          "status": "upload_verified",
-          "inputBucket": "bucket",
-          "inputKey": "input/key",
-          "inputSha256": "abc123",
-          "inputSizeBytes": 123,
-          "outputBucket": "out",
-          "outputKey": "output/key",
-          "vmId": "vm_123",
-          "errorCode": "",
-          "errorMessage": "",
-          "metadata": {},
-          "completedAt": null,
-          "createdAt": "2026-03-12T00:00:00Z",
-          "updatedAt": "2026-03-12T00:00:01Z"
-        },
-        {
-          "id": "build-2",
-          "teamId": "team_1",
-          "userId": "user_1",
-          "namespace": "team_1",
-          "imageName": "custom_node",
-          "imageId": "img_123",
-          "status": "dispatching",
-          "inputBucket": "bucket",
-          "inputKey": "input/key",
-          "inputSha256": "abc123",
-          "inputSizeBytes": 123,
-          "outputBucket": "out",
-          "outputKey": "output/key",
-          "vmId": "vm_123",
-          "errorCode": "",
-          "errorMessage": "",
-          "metadata": {},
-          "completedAt": null,
-          "createdAt": "2026-03-12T00:00:00Z",
-          "updatedAt": "2026-03-12T00:00:01Z"
-        },
-        {
-          "id": "build-3",
-          "teamId": "team_1",
-          "userId": "user_1",
-          "namespace": "team_1",
-          "imageName": "custom_node",
-          "imageId": "img_123",
-          "status": "building",
-          "inputBucket": "bucket",
-          "inputKey": "input/key",
-          "inputSha256": "abc123",
-          "inputSizeBytes": 123,
-          "outputBucket": "out",
-          "outputKey": "output/key",
-          "vmId": "vm_123",
-          "errorCode": "",
-          "errorMessage": "",
-          "metadata": {},
-          "completedAt": null,
-          "createdAt": "2026-03-12T00:00:00Z",
-          "updatedAt": "2026-03-12T00:00:01Z"
-        },
-        {
-          "id": "build-4",
-          "teamId": "team_1",
-          "userId": "user_1",
-          "namespace": "team_1",
-          "imageName": "custom_node",
-          "imageId": "img_123",
-          "status": "verifying",
-          "inputBucket": "bucket",
-          "inputKey": "input/key",
-          "inputSha256": "abc123",
-          "inputSizeBytes": 123,
-          "outputBucket": "out",
-          "outputKey": "output/key",
-          "vmId": "vm_123",
-          "errorCode": "",
-          "errorMessage": "",
-          "metadata": {},
-          "completedAt": null,
-          "createdAt": "2026-03-12T00:00:00Z",
-          "updatedAt": "2026-03-12T00:00:01Z"
-        },
-        {
-          "id": "build-5",
-          "teamId": "team_1",
-          "userId": "user_1",
-          "namespace": "team_1",
-          "imageName": "custom_node",
-          "imageId": "img_123",
-          "status": "completed",
-          "inputBucket": "bucket",
-          "inputKey": "input/key",
-          "inputSha256": "abc123",
-          "inputSizeBytes": 123,
-          "outputBucket": "out",
-          "outputKey": "output/key",
-          "vmId": "vm_123",
-          "errorCode": "",
-          "errorMessage": "",
-          "metadata": {},
-          "completedAt": null,
-          "createdAt": "2026-03-12T00:00:00Z",
-          "updatedAt": "2026-03-12T00:00:01Z"
-        },
-        {
-          "id": "build-6",
-          "teamId": "team_1",
-          "userId": "user_1",
-          "namespace": "team_1",
-          "imageName": "custom_node",
-          "imageId": "img_123",
-          "status": "failed",
-          "inputBucket": "bucket",
-          "inputKey": "input/key",
-          "inputSha256": "abc123",
-          "inputSizeBytes": 123,
-          "outputBucket": "out",
-          "outputKey": "output/key",
-          "vmId": "vm_123",
-          "errorCode": "",
-          "errorMessage": "",
-          "metadata": {},
-          "completedAt": null,
-          "createdAt": "2026-03-12T00:00:00Z",
-          "updatedAt": "2026-03-12T00:00:01Z"
-        },
-        {
-          "id": "build-7",
-          "teamId": "team_1",
-          "userId": "user_1",
-          "namespace": "team_1",
-          "imageName": "custom_node",
-          "imageId": "img_123",
-          "status": "canceled",
-          "inputBucket": "bucket",
-          "inputKey": "input/key",
-          "inputSha256": "abc123",
-          "inputSizeBytes": 123,
-          "outputBucket": "out",
-          "outputKey": "output/key",
-          "vmId": "vm_123",
-          "errorCode": "",
-          "errorMessage": "",
-          "metadata": {},
-          "completedAt": null,
-          "createdAt": "2026-03-12T00:00:00Z",
-          "updatedAt": "2026-03-12T00:00:01Z"
-        }
-      ]
-    },
     "requests": [
       {
         "method": "GET",
@@ -2632,31 +1951,6 @@
         }
       }
     ],
-    "response": {
-      "hit": true,
-      "build": {
-        "id": "build-123",
-        "teamId": "team_1",
-        "userId": "user_1",
-        "namespace": "team_1",
-        "imageName": "custom_node",
-        "imageId": "img_123",
-        "status": "upload_verified",
-        "inputBucket": "bucket",
-        "inputKey": "input/key",
-        "inputSha256": "abc123",
-        "inputSizeBytes": 123,
-        "outputBucket": "out",
-        "outputKey": "output/key",
-        "vmId": "vm_123",
-        "errorCode": "",
-        "errorMessage": "",
-        "metadata": {},
-        "completedAt": null,
-        "createdAt": "2026-03-12T00:00:00Z",
-        "updatedAt": "2026-03-12T00:00:01Z"
-      }
-    },
     "requests": [
       {
         "method": "POST",
@@ -2734,12 +2028,6 @@
         "name": "cache"
       }
     ],
-    "response": {
-      "id": "vol",
-      "name": "cache",
-      "size": "42",
-      "transferAmount": "7"
-    },
     "requests": [
       {
         "method": "POST",
@@ -2770,12 +2058,6 @@
     "nodeArgs": [
       "vol"
     ],
-    "response": {
-      "id": "vol",
-      "name": "cache",
-      "size": "42",
-      "transferAmount": "7"
-    },
     "requests": [
       {
         "method": "GET",
@@ -2804,19 +2086,6 @@
     "nodeArgs": [
       {}
     ],
-    "response": {
-      "volumes": [
-        {
-          "id": "vol",
-          "name": "cache",
-          "size": "42",
-          "transferAmount": "7"
-        }
-      ],
-      "totalCount": 1,
-      "page": 1,
-      "perPage": 20
-    },
     "requests": [
       {
         "method": "GET",
@@ -2863,19 +2132,6 @@
         "limit": -1
       }
     ],
-    "response": {
-      "volumes": [
-        {
-          "id": "vol",
-          "name": "cache",
-          "size": "42",
-          "transferAmount": "7"
-        }
-      ],
-      "totalCount": 1,
-      "page": 1,
-      "perPage": 20
-    },
     "requests": [
       {
         "method": "GET",
@@ -2928,11 +2184,6 @@
     "nodeArgs": [
       "vol"
     ],
-    "response": {
-      "deleted": true,
-      "id": "vol",
-      "name": "cache"
-    },
     "requests": [
       {
         "method": "DELETE",
@@ -2968,10 +2219,6 @@
         "createdBefore": 200
       }
     ],
-    "response": {
-      "data": [],
-      "next_cursor": null
-    },
     "requests": [
       {
         "method": "GET",
@@ -3011,22 +2258,6 @@
     "nodeArgs": [
       "p1"
     ],
-    "response": {
-      "process": {
-        "id": "proc_1",
-        "status": "running",
-        "command": "bash",
-        "args": [
-          "-lc",
-          "echo hi"
-        ],
-        "cwd": "/tmp",
-        "pid": 123,
-        "exitCode": null,
-        "startedAt": 1,
-        "completedAt": null
-      }
-    },
     "requests": [
       {
         "method": "GET",
@@ -3071,25 +2302,6 @@
     "nodeArgs": [
       "p1"
     ],
-    "response": {
-      "process": {
-        "id": "proc_1",
-        "status": "running",
-        "command": "bash",
-        "args": [
-          "-lc",
-          "echo hi"
-        ],
-        "cwd": "/tmp",
-        "pid": 123,
-        "exitCode": null,
-        "startedAt": 1,
-        "completedAt": null,
-        "exit_code": 0,
-        "started_at": 0,
-        "completed_at": 2
-      }
-    },
     "requests": [
       {
         "method": "GET",
@@ -3139,25 +2351,6 @@
     "nodeArgs": [
       {}
     ],
-    "response": {
-      "data": [
-        {
-          "id": "proc_1",
-          "status": "running",
-          "command": "bash",
-          "args": [
-            "-lc",
-            "echo hi"
-          ],
-          "cwd": "/tmp",
-          "pid": 123,
-          "exitCode": null,
-          "startedAt": 1,
-          "completedAt": null
-        }
-      ],
-      "next_cursor": "next"
-    },
     "requests": [
       {
         "method": "GET",
@@ -3213,18 +2406,6 @@
         "timeoutSec": 3
       }
     ],
-    "response": {
-      "result": {
-        "id": "proc_1",
-        "status": "exited",
-        "exitCode": 0,
-        "stdout": "",
-        "stderr": "",
-        "startedAt": 1,
-        "completedAt": 2,
-        "error": null
-      }
-    },
     "requests": [
       {
         "method": "POST",
@@ -3268,26 +2449,6 @@
         "includeOutput": true
       }
     ],
-    "response": {
-      "pty": {
-        "id": "pty_1",
-        "command": "bash",
-        "args": [
-          "-lc"
-        ],
-        "cwd": "/tmp",
-        "pid": 321,
-        "running": true,
-        "exitCode": null,
-        "error": null,
-        "timedOut": false,
-        "rows": 24,
-        "cols": 80,
-        "startedAt": 1,
-        "finishedAt": null,
-        "output": []
-      }
-    },
     "requests": [
       {
         "method": "POST",
@@ -3343,26 +2504,6 @@
       30,
       100
     ],
-    "response": {
-      "pty": {
-        "id": "pty_1",
-        "command": "bash",
-        "args": [
-          "-lc"
-        ],
-        "cwd": "/tmp",
-        "pid": 321,
-        "running": true,
-        "exitCode": null,
-        "error": null,
-        "timedOut": false,
-        "rows": 24,
-        "cols": 80,
-        "startedAt": 1,
-        "finishedAt": null,
-        "output": []
-      }
-    },
     "requests": [
       {
         "method": "POST",
@@ -3417,26 +2558,6 @@
     "nodeArgs": [
       "TERM"
     ],
-    "response": {
-      "pty": {
-        "id": "pty_1",
-        "command": "bash",
-        "args": [
-          "-lc"
-        ],
-        "cwd": "/tmp",
-        "pid": 321,
-        "running": true,
-        "exitCode": null,
-        "error": null,
-        "timedOut": false,
-        "rows": 24,
-        "cols": 80,
-        "startedAt": 1,
-        "finishedAt": null,
-        "output": []
-      }
-    },
     "requests": [
       {
         "method": "POST",
@@ -3496,26 +2617,6 @@
         "timeoutMs": 1500
       }
     ],
-    "response": {
-      "pty": {
-        "id": "pty_1",
-        "command": "bash",
-        "args": [
-          "-lc"
-        ],
-        "cwd": "/tmp",
-        "pid": 321,
-        "running": true,
-        "exitCode": null,
-        "error": null,
-        "timedOut": false,
-        "rows": 24,
-        "cols": 80,
-        "startedAt": 1,
-        "finishedAt": null,
-        "output": []
-      }
-    },
     "requests": [
       {
         "method": "POST",
@@ -3574,26 +2675,6 @@
       "pty_1",
       true
     ],
-    "response": {
-      "pty": {
-        "id": "pty_1",
-        "command": "bash",
-        "args": [
-          "-lc"
-        ],
-        "cwd": "/tmp",
-        "pid": 321,
-        "running": true,
-        "exitCode": null,
-        "error": null,
-        "timedOut": false,
-        "rows": 24,
-        "cols": 80,
-        "startedAt": 1,
-        "finishedAt": null,
-        "output": []
-      }
-    },
     "requests": [
       {
         "method": "GET",
@@ -3657,15 +2738,6 @@
         }
       ]
     ],
-    "response": {
-      "files": [
-        {
-          "path": "/tmp/a.txt",
-          "name": "a.txt",
-          "type": "file"
-        }
-      ]
-    },
     "requests": [
       {
         "method": "POST",
@@ -3712,20 +2784,6 @@
         "overwrite": false
       }
     ],
-    "response": {
-      "entry": {
-        "path": "/tmp/destination.txt",
-        "name": "destination.txt",
-        "type": "file",
-        "size": 14,
-        "mode": 420,
-        "permissions": "-rw-r--r--",
-        "owner": "root",
-        "group": "root",
-        "modifiedTime": 123,
-        "symlinkTarget": null
-      }
-    },
     "requests": [
       {
         "method": "POST",
@@ -3772,20 +2830,6 @@
       "watch_1",
       true
     ],
-    "response": {
-      "watch": {
-        "id": "watch_1",
-        "path": "/tmp",
-        "recursive": false,
-        "active": true,
-        "error": null,
-        "createdAt": 1,
-        "stoppedAt": null,
-        "oldestSeq": 0,
-        "lastSeq": 0,
-        "eventCount": 0
-      }
-    },
     "requests": [
       {
         "method": "GET",
@@ -3834,13 +2878,6 @@
         "oneTime": false
       }
     ],
-    "response": {
-      "token": "upload-token",
-      "path": "/tmp/file.txt",
-      "method": "PUT",
-      "expiresAt": 123,
-      "url": "https://example.com/upload"
-    },
     "requests": [
       {
         "method": "POST",
@@ -3879,13 +2916,6 @@
         "oneTime": true
       }
     ],
-    "response": {
-      "token": "download-token",
-      "path": "/tmp/file.txt",
-      "method": "GET",
-      "expiresAt": 123,
-      "url": "https://example.com/download"
-    },
     "requests": [
       {
         "method": "POST",
@@ -3924,10 +2954,6 @@
         "mode": "750"
       }
     ],
-    "response": {
-      "created": true,
-      "path": "/dir"
-    },
     "requests": [
       {
         "method": "POST",
@@ -3956,7 +2982,6 @@
         "recursive": false
       }
     ],
-    "response": {},
     "requests": [
       {
         "method": "POST",
@@ -3986,15 +3011,6 @@
         }
       ]
     ],
-    "response": {
-      "files": [
-        {
-          "path": "/tmp/a.txt",
-          "name": "a.txt",
-          "type": "file"
-        }
-      ]
-    },
     "requests": [
       {
         "method": "POST",
@@ -4042,20 +3058,6 @@
         "overwrite": false
       }
     ],
-    "response": {
-      "entry": {
-        "path": "/tmp/destination.txt",
-        "name": "destination.txt",
-        "type": "file",
-        "size": 14,
-        "mode": 420,
-        "permissions": "-rw-r--r--",
-        "owner": "root",
-        "group": "root",
-        "modifiedTime": 123,
-        "symlinkTarget": null
-      }
-    },
     "requests": [
       {
         "method": "POST",
@@ -4103,20 +3105,6 @@
       "watch_1",
       true
     ],
-    "response": {
-      "watch": {
-        "id": "watch_1",
-        "path": "/tmp",
-        "recursive": false,
-        "active": true,
-        "error": null,
-        "createdAt": 1,
-        "stoppedAt": null,
-        "oldestSeq": 0,
-        "lastSeq": 0,
-        "eventCount": 0
-      }
-    },
     "requests": [
       {
         "method": "GET",
@@ -4165,13 +3153,6 @@
         "oneTime": false
       }
     ],
-    "response": {
-      "token": "upload-token",
-      "path": "/tmp/file.txt",
-      "method": "PUT",
-      "expiresAt": 123,
-      "url": "https://example.com/upload"
-    },
     "requests": [
       {
         "method": "POST",
@@ -4211,13 +3192,6 @@
         "oneTime": true
       }
     ],
-    "response": {
-      "token": "download-token",
-      "path": "/tmp/file.txt",
-      "method": "GET",
-      "expiresAt": 123,
-      "url": "https://example.com/download"
-    },
     "requests": [
       {
         "method": "POST",
@@ -4257,10 +3231,6 @@
         "mode": "750"
       }
     ],
-    "response": {
-      "created": true,
-      "path": "/dir"
-    },
     "requests": [
       {
         "method": "POST",
@@ -4290,7 +3260,6 @@
         "recursive": false
       }
     ],
-    "response": {},
     "requests": [
       {
         "method": "POST",

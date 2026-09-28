@@ -12,7 +12,7 @@ import { stopSandboxIfRunning, waitForRuntimeReady } from "../../helpers/sandbox
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const testVolumes = process.env.HYPERBROWSER_SMOKE_VOLUMES !== "0";
 
-// Explicit live release gate. Uses unique resources and deletes only those it owns.
+// Uses unique resources and deletes only those it owns.
 test("remote image build through sandbox, streaming files, watch, exposure and snapshot restore", async () => {
   const client = createClient();
   const context = await mkdtemp(join(tmpdir(), "node-parity-smoke-"));
@@ -35,7 +35,6 @@ test("remote image build through sandbox, streaming files, watch, exposure and s
       wait: false,
     });
     buildId = submitted.build?.id;
-    console.log("parity smoke: image submitted");
     const build = buildId
       ? await client.sandboxes.waitForImageBuild(buildId, { timeout: 600, pollInterval: 2 })
       : undefined;
@@ -47,7 +46,6 @@ test("remote image build through sandbox, streaming files, watch, exposure and s
     });
     expect(reused.outcome).toBe("reused");
     expect(reused.imageId).toBe(imageId);
-    console.log("parity smoke: image ready and reused");
 
     if (testVolumes) {
       volumeId = (await client.volumes.create({ name })).id;
@@ -76,7 +74,6 @@ test("remote image build through sandbox, streaming files, watch, exposure and s
     });
     expect(output.stdout).toBe("x".repeat(512 * 1024));
     expect(output.stderr).toBe("stderr-ok");
-    console.log("parity smoke: sandbox, auth and complete command output passed");
 
     const chunk = Buffer.alloc(64 * 1024, 0x5a);
     const expected = createHash("sha256");
@@ -124,7 +121,6 @@ test("remote image build through sandbox, streaming files, watch, exposure and s
       await watching;
     }
     expect(resumed.current.active).toBe(false);
-    console.log("parity smoke: 20 MiB transfer and watch resume/done passed");
 
     const server = await sandbox.processes.start({
       command: "node",
@@ -186,7 +182,6 @@ test("remote image build through sandbox, streaming files, watch, exposure and s
     await waitForRuntimeReady(restored);
     expect(await restored.files.read("/tmp/snapshot-marker")).toBe(name);
     expect((await restored.files.stat("/workspace/large.bin")).size).toBe(20 * 1024 * 1024);
-    console.log("parity smoke: exposure and snapshot restore passed");
   } catch (error) {
     primaryError = error;
     throw error;
@@ -232,6 +227,6 @@ test("remote image build through sandbox, streaming files, watch, exposure and s
         throw new Error(
           `Parity smoke resource cleanup failed: ${cleanupErrors.map(String).join("; ")}`
         );
-    } else console.log("parity smoke: owned resources cleaned up");
+    }
   }
 }, 1_000_000);

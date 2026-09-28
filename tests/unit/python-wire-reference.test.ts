@@ -7,6 +7,7 @@ import { SandboxProcessesApi, SandboxProcessHandle } from "../../src/sandbox/pro
 import { SandboxTerminalApi, SandboxTerminalHandle } from "../../src/sandbox/terminal";
 import { localHTTP } from "../helpers/local-http";
 
+// Golden requests and responses captured from Python SDK 1.9.1 (c36d3d9).
 const cleanup: Array<() => Promise<void>> = [];
 afterEach(async () => {
   for (const close of cleanup.splice(0)) await close();
