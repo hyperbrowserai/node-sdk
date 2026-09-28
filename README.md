@@ -432,14 +432,15 @@ try {
   for await (const message of watch.events({ cursor: 0, route: "ws" })) {
     if (message.type === "done") break;
     console.log(message.event.seq, message.event.path, message.event.op);
+    break; // Close this connection; the remote watch remains active.
   }
+  // Persist watch.id and the last sequence to resume an active watch:
+  const resumed = await sandbox.files.getWatch(watch.id, true);
+  await resumed.refresh(true);
+  console.log(resumed.current, resumed.toJSON());
 } finally {
   await watch.stop();
 }
-// Persist watch.id and the last event sequence to resume an existing watch:
-const resumed = await sandbox.files.getWatch(watch.id, true);
-await resumed.refresh(true);
-console.log(resumed.current, resumed.toJSON());
 ```
 
 Both watch routes (`ws` and `stream`) use WebSocket transport. Watch events include

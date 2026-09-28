@@ -1,6 +1,6 @@
 /* Validate shipped files and declarations from a fresh npm consumer. */
 const { execFileSync } = require("node:child_process");
-const { mkdtempSync, writeFileSync, rmSync } = require("node:fs");
+const { mkdtempSync, writeFileSync, rmSync, readdirSync } = require("node:fs");
 const { tmpdir } = require("node:os");
 const path = require("node:path");
 const root = path.resolve(__dirname, "..");
@@ -11,25 +11,20 @@ try {
     cwd: root,
     stdio: "inherit",
   });
-  const packed = JSON.parse(
-    execFileSync(npm, ["pack", "--ignore-scripts", "--json", "--pack-destination", consumer], {
-      cwd: root,
-      encoding: "utf8",
-    })
-  );
+  execFileSync(npm, ["pack", "--ignore-scripts", "--silent", "--pack-destination", consumer], {
+    cwd: root,
+    stdio: "pipe",
+  });
+  // npm 10 can print prepare output even with --ignore-scripts and --json.
+  const tarballs = readdirSync(consumer).filter((name) => name.endsWith(".tgz"));
+  if (tarballs.length !== 1) throw new Error("Expected one packed SDK tarball");
   writeFileSync(
     path.join(consumer, "package.json"),
     JSON.stringify({ private: true, type: "module" })
   );
   execFileSync(
     npm,
-    [
-      "install",
-      "--ignore-scripts",
-      "--no-audit",
-      "--no-fund",
-      path.join(consumer, packed[0].filename),
-    ],
+    ["install", "--ignore-scripts", "--no-audit", "--no-fund", path.join(consumer, tarballs[0])],
     { cwd: consumer, stdio: "inherit" }
   );
   const common = `

@@ -100,6 +100,7 @@ test("remote image build through sandbox, streaming files, watch, exposure and s
     expect(actual.digest("hex")).toBe(expected.digest("hex"));
     const watch = await sandbox.files.watch("/workspace");
     const resumed = await sandbox.files.getWatch(watch.id, true);
+    expect((await resumed.refresh()).current.active).toBe(true);
     const events: string[] = [];
     const watching = (async () => {
       for await (const event of resumed.events({
@@ -122,7 +123,7 @@ test("remote image build through sandbox, streaming files, watch, exposure and s
       await watch.stop();
       await watching;
     }
-    expect((await resumed.refresh()).current.active).toBe(false);
+    expect(resumed.current.active).toBe(false);
     console.log("parity smoke: 20 MiB transfer and watch resume/done passed");
 
     const server = await sandbox.processes.start({

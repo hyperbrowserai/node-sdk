@@ -8,11 +8,13 @@ export const localHTTP = async (handler: RequestListener) => {
     sockets.add(socket);
     socket.once("close", () => sockets.delete(socket));
   });
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  // Keep fixtures separate from local development proxies on 127.0.0.1.
+  const host = "127.0.0.2";
+  await new Promise<void>((resolve) => server.listen(0, host, resolve));
   return {
     server,
     sockets,
-    url: `http://127.0.0.1:${(server.address() as AddressInfo).port}`,
+    url: `http://${host}:${(server.address() as AddressInfo).port}`,
     close: async () => {
       for (const socket of sockets) socket.destroy();
       await new Promise<void>((resolve) => server.close(() => resolve()));
