@@ -7,14 +7,16 @@
 - `yarn install` — install dependencies (also runs `yarn build` via `prepare`)
 - `yarn build` — compile TypeScript
 - `yarn lint` — ESLint
-- `yarn test` — vitest (unit + contract tests pass without a running API; e2e/integration tests need `HYPERBROWSER_API_KEY`)
+- `yarn test` — unit + local integration tests; no API credentials or Docker daemon needed
+- `yarn test:unit` / `yarn test:integration` — run either local test group
+- `yarn test:e2e` — live API tests; requires `HYPERBROWSER_API_KEY`
 - `yarn format` — Prettier
 
 ### Gotchas
 
 - `yarn install` triggers the `prepare` script which runs `yarn build`. If the
   build fails on install, check for TypeScript errors in `src/`.
-- Integration and e2e tests (`tests/sandbox/e2e/`, `tests/integration/`) require
-  a running Hyperbrowser API and a valid `HYPERBROWSER_API_KEY`. Without these,
-  only the contract/unit tests in the suite will pass; the e2e tests fail with
-  `ECONNREFUSED`.
+- `vitest.config.ts` defines unit, integration, and e2e projects. The default
+  selection (including watch mode) runs only unit and integration tests.
+- Only live tests in `tests/e2e/` load env files and require a running
+  Hyperbrowser API and a valid `HYPERBROWSER_API_KEY`.

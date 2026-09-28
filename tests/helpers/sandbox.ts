@@ -3,7 +3,7 @@ import type { SandboxHandle } from "../../src/services/sandboxes";
 import type { CreateSandboxParams, SandboxSnapshotSummary } from "../../src/types";
 import { DEFAULT_IMAGE_NAME } from "./config";
 
-const SNAPSHOT_LIST_LIMIT = 200;
+const SNAPSHOT_LIST_LIMIT = 100;
 const LIST_POLL_DELAY_MS = 500;
 const LIST_POLL_TIMEOUT_MS = 90_000;
 

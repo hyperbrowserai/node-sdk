@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { VolumesService } from "../../../src/services/volumes";
+import { VolumesService } from "../../src/services/volumes";
 
 describe("volume control contract", () => {
   test("create forwards payload and returns created volume", async () => {

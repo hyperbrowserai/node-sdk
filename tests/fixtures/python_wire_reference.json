@@ -1,0 +1,3278 @@
+[
+  {
+    "name": "sandboxes.create 1",
+    "subject": "sandboxes",
+    "nodeMethod": "create",
+    "nodeArgs": [
+      {
+        "imageName": "node",
+        "cpu": 4,
+        "memoryMiB": 4096,
+        "diskMiB": 8192,
+        "timeoutMinutes": 15,
+        "enableRecording": false,
+        "allowInternetAccess": false,
+        "allowOut": [],
+        "denyOut": [
+          "0.0.0.0/0"
+        ],
+        "exposedPorts": [
+          {
+            "port": 3000,
+            "auth": false
+          }
+        ],
+        "mounts": {
+          "/cache": {
+            "id": "vol",
+            "type": "rw",
+            "shared": true
+          }
+        }
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/api/sandbox",
+        "query": {},
+        "body": {
+          "enableRecording": false,
+          "exposedPorts": [
+            {
+              "port": 3000,
+              "auth": false
+            }
+          ],
+          "mounts": {
+            "/cache": {
+              "id": "vol",
+              "type": "rw",
+              "shared": true
+            }
+          },
+          "timeoutMinutes": 15,
+          "allowInternetAccess": false,
+          "allowOut": [],
+          "denyOut": [
+            "0.0.0.0/0"
+          ],
+          "imageName": "node",
+          "vcpus": 4,
+          "memMiB": 4096,
+          "diskSizeMiB": 8192
+        },
+        "reply": {
+          "id": "sbx_123",
+          "teamId": "team_1",
+          "status": "active",
+          "endTime": null,
+          "startTime": 123,
+          "createdAt": "2026-03-12T00:00:00Z",
+          "updatedAt": "2026-03-12T00:00:01Z",
+          "closeReason": null,
+          "dataConsumed": 1,
+          "proxyDataConsumed": 2,
+          "usageType": "sandbox",
+          "jobId": null,
+          "launchState": null,
+          "creditsUsed": 0.1,
+          "region": "us",
+          "sessionUrl": "https://example.com/session",
+          "duration": 10,
+          "proxyBytesUsed": 3,
+          "vcpus": 2,
+          "memMiB": 2048,
+          "diskSizeMiB": 8192,
+          "timeoutMinutes": 30,
+          "runtime": {
+            "transport": "regional_proxy",
+            "host": "https://runtime.example.com",
+            "baseUrl": "https://runtime.example.com/sandbox/sbx_123"
+          },
+          "exposedPorts": [
+            {
+              "port": 3000,
+              "auth": true,
+              "url": "https://3000-sbx_123.runtime.example.com/",
+              "browserUrl": "https://3000-sbx_123.runtime.example.com/_hb/auth?grant=test&next=%2F",
+              "browserUrlExpiresAt": "2026-03-12T02:00:00Z"
+            }
+          ],
+          "network": {
+            "allowInternetAccess": false,
+            "allowOut": [
+              "1.1.1.1"
+            ],
+            "denyOut": [
+              "0.0.0.0/0"
+            ]
+          },
+          "token": "tok",
+          "tokenExpiresAt": "2026-03-12T01:00:00Z"
+        }
+      }
+    ],
+    "expectedResult": {
+      "id": "sbx_123",
+      "teamId": "team_1",
+      "status": "active",
+      "startTime": 123,
+      "createdAt": "2026-03-12T00:00:00Z",
+      "updatedAt": "2026-03-12T00:00:01Z",
+      "dataConsumed": 1,
+      "proxyDataConsumed": 2,
+      "usageType": "sandbox",
+      "creditsUsed": 0.1,
+      "region": "us",
+      "sessionUrl": "https://example.com/session",
+      "duration": 10,
+      "proxyBytesUsed": 3,
+      "cpu": 2,
+      "memoryMiB": 2048,
+      "diskMiB": 8192,
+      "timeoutMinutes": 30,
+      "runtime": {
+        "transport": "regional_proxy",
+        "host": "https://runtime.example.com",
+        "baseUrl": "https://runtime.example.com/sandbox/sbx_123"
+      },
+      "exposedPorts": [
+        {
+          "port": 3000,
+          "auth": true,
+          "url": "https://3000-sbx_123.runtime.example.com/",
+          "browserUrl": "https://3000-sbx_123.runtime.example.com/_hb/auth?grant=test&next=%2F",
+          "browserUrlExpiresAt": "2026-03-12T02:00:00Z"
+        }
+      ],
+      "network": {
+        "allowInternetAccess": false,
+        "allowOut": [
+          "1.1.1.1"
+        ],
+        "denyOut": [
+          "0.0.0.0/0"
+        ]
+      },
+      "token": "tok",
+      "tokenExpiresAt": "2026-03-12T01:00:00Z"
+    }
+  },
+  {
+    "name": "sandboxes.start_from_snapshot 2",
+    "subject": "sandboxes",
+    "nodeMethod": "startFromSnapshot",
+    "nodeArgs": [
+      {
+        "snapshotName": "snap",
+        "snapshotId": "sid",
+        "timeoutMinutes": 20
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/api/sandbox",
+        "query": {},
+        "body": {
+          "timeoutMinutes": 20,
+          "snapshotName": "snap",
+          "snapshotId": "sid"
+        },
+        "reply": {
+          "id": "sbx_123",
+          "teamId": "team_1",
+          "status": "active",
+          "endTime": null,
+          "startTime": 123,
+          "createdAt": "2026-03-12T00:00:00Z",
+          "updatedAt": "2026-03-12T00:00:01Z",
+          "closeReason": null,
+          "dataConsumed": 1,
+          "proxyDataConsumed": 2,
+          "usageType": "sandbox",
+          "jobId": null,
+          "launchState": null,
+          "creditsUsed": 0.1,
+          "region": "us",
+          "sessionUrl": "https://example.com/session",
+          "duration": 10,
+          "proxyBytesUsed": 3,
+          "vcpus": 2,
+          "memMiB": 2048,
+          "diskSizeMiB": 8192,
+          "timeoutMinutes": 30,
+          "runtime": {
+            "transport": "regional_proxy",
+            "host": "https://runtime.example.com",
+            "baseUrl": "https://runtime.example.com/sandbox/sbx_123"
+          },
+          "exposedPorts": [
+            {
+              "port": 3000,
+              "auth": true,
+              "url": "https://3000-sbx_123.runtime.example.com/",
+              "browserUrl": "https://3000-sbx_123.runtime.example.com/_hb/auth?grant=test&next=%2F",
+              "browserUrlExpiresAt": "2026-03-12T02:00:00Z"
+            }
+          ],
+          "network": {
+            "allowInternetAccess": false,
+            "allowOut": [
+              "1.1.1.1"
+            ],
+            "denyOut": [
+              "0.0.0.0/0"
+            ]
+          },
+          "token": "tok",
+          "tokenExpiresAt": "2026-03-12T01:00:00Z"
+        }
+      }
+    ],
+    "expectedResult": {
+      "id": "sbx_123",
+      "teamId": "team_1",
+      "status": "active",
+      "startTime": 123,
+      "createdAt": "2026-03-12T00:00:00Z",
+      "updatedAt": "2026-03-12T00:00:01Z",
+      "dataConsumed": 1,
+      "proxyDataConsumed": 2,
+      "usageType": "sandbox",
+      "creditsUsed": 0.1,
+      "region": "us",
+      "sessionUrl": "https://example.com/session",
+      "duration": 10,
+      "proxyBytesUsed": 3,
+      "cpu": 2,
+      "memoryMiB": 2048,
+      "diskMiB": 8192,
+      "timeoutMinutes": 30,
+      "runtime": {
+        "transport": "regional_proxy",
+        "host": "https://runtime.example.com",
+        "baseUrl": "https://runtime.example.com/sandbox/sbx_123"
+      },
+      "exposedPorts": [
+        {
+          "port": 3000,
+          "auth": true,
+          "url": "https://3000-sbx_123.runtime.example.com/",
+          "browserUrl": "https://3000-sbx_123.runtime.example.com/_hb/auth?grant=test&next=%2F",
+          "browserUrlExpiresAt": "2026-03-12T02:00:00Z"
+        }
+      ],
+      "network": {
+        "allowInternetAccess": false,
+        "allowOut": [
+          "1.1.1.1"
+        ],
+        "denyOut": [
+          "0.0.0.0/0"
+        ]
+      },
+      "token": "tok",
+      "tokenExpiresAt": "2026-03-12T01:00:00Z"
+    }
+  },
+  {
+    "name": "sandboxes.get 3",
+    "subject": "sandboxes",
+    "nodeMethod": "get",
+    "nodeArgs": [
+      "sbx_123"
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/api/sandbox/sbx_123",
+        "query": {},
+        "body": null,
+        "reply": {
+          "id": "sbx_123",
+          "teamId": "team_1",
+          "status": "active",
+          "endTime": null,
+          "startTime": 123,
+          "createdAt": "2026-03-12T00:00:00Z",
+          "updatedAt": "2026-03-12T00:00:01Z",
+          "closeReason": null,
+          "dataConsumed": 1,
+          "proxyDataConsumed": 2,
+          "usageType": "sandbox",
+          "jobId": null,
+          "launchState": null,
+          "creditsUsed": 0.1,
+          "region": "us",
+          "sessionUrl": "https://example.com/session",
+          "duration": 10,
+          "proxyBytesUsed": 3,
+          "vcpus": 2,
+          "memMiB": 2048,
+          "diskSizeMiB": 8192,
+          "timeoutMinutes": 30,
+          "runtime": {
+            "transport": "regional_proxy",
+            "host": "https://runtime.example.com",
+            "baseUrl": "https://runtime.example.com/sandbox/sbx_123"
+          },
+          "exposedPorts": [
+            {
+              "port": 3000,
+              "auth": true,
+              "url": "https://3000-sbx_123.runtime.example.com/",
+              "browserUrl": "https://3000-sbx_123.runtime.example.com/_hb/auth?grant=test&next=%2F",
+              "browserUrlExpiresAt": "2026-03-12T02:00:00Z"
+            }
+          ],
+          "network": {
+            "allowInternetAccess": false,
+            "allowOut": [
+              "1.1.1.1"
+            ],
+            "denyOut": [
+              "0.0.0.0/0"
+            ]
+          },
+          "token": "tok",
+          "tokenExpiresAt": "2026-03-12T01:00:00Z"
+        }
+      }
+    ],
+    "expectedResult": {
+      "id": "sbx_123",
+      "teamId": "team_1",
+      "status": "active",
+      "startTime": 123,
+      "createdAt": "2026-03-12T00:00:00Z",
+      "updatedAt": "2026-03-12T00:00:01Z",
+      "dataConsumed": 1,
+      "proxyDataConsumed": 2,
+      "usageType": "sandbox",
+      "creditsUsed": 0.1,
+      "region": "us",
+      "sessionUrl": "https://example.com/session",
+      "duration": 10,
+      "proxyBytesUsed": 3,
+      "cpu": 2,
+      "memoryMiB": 2048,
+      "diskMiB": 8192,
+      "timeoutMinutes": 30,
+      "runtime": {
+        "transport": "regional_proxy",
+        "host": "https://runtime.example.com",
+        "baseUrl": "https://runtime.example.com/sandbox/sbx_123"
+      },
+      "exposedPorts": [
+        {
+          "port": 3000,
+          "auth": true,
+          "url": "https://3000-sbx_123.runtime.example.com/",
+          "browserUrl": "https://3000-sbx_123.runtime.example.com/_hb/auth?grant=test&next=%2F",
+          "browserUrlExpiresAt": "2026-03-12T02:00:00Z"
+        }
+      ],
+      "network": {
+        "allowInternetAccess": false,
+        "allowOut": [
+          "1.1.1.1"
+        ],
+        "denyOut": [
+          "0.0.0.0/0"
+        ]
+      },
+      "token": "tok",
+      "tokenExpiresAt": "2026-03-12T01:00:00Z"
+    }
+  },
+  {
+    "name": "sandboxes.stop 4",
+    "subject": "sandboxes",
+    "nodeMethod": "stop",
+    "nodeArgs": [
+      "sbx_123"
+    ],
+    "requests": [
+      {
+        "method": "PUT",
+        "path": "/api/sandbox/sbx_123/stop",
+        "query": {},
+        "body": null,
+        "reply": {
+          "success": true
+        }
+      }
+    ],
+    "expectedResult": {
+      "success": true
+    }
+  },
+  {
+    "name": "sandboxes.list 5",
+    "subject": "sandboxes",
+    "nodeMethod": "list",
+    "nodeArgs": [
+      {}
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/api/sandboxes",
+        "query": {
+          "page": [
+            "1"
+          ],
+          "limit": [
+            "10"
+          ]
+        },
+        "body": null,
+        "reply": {
+          "sandboxes": [
+            {
+              "id": "sbx_123",
+              "teamId": "team_1",
+              "status": "active",
+              "endTime": null,
+              "startTime": 123,
+              "createdAt": "2026-03-12T00:00:00Z",
+              "updatedAt": "2026-03-12T00:00:01Z",
+              "closeReason": null,
+              "dataConsumed": 1,
+              "proxyDataConsumed": 2,
+              "usageType": "sandbox",
+              "jobId": null,
+              "launchState": null,
+              "creditsUsed": 0.1,
+              "region": "us",
+              "sessionUrl": "https://example.com/session",
+              "duration": 10,
+              "proxyBytesUsed": 3,
+              "vcpus": 2,
+              "memMiB": 2048,
+              "diskSizeMiB": 8192,
+              "runtime": {
+                "transport": "regional_proxy",
+                "host": "https://runtime.example.com",
+                "baseUrl": "https://runtime.example.com/sandbox/sbx_123"
+              },
+              "exposedPorts": [
+                {
+                  "port": 3000,
+                  "auth": false,
+                  "url": "https://3000-sbx_123.runtime.example.com/",
+                  "browserUrl": "https://3000-sbx_123.runtime.example.com/"
+                }
+              ],
+              "network": {
+                "allowInternetAccess": true,
+                "allowOut": [],
+                "denyOut": []
+              }
+            }
+          ],
+          "totalCount": 1,
+          "page": 2,
+          "perPage": 5
+        }
+      }
+    ],
+    "expectedResult": {
+      "sandboxes": [
+        {
+          "id": "sbx_123",
+          "teamId": "team_1",
+          "status": "active",
+          "startTime": 123,
+          "createdAt": "2026-03-12T00:00:00Z",
+          "updatedAt": "2026-03-12T00:00:01Z",
+          "dataConsumed": 1,
+          "proxyDataConsumed": 2,
+          "usageType": "sandbox",
+          "creditsUsed": 0.1,
+          "region": "us",
+          "sessionUrl": "https://example.com/session",
+          "duration": 10,
+          "proxyBytesUsed": 3,
+          "cpu": 2,
+          "memoryMiB": 2048,
+          "diskMiB": 8192,
+          "runtime": {
+            "transport": "regional_proxy",
+            "host": "https://runtime.example.com",
+            "baseUrl": "https://runtime.example.com/sandbox/sbx_123"
+          },
+          "exposedPorts": [
+            {
+              "port": 3000,
+              "auth": false,
+              "url": "https://3000-sbx_123.runtime.example.com/",
+              "browserUrl": "https://3000-sbx_123.runtime.example.com/"
+            }
+          ],
+          "network": {
+            "allowInternetAccess": true,
+            "allowOut": [],
+            "denyOut": []
+          }
+        }
+      ],
+      "totalCount": 1,
+      "page": 2,
+      "perPage": 5
+    }
+  },
+  {
+    "name": "sandboxes.list 6",
+    "subject": "sandboxes",
+    "nodeMethod": "list",
+    "nodeArgs": [
+      {
+        "status": "close-error",
+        "start": 100,
+        "end": 200,
+        "search": "x y",
+        "page": 2,
+        "limit": 5
+      }
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/api/sandboxes",
+        "query": {
+          "status": [
+            "close-error"
+          ],
+          "page": [
+            "2"
+          ],
+          "limit": [
+            "5"
+          ],
+          "start": [
+            "100"
+          ],
+          "end": [
+            "200"
+          ],
+          "search": [
+            "x y"
+          ]
+        },
+        "body": null,
+        "reply": {
+          "sandboxes": [
+            {
+              "id": "sbx_123",
+              "teamId": "team_1",
+              "status": "active",
+              "endTime": null,
+              "startTime": 123,
+              "createdAt": "2026-03-12T00:00:00Z",
+              "updatedAt": "2026-03-12T00:00:01Z",
+              "closeReason": null,
+              "dataConsumed": 1,
+              "proxyDataConsumed": 2,
+              "usageType": "sandbox",
+              "jobId": null,
+              "launchState": null,
+              "creditsUsed": 0.1,
+              "region": "us",
+              "sessionUrl": "https://example.com/session",
+              "duration": 10,
+              "proxyBytesUsed": 3,
+              "vcpus": 2,
+              "memMiB": 2048,
+              "diskSizeMiB": 8192,
+              "runtime": {
+                "transport": "regional_proxy",
+                "host": "https://runtime.example.com",
+                "baseUrl": "https://runtime.example.com/sandbox/sbx_123"
+              },
+              "exposedPorts": [
+                {
+                  "port": 3000,
+                  "auth": false,
+                  "url": "https://3000-sbx_123.runtime.example.com/",
+                  "browserUrl": "https://3000-sbx_123.runtime.example.com/"
+                }
+              ],
+              "network": {
+                "allowInternetAccess": true,
+                "allowOut": [],
+                "denyOut": []
+              }
+            }
+          ],
+          "totalCount": 1,
+          "page": 2,
+          "perPage": 5
+        }
+      }
+    ],
+    "expectedResult": {
+      "sandboxes": [
+        {
+          "id": "sbx_123",
+          "teamId": "team_1",
+          "status": "active",
+          "startTime": 123,
+          "createdAt": "2026-03-12T00:00:00Z",
+          "updatedAt": "2026-03-12T00:00:01Z",
+          "dataConsumed": 1,
+          "proxyDataConsumed": 2,
+          "usageType": "sandbox",
+          "creditsUsed": 0.1,
+          "region": "us",
+          "sessionUrl": "https://example.com/session",
+          "duration": 10,
+          "proxyBytesUsed": 3,
+          "cpu": 2,
+          "memoryMiB": 2048,
+          "diskMiB": 8192,
+          "runtime": {
+            "transport": "regional_proxy",
+            "host": "https://runtime.example.com",
+            "baseUrl": "https://runtime.example.com/sandbox/sbx_123"
+          },
+          "exposedPorts": [
+            {
+              "port": 3000,
+              "auth": false,
+              "url": "https://3000-sbx_123.runtime.example.com/",
+              "browserUrl": "https://3000-sbx_123.runtime.example.com/"
+            }
+          ],
+          "network": {
+            "allowInternetAccess": true,
+            "allowOut": [],
+            "denyOut": []
+          }
+        }
+      ],
+      "totalCount": 1,
+      "page": 2,
+      "perPage": 5
+    }
+  },
+  {
+    "name": "sandboxes.list_images 7",
+    "subject": "sandboxes",
+    "nodeMethod": "listImages",
+    "nodeArgs": [
+      {}
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/api/images",
+        "query": {},
+        "body": null,
+        "reply": {
+          "images": [
+            {
+              "id": "img_123",
+              "imageName": "node",
+              "namespace": "team_1",
+              "source": "registry",
+              "imageInit": {
+                "args": [
+                  "node",
+                  "server.js"
+                ]
+              },
+              "uploaded": true,
+              "createdAt": "2026-03-12T00:00:00Z",
+              "updatedAt": "2026-03-12T00:00:01Z"
+            }
+          ],
+          "totalCount": 1,
+          "page": 2,
+          "perPage": 5
+        }
+      }
+    ],
+    "expectedResult": {
+      "images": [
+        {
+          "id": "img_123",
+          "imageName": "node",
+          "namespace": "team_1",
+          "source": "registry",
+          "imageInit": {
+            "args": [
+              "node",
+              "server.js"
+            ]
+          },
+          "uploaded": true,
+          "createdAt": "2026-03-12T00:00:00Z",
+          "updatedAt": "2026-03-12T00:00:01Z"
+        }
+      ],
+      "totalCount": 1,
+      "page": 2,
+      "perPage": 5
+    }
+  },
+  {
+    "name": "sandboxes.list_images 8",
+    "subject": "sandboxes",
+    "nodeMethod": "listImages",
+    "nodeArgs": [
+      {
+        "search": "node",
+        "source": [
+          "team",
+          "public"
+        ],
+        "page": 2,
+        "limit": 5
+      }
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/api/images",
+        "query": {
+          "page": [
+            "2"
+          ],
+          "limit": [
+            "5"
+          ],
+          "search": [
+            "node"
+          ],
+          "source": [
+            "team",
+            "public"
+          ]
+        },
+        "body": null,
+        "reply": {
+          "images": [
+            {
+              "id": "img_123",
+              "imageName": "node",
+              "namespace": "team_1",
+              "source": "registry",
+              "imageInit": {
+                "args": [
+                  "node",
+                  "server.js"
+                ]
+              },
+              "uploaded": true,
+              "createdAt": "2026-03-12T00:00:00Z",
+              "updatedAt": "2026-03-12T00:00:01Z"
+            }
+          ],
+          "totalCount": 1,
+          "page": 2,
+          "perPage": 5
+        }
+      }
+    ],
+    "expectedResult": {
+      "images": [
+        {
+          "id": "img_123",
+          "imageName": "node",
+          "namespace": "team_1",
+          "source": "registry",
+          "imageInit": {
+            "args": [
+              "node",
+              "server.js"
+            ]
+          },
+          "uploaded": true,
+          "createdAt": "2026-03-12T00:00:00Z",
+          "updatedAt": "2026-03-12T00:00:01Z"
+        }
+      ],
+      "totalCount": 1,
+      "page": 2,
+      "perPage": 5
+    }
+  },
+  {
+    "name": "sandboxes.delete_image 9",
+    "subject": "sandboxes",
+    "nodeMethod": "deleteImage",
+    "nodeArgs": [
+      "img_123"
+    ],
+    "requests": [
+      {
+        "method": "DELETE",
+        "path": "/api/images/img_123",
+        "query": {},
+        "body": null,
+        "reply": {
+          "deleted": true,
+          "id": "img_123",
+          "imageName": "node",
+          "uploaded": true
+        }
+      }
+    ],
+    "expectedResult": {
+      "deleted": true,
+      "id": "img_123",
+      "imageName": "node",
+      "uploaded": true
+    }
+  },
+  {
+    "name": "sandboxes.list_snapshots 10",
+    "subject": "sandboxes",
+    "nodeMethod": "listSnapshots",
+    "nodeArgs": [
+      {
+        "status": "created",
+        "imageName": "node",
+        "limit": 100
+      }
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/api/snapshots",
+        "query": {
+          "status": [
+            "created"
+          ],
+          "limit": [
+            "100"
+          ],
+          "imageName": [
+            "node"
+          ]
+        },
+        "body": null,
+        "reply": {
+          "snapshots": [
+            {
+              "id": "snap_123",
+              "snapshotName": "snapshot-1",
+              "namespace": "team_1",
+              "imageNamespace": "team_1",
+              "imageName": "node",
+              "imageId": "img_123",
+              "status": "created",
+              "vcpus": 2,
+              "memMiB": 2048,
+              "diskSizeMiB": 8192,
+              "compatibilityTag": null,
+              "metadata": {},
+              "uploaded": true,
+              "createdAt": "2026-03-12T00:00:00Z",
+              "updatedAt": "2026-03-12T00:00:01Z"
+            }
+          ],
+          "totalCount": 1,
+          "page": 2,
+          "perPage": 5
+        }
+      }
+    ],
+    "expectedResult": {
+      "snapshots": [
+        {
+          "id": "snap_123",
+          "snapshotName": "snapshot-1",
+          "namespace": "team_1",
+          "imageNamespace": "team_1",
+          "imageName": "node",
+          "imageId": "img_123",
+          "status": "created",
+          "vcpus": 2,
+          "memMiB": 2048,
+          "diskSizeMiB": 8192,
+          "metadata": {},
+          "uploaded": true,
+          "createdAt": "2026-03-12T00:00:00Z",
+          "updatedAt": "2026-03-12T00:00:01Z"
+        }
+      ],
+      "totalCount": 1,
+      "page": 2,
+      "perPage": 5
+    }
+  },
+  {
+    "name": "sandboxes.get_snapshot 11",
+    "subject": "sandboxes",
+    "nodeMethod": "getSnapshot",
+    "nodeArgs": [
+      "sid"
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/api/snapshots/sid",
+        "query": {},
+        "body": null,
+        "reply": {
+          "snapshot": {
+            "id": "snap_123",
+            "snapshotName": "snapshot-1",
+            "namespace": "team_1",
+            "imageNamespace": "team_1",
+            "imageName": "node",
+            "imageId": "img_123",
+            "status": "created",
+            "vcpus": 2,
+            "memMiB": 2048,
+            "diskSizeMiB": 8192,
+            "compatibilityTag": null,
+            "metadata": {},
+            "uploaded": true,
+            "createdAt": "2026-03-12T00:00:00Z",
+            "updatedAt": "2026-03-12T00:00:01Z"
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "id": "snap_123",
+      "snapshotName": "snapshot-1",
+      "namespace": "team_1",
+      "imageNamespace": "team_1",
+      "imageName": "node",
+      "imageId": "img_123",
+      "status": "created",
+      "vcpus": 2,
+      "memMiB": 2048,
+      "diskSizeMiB": 8192,
+      "metadata": {},
+      "uploaded": true,
+      "createdAt": "2026-03-12T00:00:00Z",
+      "updatedAt": "2026-03-12T00:00:01Z"
+    }
+  },
+  {
+    "name": "sandboxes.delete_snapshot 12",
+    "subject": "sandboxes",
+    "nodeMethod": "deleteSnapshot",
+    "nodeArgs": [
+      "sid"
+    ],
+    "requests": [
+      {
+        "method": "DELETE",
+        "path": "/api/snapshots/sid",
+        "query": {},
+        "body": null,
+        "reply": {
+          "deleted": true
+        }
+      }
+    ],
+    "expectedResult": {
+      "deleted": true
+    }
+  },
+  {
+    "name": "sandboxes.create_memory_snapshot 13",
+    "subject": "sandboxes",
+    "nodeMethod": "createMemorySnapshot",
+    "nodeArgs": [
+      "sbx_123",
+      {
+        "snapshotName": "snap"
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/api/sandbox/sbx_123/snapshot",
+        "query": {},
+        "body": {
+          "snapshotName": "snap"
+        },
+        "reply": {
+          "snapshotName": "snap",
+          "snapshotId": "sid",
+          "namespace": "ns",
+          "status": "ready",
+          "imageName": "img",
+          "imageId": "iid",
+          "imageNamespace": "ins"
+        }
+      }
+    ],
+    "expectedResult": {
+      "snapshotName": "snap",
+      "snapshotId": "sid",
+      "namespace": "ns",
+      "status": "ready",
+      "imageName": "img",
+      "imageId": "iid",
+      "imageNamespace": "ins"
+    }
+  },
+  {
+    "name": "sandboxes.update_network 14",
+    "subject": "sandboxes",
+    "nodeMethod": "updateNetwork",
+    "nodeArgs": [
+      "sbx_123",
+      {
+        "allowInternetAccess": true
+      }
+    ],
+    "requests": [
+      {
+        "method": "PUT",
+        "path": "/api/sandbox/sbx_123/network",
+        "query": {},
+        "body": {
+          "allowInternetAccess": true
+        },
+        "reply": {
+          "network": {
+            "allowInternetAccess": false,
+            "allowOut": [
+              "1.1.1.1"
+            ],
+            "denyOut": [
+              "0.0.0.0/0"
+            ]
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "network": {
+        "allowInternetAccess": false,
+        "allowOut": [
+          "1.1.1.1"
+        ],
+        "denyOut": [
+          "0.0.0.0/0"
+        ]
+      }
+    }
+  },
+  {
+    "name": "sandboxes.update_network 15",
+    "subject": "sandboxes",
+    "nodeMethod": "updateNetwork",
+    "nodeArgs": [
+      "sbx_123",
+      {
+        "allowOut": [],
+        "denyOut": []
+      }
+    ],
+    "requests": [
+      {
+        "method": "PUT",
+        "path": "/api/sandbox/sbx_123/network",
+        "query": {},
+        "body": {
+          "allowOut": [],
+          "denyOut": []
+        },
+        "reply": {
+          "network": {
+            "allowInternetAccess": false,
+            "allowOut": [
+              "1.1.1.1"
+            ],
+            "denyOut": [
+              "0.0.0.0/0"
+            ]
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "network": {
+        "allowInternetAccess": false,
+        "allowOut": [
+          "1.1.1.1"
+        ],
+        "denyOut": [
+          "0.0.0.0/0"
+        ]
+      }
+    }
+  },
+  {
+    "name": "sandboxes.update_network 16",
+    "subject": "sandboxes",
+    "nodeMethod": "updateNetwork",
+    "nodeArgs": [
+      "sbx_123",
+      {
+        "allowInternetAccess": false,
+        "allowOut": [
+          "example.com"
+        ]
+      }
+    ],
+    "requests": [
+      {
+        "method": "PUT",
+        "path": "/api/sandbox/sbx_123/network",
+        "query": {},
+        "body": {
+          "allowInternetAccess": false,
+          "allowOut": [
+            "example.com"
+          ]
+        },
+        "reply": {
+          "network": {
+            "allowInternetAccess": false,
+            "allowOut": [
+              "1.1.1.1"
+            ],
+            "denyOut": [
+              "0.0.0.0/0"
+            ]
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "network": {
+        "allowInternetAccess": false,
+        "allowOut": [
+          "1.1.1.1"
+        ],
+        "denyOut": [
+          "0.0.0.0/0"
+        ]
+      }
+    }
+  },
+  {
+    "name": "sandboxes.expose 17",
+    "subject": "sandboxes",
+    "nodeMethod": "expose",
+    "nodeArgs": [
+      "sbx_123",
+      {
+        "port": 3000,
+        "auth": false
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/api/sandbox/sbx_123/expose",
+        "query": {},
+        "body": {
+          "port": 3000,
+          "auth": false
+        },
+        "reply": {
+          "port": 3000,
+          "auth": true,
+          "url": "https://3000-sbx_123.runtime.example.com/",
+          "browserUrl": "https://3000-sbx_123.runtime.example.com/_hb/auth?grant=test&next=%2F",
+          "browserUrlExpiresAt": "2026-03-12T02:00:00Z"
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/sandbox/sbx_123",
+        "query": {},
+        "body": null,
+        "reply": {
+          "id": "sbx_123",
+          "teamId": "team_1",
+          "status": "active",
+          "endTime": null,
+          "startTime": 123,
+          "createdAt": "2026-03-12T00:00:00Z",
+          "updatedAt": "2026-03-12T00:00:01Z",
+          "closeReason": null,
+          "dataConsumed": 1,
+          "proxyDataConsumed": 2,
+          "usageType": "sandbox",
+          "jobId": null,
+          "launchState": null,
+          "creditsUsed": 0.1,
+          "region": "us",
+          "sessionUrl": "https://example.com/session",
+          "duration": 10,
+          "proxyBytesUsed": 3,
+          "vcpus": 2,
+          "memMiB": 2048,
+          "diskSizeMiB": 8192,
+          "timeoutMinutes": 30,
+          "runtime": {
+            "transport": "regional_proxy",
+            "host": "https://runtime.example.com",
+            "baseUrl": "https://runtime.example.com/sandbox/sbx_123"
+          },
+          "exposedPorts": [
+            {
+              "port": 3000,
+              "auth": true,
+              "url": "https://3000-sbx_123.runtime.example.com/",
+              "browserUrl": "https://3000-sbx_123.runtime.example.com/_hb/auth?grant=test&next=%2F",
+              "browserUrlExpiresAt": "2026-03-12T02:00:00Z"
+            }
+          ],
+          "network": {
+            "allowInternetAccess": false,
+            "allowOut": [
+              "1.1.1.1"
+            ],
+            "denyOut": [
+              "0.0.0.0/0"
+            ]
+          },
+          "token": "tok",
+          "tokenExpiresAt": "2026-03-12T01:00:00Z"
+        }
+      }
+    ],
+    "expectedResult": {
+      "port": 3000,
+      "auth": true,
+      "url": "https://3000-sbx_123.runtime.example.com/",
+      "browserUrl": "https://3000-sbx_123.runtime.example.com/_hb/auth?grant=test&next=%2F",
+      "browserUrlExpiresAt": "2026-03-12T02:00:00Z"
+    }
+  },
+  {
+    "name": "sandboxes.unexpose 18",
+    "subject": "sandboxes",
+    "nodeMethod": "unexpose",
+    "nodeArgs": [
+      "sbx_123",
+      3000
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/api/sandbox/sbx_123/unexpose",
+        "query": {},
+        "body": {
+          "port": 3000
+        },
+        "reply": {
+          "port": 3000,
+          "exposed": false
+        }
+      }
+    ],
+    "expectedResult": {
+      "port": 3000,
+      "exposed": false
+    }
+  },
+  {
+    "name": "sandboxes.create_image_build 19",
+    "subject": "sandboxes",
+    "nodeMethod": "createImageBuild",
+    "nodeArgs": [
+      {
+        "imageName": "app",
+        "inputSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "inputSizeBytes": 100
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/api/images/builds",
+        "query": {},
+        "body": {
+          "imageName": "app",
+          "inputSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "inputSizeBytes": 100
+        },
+        "reply": {
+          "build": {
+            "id": "build-123",
+            "teamId": "team_1",
+            "userId": "user_1",
+            "namespace": "team_1",
+            "imageName": "custom_node",
+            "imageId": "",
+            "status": "awaiting_upload",
+            "inputBucket": "bucket",
+            "inputKey": "input/key",
+            "inputSha256": "abc123",
+            "inputSizeBytes": 123,
+            "outputBucket": "out",
+            "outputKey": "output/key",
+            "vmId": "vm_123",
+            "errorCode": "",
+            "errorMessage": "",
+            "metadata": {},
+            "completedAt": null,
+            "createdAt": "2026-03-12T00:00:00Z",
+            "updatedAt": "2026-03-12T00:00:01Z"
+          },
+          "upload": {
+            "url": "https://upload.example.com/rootfs",
+            "method": "PUT",
+            "headers": {
+              "x-upload": "yes"
+            },
+            "objectKey": "input/key",
+            "expiresInSeconds": 900,
+            "maxUploadBytes": 1000
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "build": {
+        "id": "build-123",
+        "teamId": "team_1",
+        "userId": "user_1",
+        "namespace": "team_1",
+        "imageName": "custom_node",
+        "imageId": "",
+        "status": "awaiting_upload",
+        "inputBucket": "bucket",
+        "inputKey": "input/key",
+        "inputSha256": "abc123",
+        "inputSizeBytes": 123,
+        "outputBucket": "out",
+        "outputKey": "output/key",
+        "vmId": "vm_123",
+        "errorCode": "",
+        "errorMessage": "",
+        "metadata": {},
+        "createdAt": "2026-03-12T00:00:00Z",
+        "updatedAt": "2026-03-12T00:00:01Z"
+      },
+      "upload": {
+        "url": "https://upload.example.com/rootfs",
+        "method": "PUT",
+        "headers": {
+          "x-upload": "yes"
+        },
+        "objectKey": "input/key",
+        "expiresInSeconds": 900,
+        "maxUploadBytes": 1000
+      }
+    }
+  },
+  {
+    "name": "sandboxes.complete_image_build 20",
+    "subject": "sandboxes",
+    "nodeMethod": "completeImageBuild",
+    "nodeArgs": [
+      "b",
+      {
+        "inputSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "inputSizeBytes": 100,
+        "inputFormat": "rootfs_export_tar_gz"
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/api/images/builds/b/complete",
+        "query": {},
+        "body": {
+          "inputSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "inputSizeBytes": 100,
+          "inputFormat": "rootfs_export_tar_gz"
+        },
+        "reply": {
+          "build": {
+            "id": "build-123",
+            "teamId": "team_1",
+            "userId": "user_1",
+            "namespace": "team_1",
+            "imageName": "custom_node",
+            "imageId": "img_123",
+            "status": "upload_verified",
+            "inputBucket": "bucket",
+            "inputKey": "input/key",
+            "inputSha256": "abc123",
+            "inputSizeBytes": 123,
+            "outputBucket": "out",
+            "outputKey": "output/key",
+            "vmId": "vm_123",
+            "errorCode": "",
+            "errorMessage": "",
+            "metadata": {},
+            "completedAt": null,
+            "createdAt": "2026-03-12T00:00:00Z",
+            "updatedAt": "2026-03-12T00:00:01Z"
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "id": "build-123",
+      "teamId": "team_1",
+      "userId": "user_1",
+      "namespace": "team_1",
+      "imageName": "custom_node",
+      "imageId": "img_123",
+      "status": "upload_verified",
+      "inputBucket": "bucket",
+      "inputKey": "input/key",
+      "inputSha256": "abc123",
+      "inputSizeBytes": 123,
+      "outputBucket": "out",
+      "outputKey": "output/key",
+      "vmId": "vm_123",
+      "errorCode": "",
+      "errorMessage": "",
+      "metadata": {},
+      "createdAt": "2026-03-12T00:00:00Z",
+      "updatedAt": "2026-03-12T00:00:01Z"
+    }
+  },
+  {
+    "name": "sandboxes.get_image_build 21",
+    "subject": "sandboxes",
+    "nodeMethod": "getImageBuild",
+    "nodeArgs": [
+      "b"
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/api/images/builds/b",
+        "query": {},
+        "body": null,
+        "reply": {
+          "build": {
+            "id": "build-123",
+            "teamId": "team_1",
+            "userId": "user_1",
+            "namespace": "team_1",
+            "imageName": "custom_node",
+            "imageId": "img_123",
+            "status": "upload_verified",
+            "inputBucket": "bucket",
+            "inputKey": "input/key",
+            "inputSha256": "abc123",
+            "inputSizeBytes": 123,
+            "outputBucket": "out",
+            "outputKey": "output/key",
+            "vmId": "vm_123",
+            "errorCode": "",
+            "errorMessage": "",
+            "metadata": {},
+            "completedAt": null,
+            "createdAt": "2026-03-12T00:00:00Z",
+            "updatedAt": "2026-03-12T00:00:01Z"
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "id": "build-123",
+      "teamId": "team_1",
+      "userId": "user_1",
+      "namespace": "team_1",
+      "imageName": "custom_node",
+      "imageId": "img_123",
+      "status": "upload_verified",
+      "inputBucket": "bucket",
+      "inputKey": "input/key",
+      "inputSha256": "abc123",
+      "inputSizeBytes": 123,
+      "outputBucket": "out",
+      "outputKey": "output/key",
+      "vmId": "vm_123",
+      "errorCode": "",
+      "errorMessage": "",
+      "metadata": {},
+      "createdAt": "2026-03-12T00:00:00Z",
+      "updatedAt": "2026-03-12T00:00:01Z"
+    }
+  },
+  {
+    "name": "sandboxes.cancel_image_build 22",
+    "subject": "sandboxes",
+    "nodeMethod": "cancelImageBuild",
+    "nodeArgs": [
+      "b"
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/api/images/builds/b/cancel",
+        "query": {},
+        "body": null,
+        "reply": {
+          "build": {
+            "id": "build-123",
+            "teamId": "team_1",
+            "userId": "user_1",
+            "namespace": "team_1",
+            "imageName": "custom_node",
+            "imageId": "img_123",
+            "status": "upload_verified",
+            "inputBucket": "bucket",
+            "inputKey": "input/key",
+            "inputSha256": "abc123",
+            "inputSizeBytes": 123,
+            "outputBucket": "out",
+            "outputKey": "output/key",
+            "vmId": "vm_123",
+            "errorCode": "",
+            "errorMessage": "",
+            "metadata": {},
+            "completedAt": null,
+            "createdAt": "2026-03-12T00:00:00Z",
+            "updatedAt": "2026-03-12T00:00:01Z"
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "id": "build-123",
+      "teamId": "team_1",
+      "userId": "user_1",
+      "namespace": "team_1",
+      "imageName": "custom_node",
+      "imageId": "img_123",
+      "status": "upload_verified",
+      "inputBucket": "bucket",
+      "inputKey": "input/key",
+      "inputSha256": "abc123",
+      "inputSizeBytes": 123,
+      "outputBucket": "out",
+      "outputKey": "output/key",
+      "vmId": "vm_123",
+      "errorCode": "",
+      "errorMessage": "",
+      "metadata": {},
+      "createdAt": "2026-03-12T00:00:00Z",
+      "updatedAt": "2026-03-12T00:00:01Z"
+    }
+  },
+  {
+    "name": "sandboxes.list_image_builds 23",
+    "subject": "sandboxes",
+    "nodeMethod": "listImageBuilds",
+    "nodeArgs": [
+      {
+        "status": "canceled",
+        "limit": 0
+      }
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/api/images/builds",
+        "query": {
+          "status": [
+            "canceled"
+          ],
+          "limit": [
+            "0"
+          ]
+        },
+        "body": null,
+        "reply": {
+          "builds": [
+            {
+              "id": "build-0",
+              "teamId": "team_1",
+              "userId": "user_1",
+              "namespace": "team_1",
+              "imageName": "custom_node",
+              "imageId": "img_123",
+              "status": "awaiting_upload",
+              "inputBucket": "bucket",
+              "inputKey": "input/key",
+              "inputSha256": "abc123",
+              "inputSizeBytes": 123,
+              "outputBucket": "out",
+              "outputKey": "output/key",
+              "vmId": "vm_123",
+              "errorCode": "",
+              "errorMessage": "",
+              "metadata": {},
+              "completedAt": null,
+              "createdAt": "2026-03-12T00:00:00Z",
+              "updatedAt": "2026-03-12T00:00:01Z"
+            },
+            {
+              "id": "build-1",
+              "teamId": "team_1",
+              "userId": "user_1",
+              "namespace": "team_1",
+              "imageName": "custom_node",
+              "imageId": "img_123",
+              "status": "upload_verified",
+              "inputBucket": "bucket",
+              "inputKey": "input/key",
+              "inputSha256": "abc123",
+              "inputSizeBytes": 123,
+              "outputBucket": "out",
+              "outputKey": "output/key",
+              "vmId": "vm_123",
+              "errorCode": "",
+              "errorMessage": "",
+              "metadata": {},
+              "completedAt": null,
+              "createdAt": "2026-03-12T00:00:00Z",
+              "updatedAt": "2026-03-12T00:00:01Z"
+            },
+            {
+              "id": "build-2",
+              "teamId": "team_1",
+              "userId": "user_1",
+              "namespace": "team_1",
+              "imageName": "custom_node",
+              "imageId": "img_123",
+              "status": "dispatching",
+              "inputBucket": "bucket",
+              "inputKey": "input/key",
+              "inputSha256": "abc123",
+              "inputSizeBytes": 123,
+              "outputBucket": "out",
+              "outputKey": "output/key",
+              "vmId": "vm_123",
+              "errorCode": "",
+              "errorMessage": "",
+              "metadata": {},
+              "completedAt": null,
+              "createdAt": "2026-03-12T00:00:00Z",
+              "updatedAt": "2026-03-12T00:00:01Z"
+            },
+            {
+              "id": "build-3",
+              "teamId": "team_1",
+              "userId": "user_1",
+              "namespace": "team_1",
+              "imageName": "custom_node",
+              "imageId": "img_123",
+              "status": "building",
+              "inputBucket": "bucket",
+              "inputKey": "input/key",
+              "inputSha256": "abc123",
+              "inputSizeBytes": 123,
+              "outputBucket": "out",
+              "outputKey": "output/key",
+              "vmId": "vm_123",
+              "errorCode": "",
+              "errorMessage": "",
+              "metadata": {},
+              "completedAt": null,
+              "createdAt": "2026-03-12T00:00:00Z",
+              "updatedAt": "2026-03-12T00:00:01Z"
+            },
+            {
+              "id": "build-4",
+              "teamId": "team_1",
+              "userId": "user_1",
+              "namespace": "team_1",
+              "imageName": "custom_node",
+              "imageId": "img_123",
+              "status": "verifying",
+              "inputBucket": "bucket",
+              "inputKey": "input/key",
+              "inputSha256": "abc123",
+              "inputSizeBytes": 123,
+              "outputBucket": "out",
+              "outputKey": "output/key",
+              "vmId": "vm_123",
+              "errorCode": "",
+              "errorMessage": "",
+              "metadata": {},
+              "completedAt": null,
+              "createdAt": "2026-03-12T00:00:00Z",
+              "updatedAt": "2026-03-12T00:00:01Z"
+            },
+            {
+              "id": "build-5",
+              "teamId": "team_1",
+              "userId": "user_1",
+              "namespace": "team_1",
+              "imageName": "custom_node",
+              "imageId": "img_123",
+              "status": "completed",
+              "inputBucket": "bucket",
+              "inputKey": "input/key",
+              "inputSha256": "abc123",
+              "inputSizeBytes": 123,
+              "outputBucket": "out",
+              "outputKey": "output/key",
+              "vmId": "vm_123",
+              "errorCode": "",
+              "errorMessage": "",
+              "metadata": {},
+              "completedAt": null,
+              "createdAt": "2026-03-12T00:00:00Z",
+              "updatedAt": "2026-03-12T00:00:01Z"
+            },
+            {
+              "id": "build-6",
+              "teamId": "team_1",
+              "userId": "user_1",
+              "namespace": "team_1",
+              "imageName": "custom_node",
+              "imageId": "img_123",
+              "status": "failed",
+              "inputBucket": "bucket",
+              "inputKey": "input/key",
+              "inputSha256": "abc123",
+              "inputSizeBytes": 123,
+              "outputBucket": "out",
+              "outputKey": "output/key",
+              "vmId": "vm_123",
+              "errorCode": "",
+              "errorMessage": "",
+              "metadata": {},
+              "completedAt": null,
+              "createdAt": "2026-03-12T00:00:00Z",
+              "updatedAt": "2026-03-12T00:00:01Z"
+            },
+            {
+              "id": "build-7",
+              "teamId": "team_1",
+              "userId": "user_1",
+              "namespace": "team_1",
+              "imageName": "custom_node",
+              "imageId": "img_123",
+              "status": "canceled",
+              "inputBucket": "bucket",
+              "inputKey": "input/key",
+              "inputSha256": "abc123",
+              "inputSizeBytes": 123,
+              "outputBucket": "out",
+              "outputKey": "output/key",
+              "vmId": "vm_123",
+              "errorCode": "",
+              "errorMessage": "",
+              "metadata": {},
+              "completedAt": null,
+              "createdAt": "2026-03-12T00:00:00Z",
+              "updatedAt": "2026-03-12T00:00:01Z"
+            }
+          ]
+        }
+      }
+    ],
+    "expectedResult": {
+      "builds": [
+        {
+          "id": "build-0",
+          "teamId": "team_1",
+          "userId": "user_1",
+          "namespace": "team_1",
+          "imageName": "custom_node",
+          "imageId": "img_123",
+          "status": "awaiting_upload",
+          "inputBucket": "bucket",
+          "inputKey": "input/key",
+          "inputSha256": "abc123",
+          "inputSizeBytes": 123,
+          "outputBucket": "out",
+          "outputKey": "output/key",
+          "vmId": "vm_123",
+          "errorCode": "",
+          "errorMessage": "",
+          "metadata": {},
+          "createdAt": "2026-03-12T00:00:00Z",
+          "updatedAt": "2026-03-12T00:00:01Z"
+        },
+        {
+          "id": "build-1",
+          "teamId": "team_1",
+          "userId": "user_1",
+          "namespace": "team_1",
+          "imageName": "custom_node",
+          "imageId": "img_123",
+          "status": "upload_verified",
+          "inputBucket": "bucket",
+          "inputKey": "input/key",
+          "inputSha256": "abc123",
+          "inputSizeBytes": 123,
+          "outputBucket": "out",
+          "outputKey": "output/key",
+          "vmId": "vm_123",
+          "errorCode": "",
+          "errorMessage": "",
+          "metadata": {},
+          "createdAt": "2026-03-12T00:00:00Z",
+          "updatedAt": "2026-03-12T00:00:01Z"
+        },
+        {
+          "id": "build-2",
+          "teamId": "team_1",
+          "userId": "user_1",
+          "namespace": "team_1",
+          "imageName": "custom_node",
+          "imageId": "img_123",
+          "status": "dispatching",
+          "inputBucket": "bucket",
+          "inputKey": "input/key",
+          "inputSha256": "abc123",
+          "inputSizeBytes": 123,
+          "outputBucket": "out",
+          "outputKey": "output/key",
+          "vmId": "vm_123",
+          "errorCode": "",
+          "errorMessage": "",
+          "metadata": {},
+          "createdAt": "2026-03-12T00:00:00Z",
+          "updatedAt": "2026-03-12T00:00:01Z"
+        },
+        {
+          "id": "build-3",
+          "teamId": "team_1",
+          "userId": "user_1",
+          "namespace": "team_1",
+          "imageName": "custom_node",
+          "imageId": "img_123",
+          "status": "building",
+          "inputBucket": "bucket",
+          "inputKey": "input/key",
+          "inputSha256": "abc123",
+          "inputSizeBytes": 123,
+          "outputBucket": "out",
+          "outputKey": "output/key",
+          "vmId": "vm_123",
+          "errorCode": "",
+          "errorMessage": "",
+          "metadata": {},
+          "createdAt": "2026-03-12T00:00:00Z",
+          "updatedAt": "2026-03-12T00:00:01Z"
+        },
+        {
+          "id": "build-4",
+          "teamId": "team_1",
+          "userId": "user_1",
+          "namespace": "team_1",
+          "imageName": "custom_node",
+          "imageId": "img_123",
+          "status": "verifying",
+          "inputBucket": "bucket",
+          "inputKey": "input/key",
+          "inputSha256": "abc123",
+          "inputSizeBytes": 123,
+          "outputBucket": "out",
+          "outputKey": "output/key",
+          "vmId": "vm_123",
+          "errorCode": "",
+          "errorMessage": "",
+          "metadata": {},
+          "createdAt": "2026-03-12T00:00:00Z",
+          "updatedAt": "2026-03-12T00:00:01Z"
+        },
+        {
+          "id": "build-5",
+          "teamId": "team_1",
+          "userId": "user_1",
+          "namespace": "team_1",
+          "imageName": "custom_node",
+          "imageId": "img_123",
+          "status": "completed",
+          "inputBucket": "bucket",
+          "inputKey": "input/key",
+          "inputSha256": "abc123",
+          "inputSizeBytes": 123,
+          "outputBucket": "out",
+          "outputKey": "output/key",
+          "vmId": "vm_123",
+          "errorCode": "",
+          "errorMessage": "",
+          "metadata": {},
+          "createdAt": "2026-03-12T00:00:00Z",
+          "updatedAt": "2026-03-12T00:00:01Z"
+        },
+        {
+          "id": "build-6",
+          "teamId": "team_1",
+          "userId": "user_1",
+          "namespace": "team_1",
+          "imageName": "custom_node",
+          "imageId": "img_123",
+          "status": "failed",
+          "inputBucket": "bucket",
+          "inputKey": "input/key",
+          "inputSha256": "abc123",
+          "inputSizeBytes": 123,
+          "outputBucket": "out",
+          "outputKey": "output/key",
+          "vmId": "vm_123",
+          "errorCode": "",
+          "errorMessage": "",
+          "metadata": {},
+          "createdAt": "2026-03-12T00:00:00Z",
+          "updatedAt": "2026-03-12T00:00:01Z"
+        },
+        {
+          "id": "build-7",
+          "teamId": "team_1",
+          "userId": "user_1",
+          "namespace": "team_1",
+          "imageName": "custom_node",
+          "imageId": "img_123",
+          "status": "canceled",
+          "inputBucket": "bucket",
+          "inputKey": "input/key",
+          "inputSha256": "abc123",
+          "inputSizeBytes": 123,
+          "outputBucket": "out",
+          "outputKey": "output/key",
+          "vmId": "vm_123",
+          "errorCode": "",
+          "errorMessage": "",
+          "metadata": {},
+          "createdAt": "2026-03-12T00:00:00Z",
+          "updatedAt": "2026-03-12T00:00:01Z"
+        }
+      ]
+    }
+  },
+  {
+    "name": "sandboxes.reuse_docker_image 24",
+    "subject": "sandboxes",
+    "nodeMethod": "reuseDockerImage",
+    "nodeArgs": [
+      {
+        "imageName": "app",
+        "sourceImageDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "sourcePlatform": "linux/amd64",
+        "imageInit": {
+          "env": {
+            "A": "1"
+          },
+          "workingDir": "/app"
+        }
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/api/images/builds/reuse",
+        "query": {},
+        "body": {
+          "imageName": "app",
+          "sourceImageDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sourcePlatform": "linux/amd64",
+          "imageInit": {
+            "env": {
+              "A": "1"
+            },
+            "workingDir": "/app"
+          }
+        },
+        "reply": {
+          "hit": true,
+          "build": {
+            "id": "build-123",
+            "teamId": "team_1",
+            "userId": "user_1",
+            "namespace": "team_1",
+            "imageName": "custom_node",
+            "imageId": "img_123",
+            "status": "upload_verified",
+            "inputBucket": "bucket",
+            "inputKey": "input/key",
+            "inputSha256": "abc123",
+            "inputSizeBytes": 123,
+            "outputBucket": "out",
+            "outputKey": "output/key",
+            "vmId": "vm_123",
+            "errorCode": "",
+            "errorMessage": "",
+            "metadata": {},
+            "completedAt": null,
+            "createdAt": "2026-03-12T00:00:00Z",
+            "updatedAt": "2026-03-12T00:00:01Z"
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "hit": true,
+      "build": {
+        "id": "build-123",
+        "teamId": "team_1",
+        "userId": "user_1",
+        "namespace": "team_1",
+        "imageName": "custom_node",
+        "imageId": "img_123",
+        "status": "upload_verified",
+        "inputBucket": "bucket",
+        "inputKey": "input/key",
+        "inputSha256": "abc123",
+        "inputSizeBytes": 123,
+        "outputBucket": "out",
+        "outputKey": "output/key",
+        "vmId": "vm_123",
+        "errorCode": "",
+        "errorMessage": "",
+        "metadata": {},
+        "createdAt": "2026-03-12T00:00:00Z",
+        "updatedAt": "2026-03-12T00:00:01Z"
+      }
+    }
+  },
+  {
+    "name": "volumes.create 25",
+    "subject": "volumes",
+    "nodeMethod": "create",
+    "nodeArgs": [
+      {
+        "name": "cache"
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/api/volume",
+        "query": {},
+        "body": {
+          "name": "cache"
+        },
+        "reply": {
+          "id": "vol",
+          "name": "cache",
+          "size": "42",
+          "transferAmount": "7"
+        }
+      }
+    ],
+    "expectedResult": {
+      "id": "vol",
+      "name": "cache",
+      "size": 42,
+      "transferAmount": 7
+    }
+  },
+  {
+    "name": "volumes.get 26",
+    "subject": "volumes",
+    "nodeMethod": "get",
+    "nodeArgs": [
+      "vol"
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/api/volume/vol",
+        "query": {},
+        "body": null,
+        "reply": {
+          "id": "vol",
+          "name": "cache",
+          "size": "42",
+          "transferAmount": "7"
+        }
+      }
+    ],
+    "expectedResult": {
+      "id": "vol",
+      "name": "cache",
+      "size": 42,
+      "transferAmount": 7
+    }
+  },
+  {
+    "name": "volumes.list 27",
+    "subject": "volumes",
+    "nodeMethod": "list",
+    "nodeArgs": [
+      {}
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/api/volume",
+        "query": {},
+        "body": null,
+        "reply": {
+          "volumes": [
+            {
+              "id": "vol",
+              "name": "cache",
+              "size": "42",
+              "transferAmount": "7"
+            }
+          ],
+          "totalCount": 1,
+          "page": 1,
+          "perPage": 20
+        }
+      }
+    ],
+    "expectedResult": {
+      "volumes": [
+        {
+          "id": "vol",
+          "name": "cache",
+          "size": 42,
+          "transferAmount": 7
+        }
+      ],
+      "totalCount": 1,
+      "page": 1,
+      "perPage": 20
+    }
+  },
+  {
+    "name": "volumes.list 28",
+    "subject": "volumes",
+    "nodeMethod": "list",
+    "nodeArgs": [
+      {
+        "search": "cache",
+        "page": 0,
+        "limit": -1
+      }
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/api/volume",
+        "query": {
+          "page": [
+            "0"
+          ],
+          "limit": [
+            "-1"
+          ],
+          "search": [
+            "cache"
+          ]
+        },
+        "body": null,
+        "reply": {
+          "volumes": [
+            {
+              "id": "vol",
+              "name": "cache",
+              "size": "42",
+              "transferAmount": "7"
+            }
+          ],
+          "totalCount": 1,
+          "page": 1,
+          "perPage": 20
+        }
+      }
+    ],
+    "expectedResult": {
+      "volumes": [
+        {
+          "id": "vol",
+          "name": "cache",
+          "size": 42,
+          "transferAmount": 7
+        }
+      ],
+      "totalCount": 1,
+      "page": 1,
+      "perPage": 20
+    }
+  },
+  {
+    "name": "volumes.delete 29",
+    "subject": "volumes",
+    "nodeMethod": "delete",
+    "nodeArgs": [
+      "vol"
+    ],
+    "requests": [
+      {
+        "method": "DELETE",
+        "path": "/api/volume/vol",
+        "query": {},
+        "body": null,
+        "reply": {
+          "deleted": true,
+          "id": "vol",
+          "name": "cache"
+        }
+      }
+    ],
+    "expectedResult": {
+      "deleted": true,
+      "id": "vol",
+      "name": "cache"
+    }
+  },
+  {
+    "name": "processes.list 30",
+    "subject": "processes",
+    "nodeMethod": "list",
+    "nodeArgs": [
+      {
+        "status": [
+          "running",
+          "exited"
+        ],
+        "limit": 10,
+        "cursor": "cur",
+        "createdAfter": 100,
+        "createdBefore": 200
+      }
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/sandbox/processes",
+        "query": {
+          "status": [
+            "running,exited"
+          ],
+          "limit": [
+            "10"
+          ],
+          "cursor": [
+            "cur"
+          ],
+          "created_after": [
+            "100"
+          ],
+          "created_before": [
+            "200"
+          ]
+        },
+        "body": null,
+        "reply": {
+          "data": [],
+          "next_cursor": null
+        }
+      }
+    ],
+    "expectedResult": {
+      "data": []
+    }
+  },
+  {
+    "name": "processes.get 31",
+    "subject": "processes",
+    "nodeMethod": "get",
+    "nodeArgs": [
+      "p1"
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/sandbox/processes/p1",
+        "query": {},
+        "body": null,
+        "reply": {
+          "process": {
+            "id": "proc_1",
+            "status": "running",
+            "command": "bash",
+            "args": [
+              "-lc",
+              "echo hi"
+            ],
+            "cwd": "/tmp",
+            "pid": 123,
+            "exitCode": null,
+            "startedAt": 1,
+            "completedAt": null
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "id": "proc_1",
+      "status": "running",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "echo hi"
+      ],
+      "cwd": "/tmp",
+      "pid": 123,
+      "startedAt": 1
+    }
+  },
+  {
+    "name": "processes.get 32",
+    "subject": "processes",
+    "nodeMethod": "get",
+    "nodeArgs": [
+      "p1"
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/sandbox/processes/p1",
+        "query": {},
+        "body": null,
+        "reply": {
+          "process": {
+            "id": "proc_1",
+            "status": "running",
+            "command": "bash",
+            "args": [
+              "-lc",
+              "echo hi"
+            ],
+            "cwd": "/tmp",
+            "pid": 123,
+            "exitCode": null,
+            "startedAt": 1,
+            "completedAt": null,
+            "exit_code": 0,
+            "started_at": 0,
+            "completed_at": 2
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "id": "proc_1",
+      "status": "running",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "echo hi"
+      ],
+      "cwd": "/tmp",
+      "pid": 123,
+      "exitCode": 0,
+      "startedAt": 0,
+      "completedAt": 2
+    }
+  },
+  {
+    "name": "processes.list 33",
+    "subject": "processes",
+    "nodeMethod": "list",
+    "nodeArgs": [
+      {}
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/sandbox/processes",
+        "query": {},
+        "body": null,
+        "reply": {
+          "data": [
+            {
+              "id": "proc_1",
+              "status": "running",
+              "command": "bash",
+              "args": [
+                "-lc",
+                "echo hi"
+              ],
+              "cwd": "/tmp",
+              "pid": 123,
+              "exitCode": null,
+              "startedAt": 1,
+              "completedAt": null
+            }
+          ],
+          "next_cursor": "next"
+        }
+      }
+    ],
+    "expectedResult": {
+      "data": [
+        {
+          "id": "proc_1",
+          "status": "running",
+          "command": "bash",
+          "args": [
+            "-lc",
+            "echo hi"
+          ],
+          "cwd": "/tmp",
+          "pid": 123,
+          "startedAt": 1
+        }
+      ],
+      "nextCursor": "next"
+    }
+  },
+  {
+    "name": "processHandle.wait 34",
+    "subject": "processHandle",
+    "nodeMethod": "wait",
+    "nodeArgs": [
+      {
+        "timeoutMs": 250,
+        "timeoutSec": 3
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/sandbox/processes/proc_1/wait",
+        "query": {},
+        "body": {
+          "timeoutMs": 250,
+          "timeout_sec": 3
+        },
+        "reply": {
+          "result": {
+            "id": "proc_1",
+            "status": "exited",
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "",
+            "startedAt": 1,
+            "completedAt": 2,
+            "error": null
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "id": "proc_1",
+      "status": "exited",
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "",
+      "startedAt": 1,
+      "completedAt": 2
+    }
+  },
+  {
+    "name": "terminalHandle.wait 35",
+    "subject": "terminalHandle",
+    "nodeMethod": "wait",
+    "nodeArgs": [
+      {
+        "timeoutMs": 800,
+        "includeOutput": true
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/sandbox/pty/pty_1/wait",
+        "query": {},
+        "body": {
+          "timeoutMs": 800,
+          "includeOutput": true
+        },
+        "reply": {
+          "pty": {
+            "id": "pty_1",
+            "command": "bash",
+            "args": [
+              "-lc"
+            ],
+            "cwd": "/tmp",
+            "pid": 321,
+            "running": true,
+            "exitCode": null,
+            "error": null,
+            "timedOut": false,
+            "rows": 24,
+            "cols": 80,
+            "startedAt": 1,
+            "finishedAt": null,
+            "output": []
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "id": "pty_1",
+      "command": "bash",
+      "args": [
+        "-lc"
+      ],
+      "cwd": "/tmp",
+      "pid": 321,
+      "running": true,
+      "timedOut": false,
+      "rows": 24,
+      "cols": 80,
+      "startedAt": 1,
+      "output": []
+    }
+  },
+  {
+    "name": "terminalHandle.resize 36",
+    "subject": "terminalHandle",
+    "nodeMethod": "resize",
+    "nodeArgs": [
+      30,
+      100
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/sandbox/pty/pty_1/resize",
+        "query": {},
+        "body": {
+          "rows": 30,
+          "cols": 100
+        },
+        "reply": {
+          "pty": {
+            "id": "pty_1",
+            "command": "bash",
+            "args": [
+              "-lc"
+            ],
+            "cwd": "/tmp",
+            "pid": 321,
+            "running": true,
+            "exitCode": null,
+            "error": null,
+            "timedOut": false,
+            "rows": 24,
+            "cols": 80,
+            "startedAt": 1,
+            "finishedAt": null,
+            "output": []
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "id": "pty_1",
+      "command": "bash",
+      "args": [
+        "-lc"
+      ],
+      "cwd": "/tmp",
+      "pid": 321,
+      "running": true,
+      "timedOut": false,
+      "rows": 24,
+      "cols": 80,
+      "startedAt": 1,
+      "output": []
+    }
+  },
+  {
+    "name": "terminalHandle.signal 37",
+    "subject": "terminalHandle",
+    "nodeMethod": "signal",
+    "nodeArgs": [
+      "TERM"
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/sandbox/pty/pty_1/kill",
+        "query": {},
+        "body": {
+          "signal": "TERM"
+        },
+        "reply": {
+          "pty": {
+            "id": "pty_1",
+            "command": "bash",
+            "args": [
+              "-lc"
+            ],
+            "cwd": "/tmp",
+            "pid": 321,
+            "running": true,
+            "exitCode": null,
+            "error": null,
+            "timedOut": false,
+            "rows": 24,
+            "cols": 80,
+            "startedAt": 1,
+            "finishedAt": null,
+            "output": []
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "id": "pty_1",
+      "command": "bash",
+      "args": [
+        "-lc"
+      ],
+      "cwd": "/tmp",
+      "pid": 321,
+      "running": true,
+      "timedOut": false,
+      "rows": 24,
+      "cols": 80,
+      "startedAt": 1,
+      "output": []
+    }
+  },
+  {
+    "name": "terminal.create 38",
+    "subject": "terminal",
+    "nodeMethod": "create",
+    "nodeArgs": [
+      {
+        "command": "bash",
+        "useShell": false,
+        "rows": 24,
+        "cols": 80,
+        "timeoutMs": 1500
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/sandbox/pty",
+        "query": {},
+        "body": {
+          "command": "bash",
+          "useShell": false,
+          "rows": 24,
+          "cols": 80,
+          "timeoutMs": 1500
+        },
+        "reply": {
+          "pty": {
+            "id": "pty_1",
+            "command": "bash",
+            "args": [
+              "-lc"
+            ],
+            "cwd": "/tmp",
+            "pid": 321,
+            "running": true,
+            "exitCode": null,
+            "error": null,
+            "timedOut": false,
+            "rows": 24,
+            "cols": 80,
+            "startedAt": 1,
+            "finishedAt": null,
+            "output": []
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "id": "pty_1",
+      "command": "bash",
+      "args": [
+        "-lc"
+      ],
+      "cwd": "/tmp",
+      "pid": 321,
+      "running": true,
+      "timedOut": false,
+      "rows": 24,
+      "cols": 80,
+      "startedAt": 1,
+      "output": []
+    }
+  },
+  {
+    "name": "terminal.get 39",
+    "subject": "terminal",
+    "nodeMethod": "get",
+    "nodeArgs": [
+      "pty_1",
+      true
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/sandbox/pty/pty_1",
+        "query": {
+          "includeOutput": [
+            "True"
+          ]
+        },
+        "body": null,
+        "reply": {
+          "pty": {
+            "id": "pty_1",
+            "command": "bash",
+            "args": [
+              "-lc"
+            ],
+            "cwd": "/tmp",
+            "pid": 321,
+            "running": true,
+            "exitCode": null,
+            "error": null,
+            "timedOut": false,
+            "rows": 24,
+            "cols": 80,
+            "startedAt": 1,
+            "finishedAt": null,
+            "output": []
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "id": "pty_1",
+      "command": "bash",
+      "args": [
+        "-lc"
+      ],
+      "cwd": "/tmp",
+      "pid": 321,
+      "running": true,
+      "timedOut": false,
+      "rows": 24,
+      "cols": 80,
+      "startedAt": 1,
+      "output": []
+    }
+  },
+  {
+    "name": "files.write 40",
+    "subject": "files",
+    "nodeMethod": "write",
+    "nodeArgs": [
+      [
+        {
+          "path": "/tmp/a",
+          "data": "YQ==",
+          "encoding": "base64",
+          "append": true,
+          "mode": "600"
+        }
+      ]
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/sandbox/files/write",
+        "query": {},
+        "body": {
+          "files": [
+            {
+              "path": "/tmp/a",
+              "data": "YQ==",
+              "encoding": "base64",
+              "append": true,
+              "mode": "600"
+            }
+          ]
+        },
+        "reply": {
+          "files": [
+            {
+              "path": "/tmp/a.txt",
+              "name": "a.txt",
+              "type": "file"
+            }
+          ]
+        }
+      }
+    ],
+    "expectedResult": [
+      {
+        "path": "/tmp/a.txt",
+        "name": "a.txt",
+        "type": "file"
+      }
+    ]
+  },
+  {
+    "name": "files.move 41",
+    "subject": "files",
+    "nodeMethod": "move",
+    "nodeArgs": [
+      {
+        "source": "/a",
+        "destination": "/b",
+        "overwrite": false
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/sandbox/files/move",
+        "query": {},
+        "body": {
+          "overwrite": false,
+          "from": "/a",
+          "to": "/b"
+        },
+        "reply": {
+          "entry": {
+            "path": "/tmp/destination.txt",
+            "name": "destination.txt",
+            "type": "file",
+            "size": 14,
+            "mode": 420,
+            "permissions": "-rw-r--r--",
+            "owner": "root",
+            "group": "root",
+            "modifiedTime": 123,
+            "symlinkTarget": null
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "path": "/tmp/destination.txt",
+      "name": "destination.txt",
+      "type": "file",
+      "size": 14,
+      "mode": 420,
+      "permissions": "-rw-r--r--",
+      "owner": "root",
+      "group": "root",
+      "modifiedTime": "1970-01-01T00:00:00.123000Z"
+    }
+  },
+  {
+    "name": "files.get_watch 42",
+    "subject": "files",
+    "nodeMethod": "getWatch",
+    "nodeArgs": [
+      "watch_1",
+      true
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/sandbox/files/watch/watch_1",
+        "query": {
+          "includeEvents": [
+            "True"
+          ]
+        },
+        "body": null,
+        "reply": {
+          "watch": {
+            "id": "watch_1",
+            "path": "/tmp",
+            "recursive": false,
+            "active": true,
+            "error": null,
+            "createdAt": 1,
+            "stoppedAt": null,
+            "oldestSeq": 0,
+            "lastSeq": 0,
+            "eventCount": 0
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "id": "watch_1",
+      "path": "/tmp",
+      "recursive": false,
+      "active": true,
+      "createdAt": 1,
+      "oldestSeq": 0,
+      "lastSeq": 0,
+      "eventCount": 0
+    }
+  },
+  {
+    "name": "files.upload_url 43",
+    "subject": "files",
+    "nodeMethod": "uploadUrl",
+    "nodeArgs": [
+      "/tmp/a",
+      {
+        "expiresInSeconds": 60,
+        "oneTime": false
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/sandbox/files/presign-upload",
+        "query": {},
+        "body": {
+          "path": "/tmp/a",
+          "expiresInSeconds": 60,
+          "oneTime": false
+        },
+        "reply": {
+          "token": "upload-token",
+          "path": "/tmp/file.txt",
+          "method": "PUT",
+          "expiresAt": 123,
+          "url": "https://example.com/upload"
+        }
+      }
+    ],
+    "expectedResult": {
+      "token": "upload-token",
+      "path": "/tmp/file.txt",
+      "method": "PUT",
+      "expiresAt": 123,
+      "url": "https://example.com/upload"
+    }
+  },
+  {
+    "name": "files.download_url 44",
+    "subject": "files",
+    "nodeMethod": "downloadUrl",
+    "nodeArgs": [
+      "/tmp/a",
+      {
+        "expiresInSeconds": 30,
+        "oneTime": true
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/sandbox/files/presign-download",
+        "query": {},
+        "body": {
+          "path": "/tmp/a",
+          "expiresInSeconds": 30,
+          "oneTime": true
+        },
+        "reply": {
+          "token": "download-token",
+          "path": "/tmp/file.txt",
+          "method": "GET",
+          "expiresAt": 123,
+          "url": "https://example.com/download"
+        }
+      }
+    ],
+    "expectedResult": {
+      "token": "download-token",
+      "path": "/tmp/file.txt",
+      "method": "GET",
+      "expiresAt": 123,
+      "url": "https://example.com/download"
+    }
+  },
+  {
+    "name": "files.mkdir 45",
+    "subject": "files",
+    "nodeMethod": "mkdir",
+    "nodeArgs": [
+      "/dir",
+      {
+        "parents": false,
+        "mode": "750"
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/sandbox/files/mkdir",
+        "query": {},
+        "body": {
+          "path": "/dir",
+          "parents": false,
+          "mode": "750"
+        },
+        "reply": {
+          "created": true,
+          "path": "/dir"
+        }
+      }
+    ],
+    "expectedResult": true
+  },
+  {
+    "name": "files.delete 46",
+    "subject": "files",
+    "nodeMethod": "delete",
+    "nodeArgs": [
+      "/dir",
+      {
+        "recursive": false
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/sandbox/files/delete",
+        "query": {},
+        "body": {
+          "path": "/dir",
+          "recursive": false
+        },
+        "reply": {}
+      }
+    ],
+    "expectedResult": null
+  },
+  {
+    "name": "filesRoot.write 47",
+    "subject": "filesRoot",
+    "nodeMethod": "write",
+    "nodeArgs": [
+      [
+        {
+          "path": "/tmp/a",
+          "data": "YQ==",
+          "encoding": "base64",
+          "append": true,
+          "mode": "600"
+        }
+      ]
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/sandbox/files/write",
+        "query": {},
+        "body": {
+          "files": [
+            {
+              "path": "/tmp/a",
+              "data": "YQ==",
+              "encoding": "base64",
+              "append": true,
+              "mode": "600"
+            }
+          ],
+          "runAs": "root"
+        },
+        "reply": {
+          "files": [
+            {
+              "path": "/tmp/a.txt",
+              "name": "a.txt",
+              "type": "file"
+            }
+          ]
+        }
+      }
+    ],
+    "expectedResult": [
+      {
+        "path": "/tmp/a.txt",
+        "name": "a.txt",
+        "type": "file"
+      }
+    ]
+  },
+  {
+    "name": "filesRoot.move 48",
+    "subject": "filesRoot",
+    "nodeMethod": "move",
+    "nodeArgs": [
+      {
+        "source": "/a",
+        "destination": "/b",
+        "overwrite": false
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/sandbox/files/move",
+        "query": {},
+        "body": {
+          "overwrite": false,
+          "from": "/a",
+          "to": "/b",
+          "runAs": "root"
+        },
+        "reply": {
+          "entry": {
+            "path": "/tmp/destination.txt",
+            "name": "destination.txt",
+            "type": "file",
+            "size": 14,
+            "mode": 420,
+            "permissions": "-rw-r--r--",
+            "owner": "root",
+            "group": "root",
+            "modifiedTime": 123,
+            "symlinkTarget": null
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "path": "/tmp/destination.txt",
+      "name": "destination.txt",
+      "type": "file",
+      "size": 14,
+      "mode": 420,
+      "permissions": "-rw-r--r--",
+      "owner": "root",
+      "group": "root",
+      "modifiedTime": "1970-01-01T00:00:00.123000Z"
+    }
+  },
+  {
+    "name": "filesRoot.get_watch 49",
+    "subject": "filesRoot",
+    "nodeMethod": "getWatch",
+    "nodeArgs": [
+      "watch_1",
+      true
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/sandbox/files/watch/watch_1",
+        "query": {
+          "includeEvents": [
+            "True"
+          ]
+        },
+        "body": null,
+        "reply": {
+          "watch": {
+            "id": "watch_1",
+            "path": "/tmp",
+            "recursive": false,
+            "active": true,
+            "error": null,
+            "createdAt": 1,
+            "stoppedAt": null,
+            "oldestSeq": 0,
+            "lastSeq": 0,
+            "eventCount": 0
+          }
+        }
+      }
+    ],
+    "expectedResult": {
+      "id": "watch_1",
+      "path": "/tmp",
+      "recursive": false,
+      "active": true,
+      "createdAt": 1,
+      "oldestSeq": 0,
+      "lastSeq": 0,
+      "eventCount": 0
+    }
+  },
+  {
+    "name": "filesRoot.upload_url 50",
+    "subject": "filesRoot",
+    "nodeMethod": "uploadUrl",
+    "nodeArgs": [
+      "/tmp/a",
+      {
+        "expiresInSeconds": 60,
+        "oneTime": false
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/sandbox/files/presign-upload",
+        "query": {},
+        "body": {
+          "path": "/tmp/a",
+          "expiresInSeconds": 60,
+          "oneTime": false,
+          "runAs": "root"
+        },
+        "reply": {
+          "token": "upload-token",
+          "path": "/tmp/file.txt",
+          "method": "PUT",
+          "expiresAt": 123,
+          "url": "https://example.com/upload"
+        }
+      }
+    ],
+    "expectedResult": {
+      "token": "upload-token",
+      "path": "/tmp/file.txt",
+      "method": "PUT",
+      "expiresAt": 123,
+      "url": "https://example.com/upload"
+    }
+  },
+  {
+    "name": "filesRoot.download_url 51",
+    "subject": "filesRoot",
+    "nodeMethod": "downloadUrl",
+    "nodeArgs": [
+      "/tmp/a",
+      {
+        "expiresInSeconds": 30,
+        "oneTime": true
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/sandbox/files/presign-download",
+        "query": {},
+        "body": {
+          "path": "/tmp/a",
+          "expiresInSeconds": 30,
+          "oneTime": true,
+          "runAs": "root"
+        },
+        "reply": {
+          "token": "download-token",
+          "path": "/tmp/file.txt",
+          "method": "GET",
+          "expiresAt": 123,
+          "url": "https://example.com/download"
+        }
+      }
+    ],
+    "expectedResult": {
+      "token": "download-token",
+      "path": "/tmp/file.txt",
+      "method": "GET",
+      "expiresAt": 123,
+      "url": "https://example.com/download"
+    }
+  },
+  {
+    "name": "filesRoot.mkdir 52",
+    "subject": "filesRoot",
+    "nodeMethod": "mkdir",
+    "nodeArgs": [
+      "/dir",
+      {
+        "parents": false,
+        "mode": "750"
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/sandbox/files/mkdir",
+        "query": {},
+        "body": {
+          "path": "/dir",
+          "parents": false,
+          "mode": "750",
+          "runAs": "root"
+        },
+        "reply": {
+          "created": true,
+          "path": "/dir"
+        }
+      }
+    ],
+    "expectedResult": true
+  },
+  {
+    "name": "filesRoot.delete 53",
+    "subject": "filesRoot",
+    "nodeMethod": "delete",
+    "nodeArgs": [
+      "/dir",
+      {
+        "recursive": false
+      }
+    ],
+    "requests": [
+      {
+        "method": "POST",
+        "path": "/sandbox/files/delete",
+        "query": {},
+        "body": {
+          "path": "/dir",
+          "recursive": false,
+          "runAs": "root"
+        },
+        "reply": {}
+      }
+    ],
+    "expectedResult": null
+  }
+]

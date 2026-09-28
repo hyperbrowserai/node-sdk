@@ -3,15 +3,15 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import type { SandboxHandle } from "../../../src/services/sandboxes";
-import type { Sandbox } from "../../../src/types";
-import { createClient, testName } from "../../helpers/config";
+import type { SandboxHandle } from "../../src/services/sandboxes";
+import type { Sandbox } from "../../src/types";
+import { createClient, testName } from "../helpers/config";
 import {
   defaultSandboxParams,
   stopSandboxIfRunning,
   waitForCreatedSnapshot,
   waitForRuntimeReady,
-} from "../../helpers/sandbox";
+} from "../helpers/sandbox";
 
 const client = createClient();
 const SANDBOX_PAGE_LIMIT = 50;
@@ -71,7 +71,11 @@ describe.sequential("sandbox list e2e", () => {
   });
 
   afterAll(async () => {
-    await stopSandboxIfRunning(sandbox);
+    try {
+      await stopSandboxIfRunning(sandbox);
+    } finally {
+      if (memorySnapshot) await client.sandboxes.deleteSnapshot(memorySnapshot.snapshotId);
+    }
   });
 
   test("list returns the created sandbox in the active set", async () => {
@@ -129,7 +133,7 @@ describe.sequential("sandbox list e2e", () => {
     const createdSnapshots = await client.sandboxes.listSnapshots({
       status: "created",
       imageName: memorySnapshot!.imageName,
-      limit: 200,
+      limit: 100,
     });
 
     expect(createdSnapshots.snapshots.some((entry) => entry.id === listedSnapshot.id)).toBe(

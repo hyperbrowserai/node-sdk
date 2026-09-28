@@ -1,0 +1,6847 @@
+{
+  "reference": "python-sdk c36d3d9 / 1.9.1",
+  "ignore": [
+    {
+      "pattern": "**",
+      "path": "file",
+      "expected": true
+    },
+    {
+      "pattern": "**/",
+      "path": "file/",
+      "expected": true
+    },
+    {
+      "pattern": "**",
+      "path": "dir/file",
+      "expected": true
+    },
+    {
+      "pattern": "**/**",
+      "path": "dir/file",
+      "expected": true
+    },
+    {
+      "pattern": "dir/**",
+      "path": "dir/file",
+      "expected": true
+    },
+    {
+      "pattern": "dir/**",
+      "path": "dir/dir2/file",
+      "expected": true
+    },
+    {
+      "pattern": "**/dir",
+      "path": "dir",
+      "expected": true
+    },
+    {
+      "pattern": "**/dir",
+      "path": "dir/file",
+      "expected": true
+    },
+    {
+      "pattern": "**/dir2/*",
+      "path": "dir/dir2/file",
+      "expected": true
+    },
+    {
+      "pattern": "**/dir2/**",
+      "path": "dir/dir2/dir3/file",
+      "expected": true
+    },
+    {
+      "pattern": "**file",
+      "path": "file",
+      "expected": true
+    },
+    {
+      "pattern": "**file",
+      "path": "dir/dir/file",
+      "expected": true
+    },
+    {
+      "pattern": "**/file",
+      "path": "dir/dir/file",
+      "expected": true
+    },
+    {
+      "pattern": "**/file*",
+      "path": "dir/dir/file.txt",
+      "expected": true
+    },
+    {
+      "pattern": "**/file*txt",
+      "path": "dir/dir/file.txt",
+      "expected": true
+    },
+    {
+      "pattern": "**/file*.txt*",
+      "path": "dir/dir/file.txt",
+      "expected": true
+    },
+    {
+      "pattern": "**/**/*.txt",
+      "path": "dir/dir/file.txt",
+      "expected": true
+    },
+    {
+      "pattern": "**/**/*.txt2",
+      "path": "dir/dir/file.txt",
+      "expected": false
+    },
+    {
+      "pattern": "**/*.txt",
+      "path": "file.txt",
+      "expected": true
+    },
+    {
+      "pattern": "a**/*.txt",
+      "path": "a/dir/dir/file.txt",
+      "expected": true
+    },
+    {
+      "pattern": "a/*.txt",
+      "path": "a/dir/file.txt",
+      "expected": false
+    },
+    {
+      "pattern": "a/*.txt",
+      "path": "a/file.txt",
+      "expected": true
+    },
+    {
+      "pattern": "a/*.txt**",
+      "path": "a/file.txt",
+      "expected": true
+    },
+    {
+      "pattern": "a*",
+      "path": "ab/c",
+      "expected": true
+    },
+    {
+      "pattern": "a*/b",
+      "path": "abc/b",
+      "expected": true
+    },
+    {
+      "pattern": "a*/b",
+      "path": "a/c/b",
+      "expected": false
+    },
+    {
+      "pattern": "a*b*c*d*e*/f",
+      "path": "axbxcxdxexxx/f",
+      "expected": true
+    },
+    {
+      "pattern": "a*b*c*d*e*/f",
+      "path": "axbxcxdxe/xxx/f",
+      "expected": false
+    },
+    {
+      "pattern": "a*b?c*x",
+      "path": "abxbbxdbxebxczzx",
+      "expected": true
+    },
+    {
+      "pattern": "a*b?c*x",
+      "path": "abxbbxdbxebxczzy",
+      "expected": false
+    },
+    {
+      "pattern": "a[b-d]e",
+      "path": "ae",
+      "expected": false
+    },
+    {
+      "pattern": "a[b-d]e",
+      "path": "ace",
+      "expected": true
+    },
+    {
+      "pattern": "a[b-d]e",
+      "path": "aae",
+      "expected": false
+    },
+    {
+      "pattern": "a[^b-d]e",
+      "path": "aze",
+      "expected": true
+    },
+    {
+      "pattern": ".*",
+      "path": ".foo",
+      "expected": true
+    },
+    {
+      "pattern": ".*",
+      "path": "foo",
+      "expected": false
+    },
+    {
+      "pattern": "abc.def",
+      "path": "abcdef",
+      "expected": false
+    },
+    {
+      "pattern": "abc.def",
+      "path": "abc.def",
+      "expected": true
+    },
+    {
+      "pattern": "abc.def",
+      "path": "abcZdef",
+      "expected": false
+    },
+    {
+      "pattern": "abc?def",
+      "path": "abcZdef",
+      "expected": true
+    },
+    {
+      "pattern": "abc?def",
+      "path": "abcdef",
+      "expected": false
+    },
+    {
+      "pattern": "a\\*b",
+      "path": "a*b",
+      "expected": true
+    },
+    {
+      "pattern": "a\\*b",
+      "path": "ab",
+      "expected": false
+    },
+    {
+      "pattern": "a?b",
+      "path": "a☺b",
+      "expected": true
+    },
+    {
+      "pattern": "a[^a]b",
+      "path": "a☺b",
+      "expected": true
+    },
+    {
+      "pattern": "a???b",
+      "path": "a☺b",
+      "expected": false
+    },
+    {
+      "pattern": "a[^a][^a][^a]b",
+      "path": "a☺b",
+      "expected": false
+    },
+    {
+      "pattern": "[a-ζ]*",
+      "path": "α",
+      "expected": true
+    },
+    {
+      "pattern": "*[a-ζ]",
+      "path": "A",
+      "expected": false
+    },
+    {
+      "pattern": "a?b",
+      "path": "a/b",
+      "expected": false
+    },
+    {
+      "pattern": "a*b",
+      "path": "a/b",
+      "expected": false
+    },
+    {
+      "pattern": "[\\]a]",
+      "path": "]",
+      "expected": true
+    },
+    {
+      "pattern": "[\\-]",
+      "path": "-",
+      "expected": true
+    },
+    {
+      "pattern": "[x\\-]",
+      "path": "x",
+      "expected": true
+    },
+    {
+      "pattern": "[x\\-]",
+      "path": "-",
+      "expected": true
+    },
+    {
+      "pattern": "[x\\-]",
+      "path": "z",
+      "expected": false
+    },
+    {
+      "pattern": "[\\-x]",
+      "path": "x",
+      "expected": true
+    },
+    {
+      "pattern": "[\\-x]",
+      "path": "-",
+      "expected": true
+    },
+    {
+      "pattern": "[\\-x]",
+      "path": "a",
+      "expected": false
+    },
+    {
+      "pattern": "**/foo/bar",
+      "path": "foo/bar",
+      "expected": true
+    },
+    {
+      "pattern": "**/foo/bar",
+      "path": "dir/dir2/foo/bar",
+      "expected": true
+    },
+    {
+      "pattern": "abc/**",
+      "path": "abc",
+      "expected": false
+    },
+    {
+      "pattern": "abc/**",
+      "path": "abc/def/ghi",
+      "expected": true
+    },
+    {
+      "pattern": "**/.foo",
+      "path": ".foo",
+      "expected": true
+    },
+    {
+      "pattern": "**/.foo",
+      "path": "bar.foo",
+      "expected": false
+    },
+    {
+      "pattern": "a(b)c/def",
+      "path": "a(b)c/def",
+      "expected": true
+    },
+    {
+      "pattern": "a(b)c/def",
+      "path": "a(b)c/xyz",
+      "expected": false
+    },
+    {
+      "pattern": "a.|)$(}+{bc",
+      "path": "a.|)$(}+{bc",
+      "expected": true
+    },
+    {
+      "pattern": "dist/*.whl",
+      "path": "dist/proxy.py-2.4.0rc3.dev36+g08acad9-py3-none-any.whl",
+      "expected": true
+    },
+    {
+      "pattern": "**\n!util/docker/web\n",
+      "path": "util/docker/web/foo",
+      "expected": false
+    },
+    {
+      "pattern": "**\n!util/docker/web\nutil/docker/web/foo\n",
+      "path": "util/docker/web/foo",
+      "expected": true
+    },
+    {
+      "pattern": "**\n!dist/proxy.py-2.4.0rc3.dev36+g08acad9-py3-none-any.whl\n",
+      "path": "dist/proxy.py-2.4.0rc3.dev36+g08acad9-py3-none-any.whl",
+      "expected": false
+    },
+    {
+      "pattern": "**\n!dist/*.whl\n",
+      "path": "dist/package.whl",
+      "expected": false
+    },
+    {
+      "pattern": "docs\n!docs/README.md\n",
+      "path": "docs/README.md",
+      "expected": false
+    },
+    {
+      "pattern": "docs/*\n!docs/README.md\n",
+      "path": "docs/README.md",
+      "expected": false
+    },
+    {
+      "pattern": "a?b",
+      "path": "a😀b",
+      "expected": true
+    },
+    {
+      "pattern": "a??b",
+      "path": "a😀b",
+      "expected": false
+    },
+    {
+      "pattern": "a[^x]b",
+      "path": "a😀b",
+      "expected": true
+    },
+    {
+      "pattern": "a]b",
+      "path": "a]b",
+      "expected": true
+    }
+  ],
+  "invalidIgnore": [
+    "!",
+    "[",
+    "[^",
+    "[^bc",
+    "abc\\",
+    "[]a]",
+    "[-]",
+    "[x-]",
+    "[-x]",
+    "[a-b-c]"
+  ],
+  "dockerfile": [
+    {
+      "dockerfile": "FROM scratch AS source\nCOPY [\"one file\", \"two\", \"/dest/\"]\nCOPY --chown=1:1 --chmod=0755 dir /dir\nCOPY --from=source /generated /generated\n",
+      "groups": [
+        [
+          "one file",
+          "two"
+        ],
+        [
+          "dir"
+        ]
+      ],
+      "fallback": ""
+    },
+    {
+      "dockerfile": "# syntax=docker/dockerfile:1-labs\nFROM scratch\nCOPY --link --parents --exclude=*.tmp \\\n  quoted-dir \\\n  plain /dest/\n",
+      "groups": [
+        [
+          "quoted-dir",
+          "plain"
+        ]
+      ],
+      "fallback": ""
+    },
+    {
+      "dockerfile": "FROM scratch\nCOPY\tfile.txt\t/dest/\n",
+      "groups": [
+        [
+          "file.txt"
+        ]
+      ],
+      "fallback": ""
+    },
+    {
+      "dockerfile": "FROM scratch\nCOPY \"one file\" /dest/\n",
+      "groups": [
+        [
+          "one file"
+        ]
+      ],
+      "fallback": ""
+    },
+    {
+      "dockerfile": "FROM scratch\nADD local.tar /local/\nADD https://example.com/archive.tar /remote/\nADD https://example.com/archive.tar?version=1 /remote-query/\nADD git://example.com/repository /git/\nADD git@github.com:moby/buildkit.git /ssh-git/\n",
+      "groups": [
+        [
+          "local.tar"
+        ]
+      ],
+      "fallback": ""
+    },
+    {
+      "dockerfile": "FROM scratch\nADD assets:latest /colon/\nADD http:archive.tar /http-colon/\nADD oci-layout://example/image /unsupported-scheme/\n",
+      "groups": [
+        [
+          "assets:latest"
+        ],
+        [
+          "http:archive.tar"
+        ],
+        [
+          "oci-layout://example/image"
+        ]
+      ],
+      "fallback": ""
+    },
+    {
+      "dockerfile": "FROM scratch AS generated\nRUN --mount=type=bind,source=src,target=/src true\nRUN --mount=source=vendor,target=/vendor true\nRUN --mount=type=bind,target=/context true\nRUN --mount=type=bind,from=generated,source=/out,target=/out true\nRUN --mount=type=cache,target=/cache true\nRUN echo --mount=type=bind,source=not-a-builder-flag,target=/src\n",
+      "groups": [
+        [
+          "src"
+        ],
+        [
+          "vendor"
+        ],
+        [
+          "."
+        ]
+      ],
+      "fallback": ""
+    },
+    {
+      "dockerfile": "FROM scratch\nARG SOURCE=src\nCOPY $SOURCE /app\n",
+      "groups": [],
+      "fallback": "copy_source_requires_expansion"
+    },
+    {
+      "dockerfile": "FROM scratch\nADD ${SOURCE} /app\n",
+      "groups": [],
+      "fallback": "add_source_requires_expansion"
+    },
+    {
+      "dockerfile": "FROM scratch\nRUN --mount=type=bind,source=$SOURCE,target=/src true\n",
+      "groups": [],
+      "fallback": "run_bind_source_requires_expansion"
+    },
+    {
+      "dockerfile": "FROM scratch\nCOPY src/*.py /app\n",
+      "groups": [],
+      "fallback": "dockerfile_source_pattern"
+    },
+    {
+      "dockerfile": "FROM scratch\nCOPY [\"foo\\\\bar\", \"/app/\"]\n",
+      "groups": [],
+      "fallback": "dockerfile_source_path"
+    },
+    {
+      "dockerfile": "FROM scratch\nRUN --mount=type=bind,source=\"dir with space\",target=/src true\n",
+      "groups": [],
+      "fallback": "run_mount_parse_failed"
+    },
+    {
+      "dockerfile": "# syntax=example.com/acme/custom-frontend:v2\nFROM scratch\nCOPY src /app\n",
+      "groups": [],
+      "fallback": "custom_dockerfile_frontend"
+    },
+    {
+      "dockerfile": "FROM scratch\nCUSTOM source /app\n",
+      "groups": [],
+      "fallback": "dockerfile_instruction_parse_failed"
+    },
+    {
+      "dockerfile": "FROM scratch\nCOPY <<EOF /inline\nhello\nEOF\n",
+      "groups": [],
+      "fallback": "dockerfile_instruction_parse_failed"
+    },
+    {
+      "dockerfile": "# escape=`\nFROM scratch\nCOPY dir /dir\n",
+      "groups": [],
+      "fallback": "dockerfile_parse_failed"
+    },
+    {
+      "dockerfile": "FROM scratch\nCOPY dir \\\n# comment in continuation\n  /dir\n",
+      "groups": [],
+      "fallback": "dockerfile_parse_failed"
+    },
+    {
+      "dockerfile": "FROM scratch\nONBUILD ADD . /app/src\n",
+      "groups": [],
+      "fallback": ""
+    }
+  ],
+  "imageNames": [
+    {
+      "options": {
+        "source": "dockerfile",
+        "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "expected": "hb__dockerfile__2e909a01234f4fda__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "dockerfile",
+        "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "namePrefix": "custom"
+      },
+      "expected": "custom__dockerfile__2e909a01234f4fda__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "dockerfile",
+        "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "namePrefix": "xxxxxxxxxxxxxxxxxxxxx"
+      },
+      "expected": "xxxxxxxxxxxxxxxxxxxxx__dockerfile__2e909a01234f4fda__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "dockerfile",
+        "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "platform": " LINUX/AMD64 "
+      },
+      "expected": "hb__dockerfile__2e909a01234f4fda__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "dockerfile",
+        "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "platform": "linux/arm64"
+      },
+      "expected": "hb__dockerfile__216cdc4466268dd7__linux-arm64"
+    },
+    {
+      "options": {
+        "source": "dockerfile",
+        "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "imageConfigUser": " 1000 "
+      },
+      "expected": "hb__dockerfile__b9adcbbdcaa789aa__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "dockerfile",
+        "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "imageConfigUser": ""
+      },
+      "expected": "hb__dockerfile__f0235e0ad82226f7__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "dockerfile",
+        "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "imageInit": {}
+      },
+      "expected": "hb__dockerfile__2e909a01234f4fda__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "dockerfile",
+        "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "imageInit": {
+          "env": {}
+        }
+      },
+      "expected": "hb__dockerfile__6f1f77bfcc734d33__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "dockerfile",
+        "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "imageInit": {
+          "command": "start",
+          "args": [
+            "",
+            "hello"
+          ],
+          "workingDir": "/app"
+        }
+      },
+      "expected": "hb__dockerfile__05a9187e127c466e__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "dockerfile",
+        "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "imageInit": {
+          "env": {
+            "B": "2",
+            "A": "1"
+          }
+        }
+      },
+      "expected": "hb__dockerfile__2c4c2d93a5297d14__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "dockerfile",
+        "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "imageInit": {
+          "env": {
+            "10": "ten",
+            "2": "two",
+            "__proto__": "literal"
+          }
+        }
+      },
+      "expected": "hb__dockerfile__df6e54935a9ee163__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "dockerfile",
+        "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "imageInit": {
+          "env": {
+            "A": "😀ü",
+            "😀": "x",
+            "￿": "y"
+          }
+        }
+      },
+      "expected": "hb__dockerfile__e2a6a8ecd3e7b2f2__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "prebuilt",
+        "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "expected": "hb__prebuilt__6ea5c8031561e6b0__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "prebuilt",
+        "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "namePrefix": "custom"
+      },
+      "expected": "custom__prebuilt__6ea5c8031561e6b0__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "prebuilt",
+        "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "namePrefix": "xxxxxxxxxxxxxxxxxxxxx"
+      },
+      "expected": "xxxxxxxxxxxxxxxxxxxxx__prebuilt__6ea5c8031561e6b0__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "prebuilt",
+        "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "platform": " LINUX/AMD64 "
+      },
+      "expected": "hb__prebuilt__6ea5c8031561e6b0__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "prebuilt",
+        "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "platform": "linux/arm64"
+      },
+      "expected": "hb__prebuilt__6cd9387c7cbc0e3b__linux-arm64"
+    },
+    {
+      "options": {
+        "source": "prebuilt",
+        "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "imageConfigUser": " 1000 "
+      },
+      "expected": "hb__prebuilt__0254144f0f638ad0__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "prebuilt",
+        "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "imageConfigUser": ""
+      },
+      "expected": "hb__prebuilt__e6eec0b01940a658__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "prebuilt",
+        "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "imageInit": {}
+      },
+      "expected": "hb__prebuilt__6ea5c8031561e6b0__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "prebuilt",
+        "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "imageInit": {
+          "env": {}
+        }
+      },
+      "expected": "hb__prebuilt__b4799d919c6cb713__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "prebuilt",
+        "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "imageInit": {
+          "command": "start",
+          "args": [
+            "",
+            "hello"
+          ],
+          "workingDir": "/app"
+        }
+      },
+      "expected": "hb__prebuilt__786b9e442efdc52f__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "prebuilt",
+        "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "imageInit": {
+          "env": {
+            "B": "2",
+            "A": "1"
+          }
+        }
+      },
+      "expected": "hb__prebuilt__013167e02c1376d5__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "prebuilt",
+        "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "imageInit": {
+          "env": {
+            "10": "ten",
+            "2": "two",
+            "__proto__": "literal"
+          }
+        }
+      },
+      "expected": "hb__prebuilt__3f1bec1f768a10cd__linux-amd64"
+    },
+    {
+      "options": {
+        "source": "prebuilt",
+        "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "imageInit": {
+          "env": {
+            "A": "😀ü",
+            "😀": "x",
+            "￿": "y"
+          }
+        }
+      },
+      "expected": "hb__prebuilt__364af6943ace57b4__linux-amd64"
+    }
+  ],
+  "processes": [
+    {
+      "name": "UTF8 616263 split 0",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "YWJj",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 1
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "abc",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 1
+      }
+    },
+    {
+      "name": "UTF8 616263 split 1",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "YQ==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "YmM=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 2
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "abc",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 2
+      }
+    },
+    {
+      "name": "UTF8 616263 split 2",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "YWI=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "Yw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 2
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "abc",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 2
+      }
+    },
+    {
+      "name": "UTF8 616263 split 3",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "YQ==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "Yg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "Yw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 3
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "abc",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 3
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 0",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oKs8J+YgA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 1
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 1
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 1",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gqzwn5iA",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 2
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 2
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 2",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oI=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "rPCfmIA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 2
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 2
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 3",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "rPCfmIA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 3
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 3
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 4",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oKs",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "8J+YgA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 2
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 2
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 5",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gqw=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "8J+YgA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 3
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 3
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 6",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oI=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "rA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "8J+YgA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 3
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 3
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 7",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "rA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "8J+YgA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 8",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oKs8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "n5iA",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 2
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 2
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 9",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gqzw",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "n5iA",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 3
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 3
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 10",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oI=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "rPA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "n5iA",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 3
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 3
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 11",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "rPA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "n5iA",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 12",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oKs",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "n5iA",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 3
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 3
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 13",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gqw=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "n5iA",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 14",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oI=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "rA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "n5iA",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 15",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "rA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "n5iA",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 5
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 5
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 16",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oKs8J8=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "mIA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 2
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 2
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 17",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gqzwnw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "mIA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 3
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 3
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 18",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oI=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "rPCf",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "mIA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 3
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 3
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 19",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "rPCf",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "mIA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 20",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oKs",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "8J8=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "mIA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 3
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 3
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 21",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gqw=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "8J8=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "mIA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 22",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oI=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "rA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "8J8=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "mIA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 23",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "rA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "8J8=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "mIA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 5
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 5
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 24",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oKs8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "nw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "mIA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 3
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 3
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 25",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gqzw",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "nw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "mIA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 26",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oI=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "rPA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "nw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "mIA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 27",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "rPA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "nw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "mIA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 5
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 5
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 28",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oKs",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "nw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "mIA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 29",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gqw=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "nw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "mIA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 5
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 5
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 30",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oI=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "rA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "nw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "mIA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 5
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 5
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 31",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "rA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "nw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 6,
+            "stream": "stdout",
+            "data": "mIA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 6
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 6
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 32",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oKs8J+Y",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 2
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 2
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 33",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gqzwn5g=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 3
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 3
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 34",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oI=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "rPCfmA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 3
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 3
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 35",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "rPCfmA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 36",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oKs",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "8J+Y",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 3
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 3
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 37",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gqw=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "8J+Y",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 38",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oI=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "rA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "8J+Y",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 39",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "rA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "8J+Y",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 5
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 5
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 40",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oKs8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "n5g=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 3
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 3
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 41",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gqzw",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "n5g=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 42",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oI=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "rPA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "n5g=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 43",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "rPA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "n5g=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 5
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 5
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 44",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oKs",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "n5g=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 45",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gqw=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "n5g=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 5
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 5
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 46",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oI=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "rA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "n5g=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 5
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 5
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 47",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "rA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "n5g=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 6,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 6
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 6
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 48",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oKs8J8=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "mA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 3
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 3
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 49",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gqzwnw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "mA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 50",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oI=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "rPCf",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "mA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 51",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "rPCf",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "mA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 5
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 5
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 52",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oKs",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "8J8=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "mA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 53",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gqw=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "8J8=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "mA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 5
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 5
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 54",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oI=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "rA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "8J8=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "mA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 5
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 5
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 55",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "rA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "8J8=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "mA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 6,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 6
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 6
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 56",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oKs8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "nw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "mA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 4
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 4
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 57",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gqzw",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "nw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "mA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 5
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 5
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 58",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oI=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "rPA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "nw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "mA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 5
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 5
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 59",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "rPA=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "nw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "mA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 6,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 6
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 6
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 60",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oKs",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "nw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "mA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 5
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 5
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 61",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gqw=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "nw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "mA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 6,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 6
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 6
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 62",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4oI=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "rA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "nw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "mA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 6,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 6
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 6
+      }
+    },
+    {
+      "name": "UTF8 e282acf09f9880 split 63",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "rA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 4,
+            "stream": "stdout",
+            "data": "8A==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 5,
+            "stream": "stdout",
+            "data": "nw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 6,
+            "stream": "stdout",
+            "data": "mA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 7,
+            "stream": "stdout",
+            "data": "gA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 7
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "€😀",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 7
+      }
+    },
+    {
+      "name": "UTF8 ffe282 split 0",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "/+KC",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 1
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "��",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 1
+      }
+    },
+    {
+      "name": "UTF8 ffe282 split 1",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "/w==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "4oI=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 2
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "��",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 2
+      }
+    },
+    {
+      "name": "UTF8 ffe282 split 2",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "/+I=",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "gg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 2
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "��",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 2
+      }
+    },
+    {
+      "name": "UTF8 ffe282 split 3",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "/w==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "4g==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "gg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 3
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "��",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 3
+      }
+    },
+    {
+      "name": "system stderr interleave",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stderr",
+            "data": "YQ==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "system",
+            "data": "Yg==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 3,
+            "stream": "stdout",
+            "data": "Yw==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 3
+          }
+        }
+      ],
+      "limit": 100,
+      "expected": {
+        "stdout": "c",
+        "stderr": "ab",
+        "exitCode": 7,
+        "lastSeq": 3
+      }
+    },
+    {
+      "name": "gap",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 2,
+            "stream": "stdout",
+            "data": "eA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 2
+          }
+        }
+      ],
+      "limit": 100,
+      "error": {
+        "code": "incomplete_output",
+        "details": {
+          "process_id": "p",
+          "last_seq": 0
+        }
+      }
+    },
+    {
+      "name": "duplicate",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "eA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "eQ==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 1
+          }
+        }
+      ],
+      "limit": 100,
+      "error": {
+        "code": "incomplete_output",
+        "details": {
+          "process_id": "p",
+          "last_seq": 1
+        }
+      }
+    },
+    {
+      "name": "missing tail",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "eA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 2
+          }
+        }
+      ],
+      "limit": 100,
+      "error": {
+        "code": "incomplete_output",
+        "details": {
+          "process_id": "p",
+          "last_seq": 1
+        }
+      }
+    },
+    {
+      "name": "missing last seq",
+      "events": [
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "started_at": 1
+          }
+        }
+      ],
+      "limit": 100,
+      "error": {
+        "code": "incomplete_output",
+        "details": {
+          "process_id": "p",
+          "last_seq": 0
+        }
+      }
+    },
+    {
+      "name": "truncation",
+      "events": [
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 0,
+            "output_truncated": true
+          }
+        }
+      ],
+      "limit": 100,
+      "error": {
+        "code": "incomplete_output",
+        "details": {
+          "process_id": "p",
+          "last_seq": 0
+        }
+      }
+    },
+    {
+      "name": "limit exact",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "YWJj",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 1
+          }
+        }
+      ],
+      "limit": 3,
+      "expected": {
+        "stdout": "abc",
+        "stderr": "",
+        "exitCode": 7,
+        "lastSeq": 1
+      }
+    },
+    {
+      "name": "limit exceeded",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "stdout",
+            "data": "YWJjZA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 1
+          }
+        }
+      ],
+      "limit": 3,
+      "error": {
+        "code": "output_limit_exceeded",
+        "details": {
+          "process_id": "p",
+          "last_seq": 0
+        }
+      }
+    },
+    {
+      "name": "unknown stream",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "unknown",
+            "data": "eA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 1
+          }
+        }
+      ],
+      "limit": 100,
+      "error": {
+        "code": "incomplete_output",
+        "details": {
+          "process_id": "p",
+          "last_seq": 0
+        }
+      }
+    },
+    {
+      "name": "prototype stream",
+      "events": [
+        {
+          "event": "output",
+          "data": {
+            "seq": 1,
+            "stream": "toString",
+            "data": "eA==",
+            "encoding": "base64",
+            "timestamp": 1
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "id": "p",
+            "status": "exited",
+            "exit_code": 7,
+            "started_at": 1,
+            "completed_at": 2,
+            "last_seq": 1
+          }
+        }
+      ],
+      "limit": 100,
+      "error": {
+        "code": "incomplete_output",
+        "details": {
+          "process_id": "p",
+          "last_seq": 0
+        }
+      }
+    },
+    {
+      "name": "server error",
+      "events": [
+        {
+          "event": "error",
+          "data": {
+            "error": "failed",
+            "code": "receiver_failure"
+          }
+        }
+      ],
+      "limit": 100,
+      "error": {
+        "code": "receiver_failure",
+        "details": {
+          "process_id": "p",
+          "last_seq": 0
+        }
+      }
+    }
+  ],
+  "contexts": [
+    {
+      "name": "baseline full=False",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": false,
+      "expected": "c26690e11c2762f699266d403d8424c61e44a4cb0a853db88ee9e2c03cea80b9"
+    },
+    {
+      "name": "baseline full=True",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": true,
+      "expected": "ce3ef45e459e63c092eb6090d1afad08acc22388d27f3f16de1ec0f7a4fa0cc0"
+    },
+    {
+      "name": "contents full=False",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "changed\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": false,
+      "expected": "4eb815544283ae62ad91ae6bf2c8937546a69bbc2dcc52d9d69d52dcdedeecb4"
+    },
+    {
+      "name": "contents full=True",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "changed\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": true,
+      "expected": "6bf0895963acdece5aae7c018ac1c3f6773b14e74c720796aee7b6a424326ffc"
+    },
+    {
+      "name": "same-size full=False",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('world')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": false,
+      "expected": "ad543b9f33d6ffbb4d9d62da68bd7f8a5cc14516c0100cb826c36c690f20d280"
+    },
+    {
+      "name": "same-size full=True",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('world')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": true,
+      "expected": "0dc1ccb7a75bcb97954618a12a6ae6a463a84d30bcf321a477411f0910250775"
+    },
+    {
+      "name": "mode full=False",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {
+        "app/main.py": 493
+      },
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": false,
+      "expected": "6c87cc3f95f93c8cdd90cc4519f83cd3cca17954126b3d3206c6c42be2d2eca7"
+    },
+    {
+      "name": "mode full=True",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {
+        "app/main.py": 493
+      },
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": true,
+      "expected": "3df99b5e557e58df26c6d991fb1503d7ebaf12c57a15fa8f76d7593afe5b7956"
+    },
+    {
+      "name": "path full=False",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused",
+        "app/renamed.py": "print('hello')\n"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": false,
+      "expected": "209acff83cde5fa5e1d90c0adfb7597f7c9f6b62ace87599f3aca7627319b8cb"
+    },
+    {
+      "name": "path full=True",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused",
+        "app/renamed.py": "print('hello')\n"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": true,
+      "expected": "b4f4de35720eb14725a6a19e012fe2d23735323d8fc56a1d55cb1bc30fb47b29"
+    },
+    {
+      "name": "ignored-file full=False",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "changed",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": false,
+      "expected": "c26690e11c2762f699266d403d8424c61e44a4cb0a853db88ee9e2c03cea80b9"
+    },
+    {
+      "name": "ignored-file full=True",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "changed",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": true,
+      "expected": "ce3ef45e459e63c092eb6090d1afad08acc22388d27f3f16de1ec0f7a4fa0cc0"
+    },
+    {
+      "name": "ignored-tree full=False",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused",
+        "app/cache/ignored": "changed"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": false,
+      "expected": "c26690e11c2762f699266d403d8424c61e44a4cb0a853db88ee9e2c03cea80b9"
+    },
+    {
+      "name": "ignored-tree full=True",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused",
+        "app/cache/ignored": "changed"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": true,
+      "expected": "ce3ef45e459e63c092eb6090d1afad08acc22388d27f3f16de1ec0f7a4fa0cc0"
+    },
+    {
+      "name": "unused-directory full=False",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache",
+        "empty"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": false,
+      "expected": "c26690e11c2762f699266d403d8424c61e44a4cb0a853db88ee9e2c03cea80b9"
+    },
+    {
+      "name": "unused-directory full=True",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache",
+        "empty"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": true,
+      "expected": "dca7539f48adebbdc4ecd84b0836572dd34d9c0a2364437a77671e73ab0df4dc"
+    },
+    {
+      "name": "included-directory full=False",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache",
+        "app/empty"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": false,
+      "expected": "1ee33dcd3c5049350e9c33d55b469ea6b8bb6466f6298d605e3348ebdf02da6b"
+    },
+    {
+      "name": "included-directory full=True",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache",
+        "app/empty"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": true,
+      "expected": "5315c77c615445d6d4e4d3a17b911618b25ebb535066c0ab2693261c467c41d2"
+    },
+    {
+      "name": "symlink-target full=False",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "two\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": false,
+      "expected": "fd49b4f1f19408f0b3abc18e2c01331f7dcff75393d1d62dc3851312e203d0e2"
+    },
+    {
+      "name": "symlink-target full=True",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "two\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": true,
+      "expected": "b8143c8f67da17bc06c52bfce8952d8f44d9a00c67aa50daefb9590fd05a7741"
+    },
+    {
+      "name": "symlink-retarget full=False",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "other"
+      },
+      "full": false,
+      "expected": "99eb651bc3cc68c86c58b2d0a23b27a3d54cb7747ceee3b29f0ac9c9124bc772"
+    },
+    {
+      "name": "symlink-retarget full=True",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "other"
+      },
+      "full": true,
+      "expected": "061e672e978d2d2d3d97641c430c37c3d1b25d7f42a7ad578f5581505e4e5e86"
+    },
+    {
+      "name": "dockerfile-ignore full=False",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "app/main.py\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused",
+        "Dockerfile.dockerignore": "*\n!app/main.py\n"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": false,
+      "expected": "cbc09bb1412168c0bb886e05638552a7cd6778c91a14498481e3ccbb03b41e7c"
+    },
+    {
+      "name": "dockerfile-ignore full=True",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "app/main.py\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused",
+        "Dockerfile.dockerignore": "*\n!app/main.py\n"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": true,
+      "expected": "87f233c411274eb5b5fbd2a0d72b389f8f603de02c1a440787e9f37046f43569"
+    },
+    {
+      "name": "ignored-dockerfile-target full=False",
+      "files": {
+        ".dockerignore": "ActualDockerfile\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused",
+        "ActualDockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target",
+        "Dockerfile": "ActualDockerfile"
+      },
+      "full": false,
+      "expected": "76c269214d1b07cb4dff7c4d225bfa123fbc987cabdf4bc80143970acba0ef14"
+    },
+    {
+      "name": "ignored-dockerfile-target full=True",
+      "files": {
+        ".dockerignore": "ActualDockerfile\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused",
+        "ActualDockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target",
+        "Dockerfile": "ActualDockerfile"
+      },
+      "full": true,
+      "expected": "b8f4bfa61e058a2c0a942e393d2e83ad7a788995ebcd0e9fa5ff9cf76a141b78"
+    },
+    {
+      "name": "external-broken-links full=False",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target",
+        "app/external": "/external/does-not-exist",
+        "app/broken": "missing"
+      },
+      "full": false,
+      "expected": "871f2674e0c720abd557f821c535215eb4b6ea3c8011541610a9aa53aa086114"
+    },
+    {
+      "name": "external-broken-links full=True",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target",
+        "app/external": "/external/does-not-exist",
+        "app/broken": "missing"
+      },
+      "full": true,
+      "expected": "6b22cff8930f7f3cd59adababa450c8942d64d1de93fb5d4b495d0a916023c47"
+    },
+    {
+      "name": "unicode-paths full=False",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused",
+        "app/a": "DEL",
+        "app/😀": "astral",
+        "app/ü": "accent",
+        "app/": "private-use BMP"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": false,
+      "expected": "8ad4ffb7190cac33f3228913ab25ff52ca747984984d20f2ed42c9adb2df338c"
+    },
+    {
+      "name": "unicode-paths full=True",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused",
+        "app/a": "DEL",
+        "app/😀": "astral",
+        "app/ü": "accent",
+        "app/": "private-use BMP"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": true,
+      "expected": "f791ac8c9c09cd8b4b7768ca8b5c40af3e0173fd27dcd1b3caaa3554eac9562b"
+    },
+    {
+      "name": "unicode-ignore full=False",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n\napp/a?b\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused",
+        "app/a😀b": "emoji",
+        "app/axb": "ASCII"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": false,
+      "expected": "2ec3b67dc14e4de49995072bb483aa7314f4a0a291c63b61e5a85b07864dbcc9"
+    },
+    {
+      "name": "unicode-ignore full=True",
+      "files": {
+        "Dockerfile": "FROM scratch\nCOPY app /app\nCOPY link /link\n",
+        ".dockerignore": "**/*.log\napp/cache\n\napp/a?b\n",
+        "app/main.py": "print('hello')\n",
+        "app/debug.log": "ignored",
+        "target": "one\n",
+        "other": "one\n",
+        "unused": "unused",
+        "app/a😀b": "emoji",
+        "app/axb": "ASCII"
+      },
+      "modes": {},
+      "directories": [
+        "app",
+        "app/cache"
+      ],
+      "links": {
+        "link": "target"
+      },
+      "full": true,
+      "expected": "dc63da0abb68a30eeedeb8bfd5310f6c1756b585b7a9640f99fbb83c370a08a4"
+    }
+  ],
+  "imageInit": [
+    {
+      "config": {},
+      "explicit": null,
+      "automatic": null,
+      "expected": null
+    },
+    {
+      "config": {},
+      "explicit": {},
+      "automatic": null,
+      "expected": null
+    },
+    {
+      "config": {},
+      "explicit": {
+        "env": {
+          "APP": "override"
+        },
+        "workingDir": "/other"
+      },
+      "automatic": null,
+      "expected": {
+        "env": {
+          "APP": "override"
+        },
+        "workingDir": "/other"
+      }
+    },
+    {
+      "config": {},
+      "explicit": {
+        "command": " run "
+      },
+      "automatic": null,
+      "expected": {
+        "command": "run"
+      }
+    },
+    {
+      "config": {},
+      "explicit": {
+        "args": [
+          "",
+          "--flag"
+        ]
+      },
+      "automatic": null,
+      "expected": {
+        "args": [
+          "--flag"
+        ]
+      }
+    },
+    {
+      "config": {
+        "Env": [
+          "PATH=/usr/bin",
+          "HOME=/root",
+          "APP=1",
+          "SANDBOX_ENABLED=x"
+        ],
+        "Entrypoint": [
+          "node"
+        ],
+        "Cmd": [
+          "app.js"
+        ],
+        "WorkingDir": " /app "
+      },
+      "explicit": null,
+      "automatic": {
+        "env": {
+          "PATH": "/usr/bin",
+          "APP": "1"
+        },
+        "args": [
+          "node",
+          "app.js"
+        ],
+        "workingDir": "/app"
+      },
+      "expected": {
+        "env": {
+          "PATH": "/usr/bin",
+          "APP": "1"
+        },
+        "args": [
+          "node",
+          "app.js"
+        ],
+        "workingDir": "/app"
+      }
+    },
+    {
+      "config": {
+        "Env": [
+          "PATH=/usr/bin",
+          "HOME=/root",
+          "APP=1",
+          "SANDBOX_ENABLED=x"
+        ],
+        "Entrypoint": [
+          "node"
+        ],
+        "Cmd": [
+          "app.js"
+        ],
+        "WorkingDir": " /app "
+      },
+      "explicit": {},
+      "automatic": {
+        "env": {
+          "PATH": "/usr/bin",
+          "APP": "1"
+        },
+        "args": [
+          "node",
+          "app.js"
+        ],
+        "workingDir": "/app"
+      },
+      "expected": {
+        "env": {
+          "PATH": "/usr/bin",
+          "APP": "1"
+        },
+        "args": [
+          "node",
+          "app.js"
+        ],
+        "workingDir": "/app"
+      }
+    },
+    {
+      "config": {
+        "Env": [
+          "PATH=/usr/bin",
+          "HOME=/root",
+          "APP=1",
+          "SANDBOX_ENABLED=x"
+        ],
+        "Entrypoint": [
+          "node"
+        ],
+        "Cmd": [
+          "app.js"
+        ],
+        "WorkingDir": " /app "
+      },
+      "explicit": {
+        "env": {
+          "APP": "override"
+        },
+        "workingDir": "/other"
+      },
+      "automatic": {
+        "env": {
+          "PATH": "/usr/bin",
+          "APP": "1"
+        },
+        "args": [
+          "node",
+          "app.js"
+        ],
+        "workingDir": "/app"
+      },
+      "expected": {
+        "env": {
+          "PATH": "/usr/bin",
+          "APP": "override"
+        },
+        "args": [
+          "node",
+          "app.js"
+        ],
+        "workingDir": "/other"
+      }
+    },
+    {
+      "config": {
+        "Env": [
+          "PATH=/usr/bin",
+          "HOME=/root",
+          "APP=1",
+          "SANDBOX_ENABLED=x"
+        ],
+        "Entrypoint": [
+          "node"
+        ],
+        "Cmd": [
+          "app.js"
+        ],
+        "WorkingDir": " /app "
+      },
+      "explicit": {
+        "command": " run "
+      },
+      "automatic": {
+        "env": {
+          "PATH": "/usr/bin",
+          "APP": "1"
+        },
+        "args": [
+          "node",
+          "app.js"
+        ],
+        "workingDir": "/app"
+      },
+      "expected": {
+        "env": {
+          "PATH": "/usr/bin",
+          "APP": "1"
+        },
+        "command": "run",
+        "workingDir": "/app"
+      }
+    },
+    {
+      "config": {
+        "Env": [
+          "PATH=/usr/bin",
+          "HOME=/root",
+          "APP=1",
+          "SANDBOX_ENABLED=x"
+        ],
+        "Entrypoint": [
+          "node"
+        ],
+        "Cmd": [
+          "app.js"
+        ],
+        "WorkingDir": " /app "
+      },
+      "explicit": {
+        "args": [
+          "",
+          "--flag"
+        ]
+      },
+      "automatic": {
+        "env": {
+          "PATH": "/usr/bin",
+          "APP": "1"
+        },
+        "args": [
+          "node",
+          "app.js"
+        ],
+        "workingDir": "/app"
+      },
+      "expected": {
+        "env": {
+          "PATH": "/usr/bin",
+          "APP": "1"
+        },
+        "args": [
+          "--flag"
+        ],
+        "workingDir": "/app"
+      }
+    },
+    {
+      "config": {
+        "Env": [
+          "__proto__=literal",
+          "toString=value",
+          "A=first",
+          "A=last",
+          "9BAD=no",
+          "NOEQUAL",
+          " x = hi=there"
+        ],
+        "Cmd": [
+          "",
+          "run",
+          ""
+        ]
+      },
+      "explicit": null,
+      "automatic": {
+        "env": {
+          "__proto__": "literal",
+          "toString": "value",
+          "A": "last",
+          "x": " hi=there"
+        },
+        "args": [
+          "run"
+        ]
+      },
+      "expected": {
+        "env": {
+          "__proto__": "literal",
+          "toString": "value",
+          "A": "last",
+          "x": " hi=there"
+        },
+        "args": [
+          "run"
+        ]
+      }
+    },
+    {
+      "config": {
+        "Env": [
+          "__proto__=literal",
+          "toString=value",
+          "A=first",
+          "A=last",
+          "9BAD=no",
+          "NOEQUAL",
+          " x = hi=there"
+        ],
+        "Cmd": [
+          "",
+          "run",
+          ""
+        ]
+      },
+      "explicit": {},
+      "automatic": {
+        "env": {
+          "__proto__": "literal",
+          "toString": "value",
+          "A": "last",
+          "x": " hi=there"
+        },
+        "args": [
+          "run"
+        ]
+      },
+      "expected": {
+        "env": {
+          "__proto__": "literal",
+          "toString": "value",
+          "A": "last",
+          "x": " hi=there"
+        },
+        "args": [
+          "run"
+        ]
+      }
+    },
+    {
+      "config": {
+        "Env": [
+          "__proto__=literal",
+          "toString=value",
+          "A=first",
+          "A=last",
+          "9BAD=no",
+          "NOEQUAL",
+          " x = hi=there"
+        ],
+        "Cmd": [
+          "",
+          "run",
+          ""
+        ]
+      },
+      "explicit": {
+        "env": {
+          "APP": "override"
+        },
+        "workingDir": "/other"
+      },
+      "automatic": {
+        "env": {
+          "__proto__": "literal",
+          "toString": "value",
+          "A": "last",
+          "x": " hi=there"
+        },
+        "args": [
+          "run"
+        ]
+      },
+      "expected": {
+        "env": {
+          "__proto__": "literal",
+          "toString": "value",
+          "A": "last",
+          "x": " hi=there",
+          "APP": "override"
+        },
+        "args": [
+          "run"
+        ],
+        "workingDir": "/other"
+      }
+    },
+    {
+      "config": {
+        "Env": [
+          "__proto__=literal",
+          "toString=value",
+          "A=first",
+          "A=last",
+          "9BAD=no",
+          "NOEQUAL",
+          " x = hi=there"
+        ],
+        "Cmd": [
+          "",
+          "run",
+          ""
+        ]
+      },
+      "explicit": {
+        "command": " run "
+      },
+      "automatic": {
+        "env": {
+          "__proto__": "literal",
+          "toString": "value",
+          "A": "last",
+          "x": " hi=there"
+        },
+        "args": [
+          "run"
+        ]
+      },
+      "expected": {
+        "env": {
+          "__proto__": "literal",
+          "toString": "value",
+          "A": "last",
+          "x": " hi=there"
+        },
+        "command": "run"
+      }
+    },
+    {
+      "config": {
+        "Env": [
+          "__proto__=literal",
+          "toString=value",
+          "A=first",
+          "A=last",
+          "9BAD=no",
+          "NOEQUAL",
+          " x = hi=there"
+        ],
+        "Cmd": [
+          "",
+          "run",
+          ""
+        ]
+      },
+      "explicit": {
+        "args": [
+          "",
+          "--flag"
+        ]
+      },
+      "automatic": {
+        "env": {
+          "__proto__": "literal",
+          "toString": "value",
+          "A": "last",
+          "x": " hi=there"
+        },
+        "args": [
+          "run"
+        ]
+      },
+      "expected": {
+        "env": {
+          "__proto__": "literal",
+          "toString": "value",
+          "A": "last",
+          "x": " hi=there"
+        },
+        "args": [
+          "--flag"
+        ]
+      }
+    },
+    {
+      "config": {
+        "Env": null,
+        "Cmd": null,
+        "WorkingDir": null
+      },
+      "explicit": null,
+      "automatic": null,
+      "expected": null
+    },
+    {
+      "config": {
+        "Env": null,
+        "Cmd": null,
+        "WorkingDir": null
+      },
+      "explicit": {},
+      "automatic": null,
+      "expected": null
+    },
+    {
+      "config": {
+        "Env": null,
+        "Cmd": null,
+        "WorkingDir": null
+      },
+      "explicit": {
+        "env": {
+          "APP": "override"
+        },
+        "workingDir": "/other"
+      },
+      "automatic": null,
+      "expected": {
+        "env": {
+          "APP": "override"
+        },
+        "workingDir": "/other"
+      }
+    },
+    {
+      "config": {
+        "Env": null,
+        "Cmd": null,
+        "WorkingDir": null
+      },
+      "explicit": {
+        "command": " run "
+      },
+      "automatic": null,
+      "expected": {
+        "command": "run"
+      }
+    },
+    {
+      "config": {
+        "Env": null,
+        "Cmd": null,
+        "WorkingDir": null
+      },
+      "explicit": {
+        "args": [
+          "",
+          "--flag"
+        ]
+      },
+      "automatic": null,
+      "expected": {
+        "args": [
+          "--flag"
+        ]
+      }
+    }
+  ]
+}

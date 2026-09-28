@@ -4,15 +4,15 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import type { SandboxHandle } from "../../../src/services/sandboxes";
-import type { SandboxProcessStreamEvent } from "../../../src/types";
-import { createClient } from "../../helpers/config";
-import { expectHyperbrowserError } from "../../helpers/errors";
+import type { SandboxHandle } from "../../src/services/sandboxes";
+import type { SandboxProcessStreamEvent } from "../../src/types";
+import { createClient } from "../helpers/config";
+import { expectHyperbrowserError } from "../helpers/errors";
 import {
   defaultSandboxParams,
   stopSandboxIfRunning,
   waitForRuntimeReady,
-} from "../../helpers/sandbox";
+} from "../helpers/sandbox";
 
 async function collectProcessStream(
   events: AsyncIterable<SandboxProcessStreamEvent>
@@ -139,9 +139,19 @@ describe.sequential("sandbox process e2e", () => {
     const result = await noisyProcess.result();
     expect(result.stdout.length).toBeGreaterThan(3 * 1024 * 1024);
 
+    // Collected output survives the runtime replay window on the original handle.
+    const replayed = await collectProcessStream(noisyProcess.stream(1));
+    expect(
+      replayed
+        .filter((event) => event.type === "stdout")
+        .map((event) => (event.type === "stdout" ? event.data : ""))
+        .join("")
+    ).toBe(result.stdout);
+
+    const reattached = await sandbox!.processes.get(noisyProcess.id);
     await expectHyperbrowserError(
       "process replay window expired",
-      () => collectProcessStream(noisyProcess.stream(1)),
+      () => collectProcessStream(reattached.stream(1)),
       {
         statusCode: 410,
         code: "replay_window_expired",
@@ -162,10 +172,10 @@ describe.sequential("sandbox process e2e", () => {
       "process wait timeout",
       () => timeoutProcess.wait({ timeoutMs: 100 }),
       {
-        statusCode: 408,
+        code: "wait_timeout",
         service: "runtime",
         retryable: false,
-        messageIncludes: "timed out",
+        messageIncludes: "Timed out",
       }
     );
 
