@@ -22,6 +22,9 @@ Live volume tests are excluded at the user’s request; their local contracts re
   stage of the audit; the final expanded suite also passes.
 - The CI matrix covers Linux Node 20.20.2/22.22.1/24.15.0 and macOS 14 Node 24.15.0.
   Windows and additional real Docker versions are not established by these tests.
+- Filesystem goldens explicitly create matching symlink permissions on macOS and
+  Linux, and use Unicode filenames accepted by both. Fingerprints include actual
+  permissions; host defaults alone can legitimately change an identity.
 
 The new comparisons exposed and fixed Unicode wildcard/JSON identity differences,
 loss of literal `__proto__` environment keys, inherited-property process stream

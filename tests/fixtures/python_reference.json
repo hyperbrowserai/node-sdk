@@ -6203,7 +6203,7 @@
         "app/a": "DEL",
         "app/😀": "astral",
         "app/ü": "accent",
-        "app/￿": "last BMP"
+        "app/": "private-use BMP"
       },
       "modes": {},
       "directories": [
@@ -6214,7 +6214,7 @@
         "link": "target"
       },
       "full": false,
-      "expected": "33c3b54d27c9c647c0efad95e56d46b2c3370a3e7efaf18096a328b943df83b3"
+      "expected": "8ad4ffb7190cac33f3228913ab25ff52ca747984984d20f2ed42c9adb2df338c"
     },
     {
       "name": "unicode-paths full=True",
@@ -6229,7 +6229,7 @@
         "app/a": "DEL",
         "app/😀": "astral",
         "app/ü": "accent",
-        "app/￿": "last BMP"
+        "app/": "private-use BMP"
       },
       "modes": {},
       "directories": [
@@ -6240,7 +6240,7 @@
         "link": "target"
       },
       "full": true,
-      "expected": "00ea0be753bac2e4a8817ccd242a6f80750ae07dcfdd4e9f323b07fda04fb551"
+      "expected": "f791ac8c9c09cd8b4b7768ca8b5c40af3e0173fd27dcd1b3caaa3554eac9562b"
     },
     {
       "name": "unicode-ignore full=False",

@@ -308,7 +308,8 @@ for name in variants:
                 "app/a\x7f": "DEL",
                 "app/😀": "astral",
                 "app/ü": "accent",
-                "app/\uffff": "last BMP",
+                # Above UTF-16 surrogate values, but a valid macOS filename.
+                "app/\ue000": "private-use BMP",
             }
         )
     elif name == "unicode-ignore":
@@ -329,6 +330,8 @@ for name in variants:
                     directory.chmod(0o755)
             for link, target in links.items():
                 (context / link).symlink_to(target)
+                if sys.platform == "darwin":
+                    (context / link).lchmod(0o777)
             expected = docker_build_context_fingerprint(
                 context, force_full_context=full
             )

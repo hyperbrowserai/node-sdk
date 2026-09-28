@@ -12,7 +12,7 @@ import {
 } from "../../src/sandbox/image-build/context";
 import { readTarEntries } from "../../src/sandbox/image-build/tar";
 import { imageBuildName } from "../../src/sandbox/image-build/resolution";
-import { rmSync } from "fs";
+import { lchmodSync, rmSync } from "fs";
 
 const tempDirs: string[] = [];
 const tempDir = (): string => {
@@ -59,6 +59,8 @@ describe("docker build context fingerprint", () => {
     writeFileSync(path.join(root, "empty"), Buffer.alloc(0));
     chmodSync(path.join(root, "empty"), 0o600);
     symlinkSync("empty", path.join(root, "link"));
+    // Fingerprints include permissions; create the same metadata as Python.
+    if (process.platform === "darwin") lchmodSync(path.join(root, "link"), 0o777);
 
     await expect(dockerBuildContextFingerprint(root)).resolves.toBe(
       "8d66062b58007e23ed8844b026726ac24e4ea5b32e4d6c3e4590d48b252755f9"

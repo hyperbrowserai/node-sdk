@@ -1,5 +1,7 @@
 import {
   chmodSync,
+  lchmodSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -40,7 +42,13 @@ test.each(reference.contexts)("Python filesystem fingerprint: $name", async (fix
       chmodSync(location, (fixture.modes as Record<string, number>)[file] ?? 0o644);
     }
     for (const [link, target] of Object.entries(fixture.links)) {
-      if (target !== undefined) symlinkSync(target, path.join(root, link));
+      if (target !== undefined) {
+        const location = path.join(root, link);
+        symlinkSync(target, location);
+        // macOS applies umask to symlinks; the Python golden uses mode 0777.
+        if (process.platform === "darwin") lchmodSync(location, 0o777);
+        expect(lstatSync(location).mode & 0o7777).toBe(0o777);
+      }
     }
     const compress = vi.spyOn(gzip, "writeGzipTar");
     try {
