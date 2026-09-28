@@ -129,7 +129,7 @@ describe.sequential("sandbox list e2e", () => {
     const createdSnapshots = await client.sandboxes.listSnapshots({
       status: "created",
       imageName: memorySnapshot!.imageName,
-      limit: 200,
+      limit: 100,
     });
 
     expect(createdSnapshots.snapshots.some((entry) => entry.id === listedSnapshot.id)).toBe(

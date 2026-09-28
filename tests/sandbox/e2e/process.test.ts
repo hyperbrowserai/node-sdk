@@ -139,6 +139,15 @@ describe.sequential("sandbox process e2e", () => {
     const result = await noisyProcess.result();
     expect(result.stdout.length).toBeGreaterThan(3 * 1024 * 1024);
 
+    // Collected output survives the runtime replay window on the original handle.
+    const replayed = await collectProcessStream(noisyProcess.stream(1));
+    expect(
+      replayed
+        .filter((event) => event.type === "stdout")
+        .map((event) => (event.type === "stdout" ? event.data : ""))
+        .join("")
+    ).toBe(result.stdout);
+
     const reattached = await sandbox!.processes.get(noisyProcess.id);
     await expectHyperbrowserError(
       "process replay window expired",
