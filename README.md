@@ -511,8 +511,7 @@ resources. Invalid or conflicting launch sources fail before a network request.
 - `HYPERBROWSER_BASE_URL` supplies the API base URL when `baseUrl` is not provided.
 
 Public handle classes are available from `@hyperbrowser/sdk/sandbox`; request and
-response types remain under `@hyperbrowser/sdk/types`. See
-[SANDBOX_PARITY.md](./SANDBOX_PARITY.md) for the parity checklist and release validation.
+response types remain under `@hyperbrowser/sdk/types`.
 
 ### Development checks
 
@@ -528,4 +527,4 @@ streamed process starts. The focused build-to-restore smoke test is
 `yarn test:e2e tests/sandbox/e2e/parity-smoke.test.ts`.
 The smoke test requires the team's sandbox volume feature. For a partial run on
 an environment without it, set `HYPERBROWSER_SMOKE_VOLUMES=0`; this does not validate
-volume mounts or satisfy the full release gate.
+volume mounts.
