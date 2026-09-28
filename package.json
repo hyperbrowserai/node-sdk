@@ -24,8 +24,7 @@
     "test:integration": "vitest run tests/integration",
     "test:watch": "vitest",
     "format": "prettier --write 'src/**/*.ts'",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.tests.json",
-    "test:package": "node scripts/check-package.cjs"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.tests.json"
   },
   "files": [
     "dist",

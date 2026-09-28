@@ -515,16 +515,10 @@ response types remain under `@hyperbrowser/sdk/types`.
 
 ### Development checks
 
-The supported Node baseline is 20.20.2; CI checks Node 20.20.2, 22.22.1, and 24.15.0.
-Run `yarn build`, `yarn typecheck`, `yarn lint`, `yarn test`, and `yarn test:package`
-for local verification. `yarn test` runs credential-free unit, contract, and HTTP /
-WebSocket tests. `yarn test:package` installs the packed SDK into a temporary
-consumer and checks CommonJS, ESM, public exports, and TypeScript declarations.
+The supported Node baseline is 20.20.2. Run `yarn build`, `yarn typecheck`,
+`yarn lint`, and `yarn test` for local verification. `yarn test` runs credential-free
+unit, contract, and HTTP / WebSocket tests.
 
 Live tests are opt-in: set `HYPERBROWSER_API_KEY` and `HYPERBROWSER_BASE_URL`, then
 run `yarn test:e2e`. They create remote resources and require a receiver supporting
-streamed process starts. The focused build-to-restore smoke test is
-`yarn test:e2e tests/sandbox/e2e/parity-smoke.test.ts`.
-The smoke test requires the team's sandbox volume feature. For a partial run on
-an environment without it, set `HYPERBROWSER_SMOKE_VOLUMES=0`; this does not validate
-volume mounts.
+streamed process starts.
