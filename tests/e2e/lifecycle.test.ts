@@ -6,21 +6,21 @@
 import { randomUUID } from "crypto";
 import fetch from "node-fetch";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import { HyperbrowserError } from "../../../src/client";
-import type { SandboxHandle } from "../../../src/services/sandboxes";
+import { HyperbrowserError } from "../../src/client";
+import type { SandboxHandle } from "../../src/services/sandboxes";
 import {
   API_KEY,
   BASE_URL,
   createClient,
   DEFAULT_IMAGE_NAME,
-} from "../../helpers/config";
-import { expectHyperbrowserError } from "../../helpers/errors";
+} from "../helpers/config";
+import { expectHyperbrowserError } from "../helpers/errors";
 import {
   defaultSandboxParams,
   stopSandboxIfRunning,
   waitForCreatedSnapshot,
   waitForRuntimeReady,
-} from "../../helpers/sandbox";
+} from "../helpers/sandbox";
 
 const client = createClient();
 const CUSTOM_IMAGE_NAME = "node";
@@ -133,12 +133,17 @@ describe.sequential("sandbox lifecycle e2e", () => {
   });
 
   afterAll(async () => {
-    await stopSandboxIfRunning(sandbox);
-    await stopSandboxIfRunning(staleHandle);
-    await stopSandboxIfRunning(secondary);
-    await stopSandboxIfRunning(imageSandbox);
-    await stopSandboxIfRunning(customImageSandbox);
-    await stopSandboxIfRunning(customSnapshotSandbox);
+    const stopped = await Promise.allSettled(
+      [sandbox, staleHandle, secondary, imageSandbox, customImageSandbox, customSnapshotSandbox]
+        .map(stopSandboxIfRunning)
+    );
+    const snapshots = await Promise.allSettled(
+      [memorySnapshot, customImageMemorySnapshot]
+        .filter((snapshot) => snapshot !== null)
+        .map((snapshot) => client.sandboxes.deleteSnapshot(snapshot!.snapshotId))
+    );
+    const failure = [...stopped, ...snapshots].find((result) => result.status === "rejected");
+    if (failure?.status === "rejected") throw failure.reason;
   });
 
   test("create response contains runtime auth", async () => {

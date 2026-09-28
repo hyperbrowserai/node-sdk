@@ -4,13 +4,13 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import type { SandboxHandle } from "../../../src/services/sandboxes";
-import { createClient } from "../../helpers/config";
+import type { SandboxHandle } from "../../src/services/sandboxes";
+import { createClient } from "../helpers/config";
 import {
   defaultSandboxParams,
   stopSandboxIfRunning,
   waitForRuntimeReady,
-} from "../../helpers/sandbox";
+} from "../helpers/sandbox";
 
 const client = createClient();
 

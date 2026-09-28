@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
-import type { SandboxHandle } from "../../../src/services/sandboxes";
-import { createClient, DEFAULT_IMAGE_NAME } from "../../helpers/config";
-import { stopSandboxIfRunning, waitForRuntimeReady } from "../../helpers/sandbox";
+import type { SandboxHandle } from "../../src/services/sandboxes";
+import { createClient, DEFAULT_IMAGE_NAME } from "../helpers/config";
+import { stopSandboxIfRunning, waitForRuntimeReady } from "../helpers/sandbox";
 
 const client = createClient();
 

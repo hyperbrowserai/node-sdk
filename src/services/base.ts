@@ -1,30 +1,15 @@
 import fetch, { HeadersInit, RequestInit, Response } from "node-fetch";
-import { HyperbrowserError } from "../client";
-
-const RETRYABLE_STATUS_CODES = new Set([429, 502, 503, 504]);
-const RETRYABLE_NETWORK_CODES = new Set([
-  "ECONNRESET",
-  "ECONNREFUSED",
-  "EAI_AGAIN",
-  "ETIMEDOUT",
-  "ESOCKETTIMEDOUT",
-]);
+import { errorRequestPath, HyperbrowserError, networkErrorMessage } from "../error";
+import {
+  getRetryDelayMs,
+  isRetryableNetworkError,
+  RETRYABLE_STATUS_CODES,
+  retryDelay,
+  shouldRetryGet,
+} from "../retry";
 
 const getRequestId = (response: Response): string | undefined => {
   return response.headers.get("x-request-id") || response.headers.get("request-id") || undefined;
-};
-
-const isRetryableNetworkError = (error: unknown): boolean => {
-  if (!(error instanceof Error)) {
-    return false;
-  }
-
-  const networkError = error as Error & { code?: string; type?: string };
-  return (
-    networkError.name === "AbortError" ||
-    networkError.type === "request-timeout" ||
-    (networkError.code ? RETRYABLE_NETWORK_CODES.has(networkError.code) : false)
-  );
 };
 
 export class BaseService {
@@ -34,12 +19,39 @@ export class BaseService {
     protected readonly timeout: number = 30000
   ) {}
 
+  /** Transient GET failures (429/502/503/504, network errors) retry up to three attempts. */
   protected async request<T>(
     path: string,
     init?: RequestInit,
     params?: Record<string, string | number | string[] | undefined>,
     fullUrl: boolean = false
   ): Promise<T> {
+    const method = (init?.method ?? "GET").toUpperCase();
+    let failedAttempt = 1;
+    for (;;) {
+      try {
+        return await this.requestOnce<T>(path, init, params, fullUrl);
+      } catch (error) {
+        if (
+          init?.signal?.aborted ||
+          !(error instanceof HyperbrowserError) ||
+          !shouldRetryGet(method, error, failedAttempt)
+        ) {
+          throw error;
+        }
+        await retryDelay(getRetryDelayMs(failedAttempt), init?.signal ?? undefined);
+        failedAttempt += 1;
+      }
+    }
+  }
+
+  private async requestOnce<T>(
+    path: string,
+    init?: RequestInit,
+    params?: Record<string, string | number | string[] | undefined>,
+    fullUrl: boolean = false
+  ): Promise<T> {
+    let response: Response | undefined;
     try {
       const url = new URL(fullUrl ? path : `${this.baseUrl}/api${path}`);
 
@@ -64,7 +76,7 @@ export class BaseService {
 
       const requestTimeout = init?.timeout ?? this.timeout;
 
-      const response = await fetch(url.toString(), {
+      response = await fetch(url.toString(), {
         ...init,
         timeout: requestTimeout,
         headers: {
@@ -86,7 +98,8 @@ export class BaseService {
           errorCode = typeof errorData?.code === "string" ? errorData.code : undefined;
           errorMessage =
             errorData.message || errorData.error || `HTTP error! status: ${response.status}`;
-        } catch {
+        } catch (error) {
+          if (init?.signal?.aborted) throw error;
           errorMessage = `HTTP error! status: ${response.status}`;
         }
         throw new HyperbrowserError(errorMessage, {
@@ -96,21 +109,24 @@ export class BaseService {
           retryable: RETRYABLE_STATUS_CODES.has(response.status),
           service: "control",
           details: errorDetails,
+          method: init?.method ?? "GET",
+          path: errorRequestPath(path),
         });
       }
 
-      if (response.headers.get("content-length") === "0") {
-        return {} as T;
-      }
-
+      const text = await response.text();
+      if (!text) return {} as T;
       try {
-        return (await response.json()) as T;
-      } catch {
+        return JSON.parse(text) as T;
+      } catch (cause) {
         throw new HyperbrowserError("Failed to parse JSON response", {
           statusCode: response.status,
           requestId: getRequestId(response),
           retryable: false,
           service: "control",
+          cause,
+          method: init?.method ?? "GET",
+          path: errorRequestPath(path),
         });
       }
     } catch (error) {
@@ -119,11 +135,16 @@ export class BaseService {
       }
 
       throw new HyperbrowserError(
-        error instanceof Error ? error.message : "Unknown error occurred",
+        networkErrorMessage(error, "Unknown error occurred"),
         {
-          retryable: isRetryableNetworkError(error),
+          code: init?.signal?.aborted ? "request_aborted" : undefined,
+          retryable: !init?.signal?.aborted && isRetryableNetworkError(error),
+          method: init?.method ?? "GET",
+          path: errorRequestPath(path),
           service: "control",
           cause: error,
+          statusCode: response?.status,
+          requestId: response ? getRequestId(response) : undefined,
         }
       );
     }

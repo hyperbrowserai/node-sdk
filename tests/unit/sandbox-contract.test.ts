@@ -1,9 +1,9 @@
 import { describe, expect, test, vi, afterEach } from "vitest";
-import { SandboxFilesApi } from "../../../src/sandbox/files";
-import { SandboxTerminalHandle } from "../../../src/sandbox/terminal";
-import * as wsModule from "../../../src/sandbox/ws";
-import { SandboxesService } from "../../../src/services/sandboxes";
-import type { SandboxExposeResult } from "../../../src/types";
+import { SandboxFilesApi } from "../../src/sandbox/files";
+import { SandboxTerminalHandle } from "../../src/sandbox/terminal";
+import * as wsModule from "../../src/sandbox/ws";
+import { SandboxesService } from "../../src/services/sandboxes";
+import type { SandboxExposeResult } from "../../src/types";
 
 const parseJsonRequestBody = (init: unknown): unknown => {
   if (!init || typeof init !== "object" || !("body" in init) || typeof init.body !== "string") {
@@ -117,6 +117,24 @@ describe("sandbox control and runtime contract", () => {
     expect(sandbox.getExposedUrl(3000)).toBe("https://3000-sbx_123.runtime.example.com/");
   });
 
+  test("create forwards the explicit CPU runtime and retains its capabilities", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue({
+      ...wireSandboxDetail(),
+      runtimeClass: "gvisor-cpu",
+      capabilities: { pty: true, gpu: false },
+    });
+    const sandbox = await service.create({ imageName: "cpu", runtimeClass: "gvisor-cpu" });
+    expect(parseJsonRequestBody(requestSpy.mock.calls[0][1])).toEqual({
+      imageName: "cpu",
+      runtimeClass: "gvisor-cpu",
+    });
+    expect(sandbox.toJSON()).toMatchObject({
+      runtimeClass: "gvisor-cpu",
+      capabilities: { pty: true, gpu: false },
+    });
+  });
+
   test("create forwards mounts for snapshot launches", async () => {
     const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
     const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue(wireSandboxDetail());
@@ -148,23 +166,15 @@ describe("sandbox control and runtime contract", () => {
     });
   });
 
-  test("create leaves resource value validation to the server", async () => {
+  test("create validates resource values before a request", async () => {
     const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
     const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue(wireSandboxDetail());
-
-    await service.create({
-      imageName: "node",
-      cpu: 0,
-      memoryMiB: -1,
-      diskMiB: 1.5,
-    });
-
-    expect(parseJsonRequestBody(requestSpy.mock.calls[0][1])).toEqual({
-      imageName: "node",
-      vcpus: 0,
-      memMiB: -1,
-      diskSizeMiB: 1.5,
-    });
+    for (const resources of [{ cpu: 0 }, { memoryMiB: -1 }, { diskMiB: 1.5 }]) {
+      await expect(service.create({ imageName: "node", ...resources })).rejects.toThrow(
+        /positive integer/
+      );
+    }
+    expect(requestSpy).not.toHaveBeenCalled();
   });
 
   test("create treats an explicitly undefined imageName as a snapshot launch", async () => {

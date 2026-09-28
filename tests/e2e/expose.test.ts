@@ -3,11 +3,11 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import type { SandboxHandle } from "../../../src/services/sandboxes";
-import { createClient } from "../../helpers/config";
-import { expectHyperbrowserError } from "../../helpers/errors";
-import { fetchRuntimeUrl } from "../../helpers/http";
-import { defaultSandboxParams, stopSandboxIfRunning } from "../../helpers/sandbox";
+import type { SandboxHandle } from "../../src/services/sandboxes";
+import { createClient } from "../helpers/config";
+import { expectHyperbrowserError } from "../helpers/errors";
+import { fetchRuntimeUrl } from "../helpers/http";
+import { defaultSandboxParams, stopSandboxIfRunning } from "../helpers/sandbox";
 
 const client = createClient();
 const HTTP_PORT = 3210;

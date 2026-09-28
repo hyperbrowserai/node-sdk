@@ -19,42 +19,9 @@ import { WebService } from "./services/web";
 import { SandboxesService } from "./services/sandboxes";
 import { VolumesService } from "./services/volumes";
 
-export type HyperbrowserService = "control" | "runtime";
-
-export interface HyperbrowserErrorOptions {
-  statusCode?: number;
-  code?: string;
-  requestId?: string;
-  retryable?: boolean;
-  service?: HyperbrowserService;
-  details?: unknown;
-  cause?: unknown;
-}
-
-export class HyperbrowserError extends Error {
-  public readonly statusCode?: number;
-  public readonly code?: string;
-  public readonly requestId?: string;
-  public readonly retryable: boolean;
-  public readonly service?: HyperbrowserService;
-  public readonly details?: unknown;
-  public readonly cause?: unknown;
-
-  constructor(message: string, options: number | HyperbrowserErrorOptions = {}) {
-    super(`[Hyperbrowser]: ${message}`);
-    this.name = "HyperbrowserError";
-
-    const normalized = typeof options === "number" ? { statusCode: options } : options;
-
-    this.statusCode = normalized.statusCode;
-    this.code = normalized.code;
-    this.requestId = normalized.requestId;
-    this.retryable = normalized.retryable ?? false;
-    this.service = normalized.service;
-    this.details = normalized.details;
-    this.cause = normalized.cause;
-  }
-}
+import { HyperbrowserError } from "./error";
+export { HyperbrowserError } from "./error";
+export type { HyperbrowserErrorOptions, HyperbrowserService } from "./error";
 
 export class HyperbrowserClient {
   public readonly sessions: SessionsService;
@@ -81,7 +48,8 @@ export class HyperbrowserClient {
 
   constructor(config: HyperbrowserConfig = {}) {
     const apiKey = config.apiKey || process.env["HYPERBROWSER_API_KEY"];
-    const baseUrl = config.baseUrl || "https://api.hyperbrowser.ai";
+    const baseUrl =
+      config.baseUrl || process.env["HYPERBROWSER_BASE_URL"] || "https://api.hyperbrowser.ai";
     const timeout = config.timeout || 30000;
     const runtimeProxyOverride = config.runtimeProxyOverride?.trim() || undefined;
     if (!apiKey) {

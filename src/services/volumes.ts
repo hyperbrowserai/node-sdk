@@ -1,4 +1,4 @@
-import { HyperbrowserError } from "../client";
+import { HyperbrowserError } from "../error";
 import {
   CreateVolumeParams,
   Volume,
@@ -6,7 +6,14 @@ import {
   VolumeListParams,
   VolumeListResponse,
 } from "../types/volume";
+import { optionalInteger } from "./normalize";
 import { BaseService } from "./base";
+
+const normalizeVolume = (volume: Volume): Volume => ({
+  ...volume,
+  size: optionalInteger(volume.size),
+  transferAmount: optionalInteger(volume.transferAmount),
+});
 
 export class VolumesService extends BaseService {
   /**
@@ -14,10 +21,12 @@ export class VolumesService extends BaseService {
    */
   async create(params: CreateVolumeParams): Promise<Volume> {
     try {
-      return await this.request<Volume>("/volume", {
-        method: "POST",
-        body: JSON.stringify(params),
-      });
+      return normalizeVolume(
+        await this.request<Volume>("/volume", {
+          method: "POST",
+          body: JSON.stringify(params),
+        })
+      );
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
@@ -31,11 +40,18 @@ export class VolumesService extends BaseService {
    */
   async list(params: VolumeListParams = {}): Promise<VolumeListResponse> {
     try {
-      return await this.request<VolumeListResponse>("/volume", undefined, {
+      const response = await this.request<VolumeListResponse>("/volume", undefined, {
         search: params.search,
         page: params.page,
         limit: params.limit,
       });
+      return {
+        ...response,
+        volumes: response.volumes.map(normalizeVolume),
+        totalCount: optionalInteger(response.totalCount),
+        page: optionalInteger(response.page),
+        perPage: optionalInteger(response.perPage),
+      };
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
@@ -49,7 +65,7 @@ export class VolumesService extends BaseService {
    */
   async get(id: string): Promise<Volume> {
     try {
-      return await this.request<Volume>(`/volume/${id}`);
+      return normalizeVolume(await this.request<Volume>(`/volume/${id}`));
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;
@@ -65,10 +81,9 @@ export class VolumesService extends BaseService {
    */
   async delete(key: string): Promise<VolumeDeleteResult> {
     try {
-      return await this.request<VolumeDeleteResult>(
-        `/volume/${encodeURIComponent(key)}`,
-        { method: "DELETE" }
-      );
+      return await this.request<VolumeDeleteResult>(`/volume/${encodeURIComponent(key)}`, {
+        method: "DELETE",
+      });
     } catch (error) {
       if (error instanceof HyperbrowserError) {
         throw error;

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { SandboxesService } from "../../../src/services/sandboxes";
+import { SandboxesService } from "../../src/services/sandboxes";
 
 const parseJsonRequestBody = (init: unknown): Record<string, unknown> => {
   if (!init || typeof init !== "object" || !("body" in init) || typeof init.body !== "string") {

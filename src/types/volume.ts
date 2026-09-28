@@ -5,8 +5,8 @@ export interface CreateVolumeParams {
 export interface Volume {
   id: string;
   name: string;
-  size?: number;
-  transferAmount?: number;
+  size?: number | null;
+  transferAmount?: number | null;
 }
 
 export interface VolumeListParams {
@@ -17,13 +17,13 @@ export interface VolumeListParams {
 
 export interface VolumeListResponse {
   volumes: Volume[];
-  totalCount?: number;
-  page?: number;
-  perPage?: number;
+  totalCount?: number | null;
+  page?: number | null;
+  perPage?: number | null;
 }
 
 export interface VolumeDeleteResult {
   deleted: boolean;
-  id?: string;
-  name?: string;
+  id?: string | null;
+  name?: string | null;
 }

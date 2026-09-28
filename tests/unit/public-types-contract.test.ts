@@ -3,15 +3,18 @@ import type {
   CompleteSandboxImageBuildParams,
   CreateSandboxImageBuildParams,
   Sandbox,
+  SandboxExecParams,
+  SandboxImageBuildInputFormat,
   SandboxImageBuildListParams,
   SandboxImageBuildStatus,
+  SandboxProcessResult,
   SandboxImageListResponse,
   SandboxNetworkPolicy,
   SandboxSnapshotListResponse,
   SessionRegion,
   SessionStatus,
   VolumeListResponse,
-} from "../../../src/types";
+} from "../../src/types";
 
 describe("public type compatibility", () => {
   test("keeps newly available response data optional", () => {
@@ -22,7 +25,7 @@ describe("public type compatibility", () => {
     expect(imageResponse.totalCount).toBeUndefined();
     expect(snapshotResponse.page).toBeUndefined();
     expect(volumeResponse.perPage).toBeUndefined();
-    expectTypeOf<Sandbox["network"]>().toEqualTypeOf<SandboxNetworkPolicy | undefined>();
+    expectTypeOf<Sandbox["network"]>().toEqualTypeOf<SandboxNetworkPolicy | null | undefined>();
   });
 
   test("includes public server region and status values", () => {
@@ -33,18 +36,30 @@ describe("public type compatibility", () => {
     expect(status).toBe("close-error");
   });
 
-  test("only accepts the image build format and platform supported by the server", () => {
+  test("only accepts the image build formats and platform supported by the server", () => {
     expectTypeOf<CreateSandboxImageBuildParams["inputFormat"]>().toEqualTypeOf<
-      "rootfs_export_tar_gz" | undefined
+      SandboxImageBuildInputFormat | undefined
+    >();
+    expectTypeOf<SandboxImageBuildInputFormat>().toEqualTypeOf<
+      | "rootfs_export_tar_gz"
+      | "dockerfile_context_tar_gz"
+      | "dockerfile_context_manifest_v1"
+      | "docker_image_manifest_v1"
     >();
     expectTypeOf<CreateSandboxImageBuildParams["sourcePlatform"]>().toEqualTypeOf<
       "linux/amd64" | undefined
     >();
     expectTypeOf<CompleteSandboxImageBuildParams["inputFormat"]>().toEqualTypeOf<
-      "rootfs_export_tar_gz" | undefined
+      SandboxImageBuildInputFormat | undefined
     >();
+    expectTypeOf<CreateSandboxImageBuildParams["builderCpus"]>().toEqualTypeOf<number | undefined>();
+    expectTypeOf<SandboxExecParams["maxOutputBytes"]>().toEqualTypeOf<number | undefined>();
+    expectTypeOf<SandboxProcessResult["outputTruncated"]>().toEqualTypeOf<boolean | undefined>();
     expectTypeOf<SandboxImageBuildListParams["status"]>().toEqualTypeOf<
       SandboxImageBuildStatus | undefined
     >();
+    expectTypeOf<"cancelled">().not.toExtend<SandboxImageBuildStatus>();
+    expectTypeOf<"BUILDING">().not.toExtend<SandboxImageBuildStatus>();
+    expectTypeOf<"canceled">().toExtend<SandboxImageBuildStatus>();
   });
 });
