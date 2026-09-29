@@ -526,7 +526,7 @@ describe("client HTTP integration", () => {
     ]);
   });
 
-  test("OpenAI CUA accepts GPT-6 Sol and Luna models", async () => {
+  test("OpenAI CUA accepts GPT-6.1 Sol, GPT-6 Sol, and Luna models", async () => {
     const server = await startServer();
     servers.push(server);
     const client = new HyperbrowserClient({
@@ -534,6 +534,11 @@ describe("client HTTP integration", () => {
       baseUrl: server.baseUrl,
     });
 
+    await client.agents.cua.start({
+      task: "Complete the task",
+      llm: "gpt-6.1-sol",
+      reasoningEffort: "max",
+    });
     await client.agents.cua.start({
       task: "Complete the task",
       llm: "gpt-6-sol",
@@ -546,6 +551,11 @@ describe("client HTTP integration", () => {
     });
 
     expect(server.requests.map((request) => request.body)).toEqual([
+      {
+        task: "Complete the task",
+        llm: "gpt-6.1-sol",
+        reasoningEffort: "max",
+      },
       {
         task: "Complete the task",
         llm: "gpt-6-sol",
