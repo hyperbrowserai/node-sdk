@@ -24,6 +24,7 @@ export interface SessionProfile {
 }
 
 export interface SessionLaunchState {
+  enableWebMcp?: boolean;
   useUltraStealth?: boolean;
   useStealth?: boolean;
   useProxy?: boolean;
@@ -165,6 +166,8 @@ export interface StartSessionFromSnapshotParams {
 }
 
 export interface CreateSessionParams {
+  /** Enable page-provided WebMCP tools. Defaults to false on the server. */
+  enableWebMcp?: boolean;
   useUltraStealth?: boolean;
   useStealth?: boolean;
   useProxy?: boolean;

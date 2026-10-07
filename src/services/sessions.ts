@@ -28,6 +28,7 @@ import {
   SessionGetParams,
 } from "../types/session";
 import { BaseService } from "./base";
+import { WebMCPService } from "./webmcp";
 import { HyperbrowserError } from "../client";
 
 const CAPTCHA_EVALUATION_REQUEST_TIMEOUT_MS = 185_000;
@@ -65,10 +66,12 @@ class SessionEventLogsService extends BaseService {
 
 export class SessionsService extends BaseService {
   public readonly eventLogs: SessionEventLogsService;
+  public readonly webmcp: WebMCPService;
 
   constructor(apiKey: string, baseUrl: string, timeout: number) {
     super(apiKey, baseUrl, timeout);
     this.eventLogs = new SessionEventLogsService(apiKey, baseUrl, timeout);
+    this.webmcp = new WebMCPService(apiKey, baseUrl, timeout);
   }
 
   /**
