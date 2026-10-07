@@ -49,11 +49,12 @@ export class ComputerActionService extends BaseService {
 
   async click(
     session: SessionDetail | string,
-    x: number,
-    y: number,
+    x?: number,
+    y?: number,
     button: ComputerActionMouseButton = "left",
     numClicks: number = 1,
-    returnScreenshot: boolean = false
+    returnScreenshot: boolean = false,
+    keys?: string[]
   ): Promise<ComputerActionResponse> {
     return this.executeRequest(session, {
       action: ComputerAction.CLICK,
@@ -61,6 +62,7 @@ export class ComputerActionService extends BaseService {
       y,
       button,
       numClicks,
+      keys,
       returnScreenshot,
     });
   }
@@ -83,6 +85,16 @@ export class ComputerActionService extends BaseService {
     });
   }
 
+  async cursorPosition(
+    session: SessionDetail | string,
+    returnScreenshot: boolean = false
+  ): Promise<ComputerActionResponse> {
+    return this.executeRequest(session, {
+      action: ComputerAction.CURSOR_POSITION,
+      returnScreenshot,
+    });
+  }
+
   async pressKeys(
     session: SessionDetail | string,
     keys: string[],
@@ -98,11 +110,13 @@ export class ComputerActionService extends BaseService {
   async drag(
     session: SessionDetail | string,
     path: Coordinate[],
-    returnScreenshot: boolean = false
+    returnScreenshot: boolean = false,
+    keys?: string[]
   ): Promise<ComputerActionResponse> {
     return this.executeRequest(session, {
       action: ComputerAction.DRAG,
       path,
+      keys,
       returnScreenshot,
     });
   }
@@ -123,11 +137,12 @@ export class ComputerActionService extends BaseService {
 
   async scroll(
     session: SessionDetail | string,
-    x: number,
-    y: number,
-    scrollX: number,
-    scrollY: number,
-    returnScreenshot: boolean = false
+    x?: number,
+    y?: number,
+    scrollX: number = 0,
+    scrollY: number = 0,
+    returnScreenshot: boolean = false,
+    keys?: string[]
   ): Promise<ComputerActionResponse> {
     return this.executeRequest(session, {
       action: ComputerAction.SCROLL,
@@ -135,6 +150,7 @@ export class ComputerActionService extends BaseService {
       y,
       scrollX,
       scrollY,
+      keys,
       returnScreenshot,
     });
   }

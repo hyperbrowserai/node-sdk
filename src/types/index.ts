@@ -328,6 +328,7 @@ export {
   PressKeysActionParams,
   MoveMouseActionParams,
   ScreenshotActionParams,
+  CursorPositionActionParams,
   ScrollActionParams,
   TypeTextActionParams,
   ComputerActionParams,
@@ -343,6 +344,7 @@ export {
   ListWindowsActionParams,
   ComputerActionWindow,
   ComputerActionResponseDataListWindows,
+  ComputerActionResponseDataCursorPosition,
 } from "./computer-action";
 export { FetchParams, FetchResponse, FetchResponseData, FetchStatus } from "./web/fetch";
 export {

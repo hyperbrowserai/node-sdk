@@ -1,5 +1,10 @@
 import { describe, expect, expectTypeOf, test } from "vitest";
 import type {
+  ClickActionParams,
+  DragActionParams,
+  ScrollActionParams,
+  CursorPositionActionParams,
+  ComputerActionResponseDataCursorPosition,
   CompleteSandboxImageBuildParams,
   CreateSandboxImageBuildParams,
   Sandbox,
@@ -15,8 +20,25 @@ import type {
   SessionStatus,
   VolumeListResponse,
 } from "../../src/types";
+import { ComputerAction } from "../../src/types";
 
 describe("public type compatibility", () => {
+  test("exports cursor-position requests and typed coordinates with optional pointer modifiers", () => {
+    const request: CursorPositionActionParams = { action: ComputerAction.CURSOR_POSITION };
+    const response: ComputerActionResponseDataCursorPosition = { x: 10, y: 20 };
+    const scroll: ScrollActionParams = {
+      action: ComputerAction.SCROLL,
+      scrollX: 0,
+      scrollY: 1,
+      keys: ["Shift_L"],
+    };
+    expect(request.action).toBe("cursor_position");
+    expect(response).toEqual({ x: 10, y: 20 });
+    expect(scroll).not.toHaveProperty("x");
+    expectTypeOf<ClickActionParams["keys"]>().toEqualTypeOf<string[] | undefined>();
+    expectTypeOf<DragActionParams["keys"]>().toEqualTypeOf<string[] | undefined>();
+    expectTypeOf<ScrollActionParams["keys"]>().toEqualTypeOf<string[] | undefined>();
+  });
   test("keeps newly available response data optional", () => {
     const imageResponse: SandboxImageListResponse = { images: [] };
     const snapshotResponse: SandboxSnapshotListResponse = { snapshots: [] };
@@ -52,7 +74,9 @@ describe("public type compatibility", () => {
     expectTypeOf<CompleteSandboxImageBuildParams["inputFormat"]>().toEqualTypeOf<
       SandboxImageBuildInputFormat | undefined
     >();
-    expectTypeOf<CreateSandboxImageBuildParams["builderCpus"]>().toEqualTypeOf<number | undefined>();
+    expectTypeOf<CreateSandboxImageBuildParams["builderCpus"]>().toEqualTypeOf<
+      number | undefined
+    >();
     expectTypeOf<SandboxExecParams["maxOutputBytes"]>().toEqualTypeOf<number | undefined>();
     expectTypeOf<SandboxProcessResult["outputTruncated"]>().toEqualTypeOf<boolean | undefined>();
     expectTypeOf<SandboxImageBuildListParams["status"]>().toEqualTypeOf<
