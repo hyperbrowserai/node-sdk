@@ -71,6 +71,8 @@ describe("public type compatibility", () => {
     expect(request.action).toBe("cursor_position");
     expect(response).toEqual({ x: 10, y: 20 });
     expect(scroll).not.toHaveProperty("x");
+    expect(actionConsumer(scroll)).toBe("scroll");
+    expectTypeOf<ScrollAtCursorActionParams>().toExtend<ComputerActionParams>();
     expectTypeOf<ClickActionParams["keys"]>().toEqualTypeOf<string[] | undefined>();
     expectTypeOf<DragActionParams["keys"]>().toEqualTypeOf<string[] | undefined>();
     expectTypeOf<ScrollActionParams["keys"]>().toEqualTypeOf<string[] | undefined>();

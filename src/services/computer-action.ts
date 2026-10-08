@@ -4,7 +4,6 @@ import {
   ComputerActionParams,
   ComputerActionResponse,
   CursorPositionActionResponse,
-  ScrollAtCursorActionParams,
   Coordinate,
   ComputerActionMouseButton,
 } from "../types/computer-action";
@@ -14,7 +13,7 @@ import { HyperbrowserError } from "../client";
 export class ComputerActionService extends BaseService {
   private async executeRequest<Response extends ComputerActionResponse = ComputerActionResponse>(
     session: SessionDetail | string,
-    params: ComputerActionParams | ScrollAtCursorActionParams
+    params: ComputerActionParams
   ): Promise<Response> {
     try {
       let sessionDetail: SessionDetail;

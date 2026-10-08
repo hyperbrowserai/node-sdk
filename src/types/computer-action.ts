@@ -166,6 +166,7 @@ export type ComputerActionParams =
   | ScreenshotActionParams
   | CursorPositionActionParams
   | ScrollActionParams
+  | ScrollAtCursorActionParams
   | TypeTextActionParams
   | HoldKeyActionParams
   | MouseDownActionParams
