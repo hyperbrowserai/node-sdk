@@ -88,13 +88,16 @@ export interface CursorPositionActionParams {
  */
 export interface ScrollActionParams {
   action: ComputerAction.SCROLL;
-  x?: number;
-  y?: number;
+  x: number;
+  y: number;
   keys?: string[];
   scrollX: number;
   scrollY: number;
   returnScreenshot?: boolean;
 }
+
+/** Parameters for scrolling without moving the desktop cursor. */
+export type ScrollAtCursorActionParams = Omit<ScrollActionParams, "x" | "y">;
 
 /**
  * Parameters for type text action
@@ -212,4 +215,9 @@ export interface ComputerActionResponse {
   data?: ComputerActionResponseData;
   error?: string;
   message?: string;
+}
+
+/** Response from reading the desktop cursor position. */
+export interface CursorPositionActionResponse extends Omit<ComputerActionResponse, "data"> {
+  data?: ComputerActionResponseDataCursorPosition;
 }

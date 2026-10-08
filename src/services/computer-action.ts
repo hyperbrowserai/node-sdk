@@ -3,6 +3,8 @@ import {
   ComputerAction,
   ComputerActionParams,
   ComputerActionResponse,
+  CursorPositionActionResponse,
+  ScrollAtCursorActionParams,
   Coordinate,
   ComputerActionMouseButton,
 } from "../types/computer-action";
@@ -10,10 +12,10 @@ import { BaseService } from "./base";
 import { HyperbrowserError } from "../client";
 
 export class ComputerActionService extends BaseService {
-  private async executeRequest(
+  private async executeRequest<Response extends ComputerActionResponse = ComputerActionResponse>(
     session: SessionDetail | string,
-    params: ComputerActionParams
-  ): Promise<ComputerActionResponse> {
+    params: ComputerActionParams | ScrollAtCursorActionParams
+  ): Promise<Response> {
     try {
       let sessionDetail: SessionDetail;
 
@@ -30,7 +32,7 @@ export class ComputerActionService extends BaseService {
         );
       }
 
-      return await this.request<ComputerActionResponse>(
+      return await this.request<Response>(
         sessionDetail.computerActionEndpoint,
         {
           method: "POST",
@@ -49,8 +51,8 @@ export class ComputerActionService extends BaseService {
 
   async click(
     session: SessionDetail | string,
-    x?: number,
-    y?: number,
+    x: number,
+    y: number,
     button: ComputerActionMouseButton = "left",
     numClicks: number = 1,
     returnScreenshot: boolean = false,
@@ -64,6 +66,22 @@ export class ComputerActionService extends BaseService {
       numClicks,
       keys,
       returnScreenshot,
+    });
+  }
+
+  async clickAtCursor(
+    session: SessionDetail | string,
+    button: ComputerActionMouseButton = "left",
+    numClicks: number = 1,
+    returnScreenshot: boolean = false,
+    keys?: string[]
+  ): Promise<ComputerActionResponse> {
+    return this.executeRequest(session, {
+      action: ComputerAction.CLICK,
+      button,
+      numClicks,
+      returnScreenshot,
+      keys,
     });
   }
 
@@ -88,8 +106,8 @@ export class ComputerActionService extends BaseService {
   async cursorPosition(
     session: SessionDetail | string,
     returnScreenshot: boolean = false
-  ): Promise<ComputerActionResponse> {
-    return this.executeRequest(session, {
+  ): Promise<CursorPositionActionResponse> {
+    return this.executeRequest<CursorPositionActionResponse>(session, {
       action: ComputerAction.CURSOR_POSITION,
       returnScreenshot,
     });
@@ -137,10 +155,10 @@ export class ComputerActionService extends BaseService {
 
   async scroll(
     session: SessionDetail | string,
-    x?: number,
-    y?: number,
-    scrollX: number = 0,
-    scrollY: number = 0,
+    x: number,
+    y: number,
+    scrollX: number,
+    scrollY: number,
     returnScreenshot: boolean = false,
     keys?: string[]
   ): Promise<ComputerActionResponse> {
@@ -152,6 +170,22 @@ export class ComputerActionService extends BaseService {
       scrollY,
       keys,
       returnScreenshot,
+    });
+  }
+
+  async scrollAtCursor(
+    session: SessionDetail | string,
+    scrollX: number = 0,
+    scrollY: number = 0,
+    returnScreenshot: boolean = false,
+    keys?: string[]
+  ): Promise<ComputerActionResponse> {
+    return this.executeRequest(session, {
+      action: ComputerAction.SCROLL,
+      scrollX,
+      scrollY,
+      returnScreenshot,
+      keys,
     });
   }
 

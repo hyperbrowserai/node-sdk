@@ -36,7 +36,7 @@ async function fixture(success = true) {
       response.end(
         JSON.stringify({
           success,
-          ...(body.action === "cursor_position" ? { data: { x: 123, y: 456 } } : {}),
+          ...(success && body.action === "cursor_position" ? { data: { x: 123, y: 456 } } : {}),
           ...(!success ? { error: "action failed" } : {}),
         })
       );
@@ -79,6 +79,11 @@ describe("computer action primitives", () => {
       const { actions, session, requests } = await fixture();
       const result = await actions.cursorPosition(byId ? session.id : session, true);
       expect(result).toEqual({ success: true, data: { x: 123, y: 456 } });
+      if (result.data) {
+        const x: number = result.data.x;
+        const y: number = result.data.y;
+        expect([x, y]).toEqual([123, 456]);
+      }
       expect(requests.at(-1)).toEqual({
         method: "POST",
         url: "/action",
@@ -149,8 +154,8 @@ describe("computer action primitives", () => {
 
   test("uses current cursor when click or scroll coordinates are omitted", async () => {
     const { actions, session, requests } = await fixture();
-    await actions.click(session);
-    await actions.scroll(session, undefined, undefined, 0, 2, false, ["Control_L"]);
+    await actions.clickAtCursor(session);
+    await actions.scrollAtCursor(session, 0, 2, false, ["Control_L"]);
     expect(requests[0].body).toEqual({
       action: "click",
       button: "left",
@@ -174,11 +179,54 @@ describe("computer action primitives", () => {
     expect(requests).toHaveLength(0);
   });
 
+  test("defaults cursor-relative scroll deltas without moving the pointer", async () => {
+    const { actions, session, requests } = await fixture();
+    await actions.scrollAtCursor(session);
+    expect(requests[0].body).toEqual({
+      action: "scroll",
+      scrollX: 0,
+      scrollY: 0,
+      returnScreenshot: false,
+    });
+  });
+
+  test.each([undefined, [], ["Shift_L"]])(
+    "scrolls at cursor with screenshot, session lookup and modifiers: %s",
+    async (keys) => {
+      const { actions, session, requests } = await fixture();
+      const result = await actions.scrollAtCursor(session.id, -1, 2, true, keys);
+      expect(result.success).toBe(true);
+      expect(requests[0].method).toBe("GET");
+      expect(requests[1].body).toEqual({
+        action: "scroll",
+        scrollX: -1,
+        scrollY: 2,
+        returnScreenshot: true,
+        ...(keys === undefined ? {} : { keys }),
+      });
+    }
+  );
+
   test("preserves unsuccessful action responses", async () => {
     const { actions, session } = await fixture(false);
-    expect(await actions.cursorPosition(session)).toMatchObject({
+    const result = await actions.cursorPosition(session);
+    expect(result).toMatchObject({
       success: false,
       error: "action failed",
+    });
+    expect(result.data).toBeUndefined();
+  });
+
+  test("clicks at cursor with buttons, counts, screenshot and modifiers", async () => {
+    const { actions, session, requests } = await fixture();
+    await actions.clickAtCursor(session.id, "right", 2, true, ["Control_L"]);
+    expect(requests[0].method).toBe("GET");
+    expect(requests[1].body).toEqual({
+      action: "click",
+      button: "right",
+      numClicks: 2,
+      returnScreenshot: true,
+      keys: ["Control_L"],
     });
   });
 });
