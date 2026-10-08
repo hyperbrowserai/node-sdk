@@ -79,7 +79,7 @@ describe("computer action primitives", () => {
       const { actions, session, requests } = await fixture();
       const result = await actions.cursorPosition(byId ? session.id : session, true);
       expect(result).toEqual({ success: true, data: { x: 123, y: 456 } });
-      if (result.data) {
+      if (result.data && "x" in result.data) {
         const x: number = result.data.x;
         const y: number = result.data.y;
         expect([x, y]).toEqual([123, 456]);

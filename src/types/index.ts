@@ -329,7 +329,6 @@ export {
   MoveMouseActionParams,
   ScreenshotActionParams,
   CursorPositionActionParams,
-  CursorPositionActionResponse,
   ScrollAtCursorActionParams,
   ScrollActionParams,
   TypeTextActionParams,

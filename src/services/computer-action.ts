@@ -3,7 +3,6 @@ import {
   ComputerAction,
   ComputerActionParams,
   ComputerActionResponse,
-  CursorPositionActionResponse,
   Coordinate,
   ComputerActionMouseButton,
 } from "../types/computer-action";
@@ -11,10 +10,10 @@ import { BaseService } from "./base";
 import { HyperbrowserError } from "../client";
 
 export class ComputerActionService extends BaseService {
-  private async executeRequest<Response extends ComputerActionResponse = ComputerActionResponse>(
+  private async executeRequest(
     session: SessionDetail | string,
     params: ComputerActionParams
-  ): Promise<Response> {
+  ): Promise<ComputerActionResponse> {
     try {
       let sessionDetail: SessionDetail;
 
@@ -31,7 +30,7 @@ export class ComputerActionService extends BaseService {
         );
       }
 
-      return await this.request<Response>(
+      return await this.request<ComputerActionResponse>(
         sessionDetail.computerActionEndpoint,
         {
           method: "POST",
@@ -105,8 +104,8 @@ export class ComputerActionService extends BaseService {
   async cursorPosition(
     session: SessionDetail | string,
     returnScreenshot: boolean = false
-  ): Promise<CursorPositionActionResponse> {
-    return this.executeRequest<CursorPositionActionResponse>(session, {
+  ): Promise<ComputerActionResponse> {
+    return this.executeRequest(session, {
       action: ComputerAction.CURSOR_POSITION,
       returnScreenshot,
     });

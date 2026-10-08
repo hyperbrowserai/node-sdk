@@ -8,7 +8,6 @@ import type {
   ComputerActionResponseData,
   ComputerActionResponse,
   CursorPositionActionParams,
-  CursorPositionActionResponse,
   ComputerActionResponseDataCursorPosition,
   CompleteSandboxImageBuildParams,
   CreateSandboxImageBuildParams,
@@ -78,7 +77,7 @@ describe("public type compatibility", () => {
     expectTypeOf<ScrollActionParams["keys"]>().toEqualTypeOf<string[] | undefined>();
   });
 
-  test("preserves coordinate contracts and exposes narrow cursor responses", () => {
+  test("preserves coordinate contracts and uses shared cursor responses", () => {
     const actionNames: Record<ComputerAction, string> = {
       click: "click",
       drag: "drag",
@@ -110,8 +109,8 @@ describe("public type compatibility", () => {
     expect(actionConsumer({ action: ComputerAction.CURSOR_POSITION })).toBe("cursor_position");
     expect(sharedResponseConsumer({ clipboardText: "hello" })).toBe("hello");
     expect(sharedResponseConsumer({ x: 10, y: 20 })).toBe("10");
-    const cursor: CursorPositionActionResponse = { success: true, data: { x: 10, y: 20 } };
-    if (cursor.data) {
+    const cursor: ComputerActionResponse = { success: true, data: { x: 10, y: 20 } };
+    if (cursor.data && "x" in cursor.data) {
       const x: number = cursor.data.x;
       const y: number = cursor.data.y;
       expect(x + y).toBe(30);
@@ -128,7 +127,7 @@ describe("public type compatibility", () => {
       Promise<ComputerActionResponse>
     >();
     expectTypeOf<ReturnType<ComputerActionService["cursorPosition"]>>().toEqualTypeOf<
-      Promise<CursorPositionActionResponse>
+      Promise<ComputerActionResponse>
     >();
   });
   test("keeps newly available response data optional", () => {

@@ -217,8 +217,3 @@ export interface ComputerActionResponse {
   error?: string;
   message?: string;
 }
-
-/** Response from reading the desktop cursor position. */
-export interface CursorPositionActionResponse extends Omit<ComputerActionResponse, "data"> {
-  data?: ComputerActionResponseDataCursorPosition;
-}
