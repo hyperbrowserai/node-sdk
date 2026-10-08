@@ -513,30 +513,6 @@ resources. Invalid or conflicting launch sources fail before a network request.
 Public handle classes are available from `@hyperbrowser/sdk/sandbox`; request and
 response types remain under `@hyperbrowser/sdk/types`.
 
-### Computer action cursor and modifier keys
-
-`cursorPosition()` returns physical desktop coordinates in `result.data`.
-Click, drag and scroll accept an optional trailing `keys` array of xdotool key
-names held during the action. Existing positional arguments are unchanged.
-Use `clickAtCursor()` or `scrollAtCursor()` to act at the current pointer.
-`click()` and `scroll()` still require coordinates. All actions, including
-`cursorPosition()`, return `ComputerActionResponse`. Check that `data` contains
-cursor coordinates before accessing them. The general action enum and
-request/response unions include cursor position.
-
-```typescript
-const session = await client.sessions.create();
-try {
-  const result = await client.computerAction.cursorPosition(session);
-  if (result.data && "x" in result.data) console.log(result.data.x, result.data.y);
-  await client.computerAction.click(session, 100, 200, "left", 1, false, ["Control_L"]);
-  await client.computerAction.drag(session, [{ x: 100, y: 200 }, { x: 200, y: 300 }], false, ["Shift_L"]);
-  await client.computerAction.scrollAtCursor(session, 0, 2, false, ["Control_L"]);
-} finally {
-  await client.sessions.stop(session.id);
-}
-```
-
 ### Development checks
 
 The supported Node baseline is 20.20.2. Run `yarn build`, `yarn typecheck`,
