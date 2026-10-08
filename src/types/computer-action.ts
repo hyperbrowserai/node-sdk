@@ -10,6 +10,7 @@ export enum ComputerAction {
   PRESS_KEYS = "press_keys",
   MOVE_MOUSE = "move_mouse",
   SCREENSHOT = "screenshot",
+  CURSOR_POSITION = "cursor_position",
   SCROLL = "scroll",
   TYPE_TEXT = "type_text",
   GET_CLIPBOARD_TEXT = "get_clipboard_text",
@@ -36,6 +37,7 @@ export interface ClickActionParams {
   y?: number;
   button?: ComputerActionMouseButton;
   numClicks?: number;
+  keys?: string[];
   returnScreenshot?: boolean;
 }
 
@@ -45,6 +47,7 @@ export interface ClickActionParams {
 export interface DragActionParams {
   action: ComputerAction.DRAG;
   path: Coordinate[];
+  keys?: string[];
   returnScreenshot?: boolean;
 }
 
@@ -74,6 +77,12 @@ export interface ScreenshotActionParams {
   action: ComputerAction.SCREENSHOT;
 }
 
+/** Parameters for reading the desktop cursor position. */
+export interface CursorPositionActionParams {
+  action: ComputerAction.CURSOR_POSITION;
+  returnScreenshot?: boolean;
+}
+
 /**
  * Parameters for scroll action
  */
@@ -81,10 +90,14 @@ export interface ScrollActionParams {
   action: ComputerAction.SCROLL;
   x: number;
   y: number;
+  keys?: string[];
   scrollX: number;
   scrollY: number;
   returnScreenshot?: boolean;
 }
+
+/** Parameters for scrolling without moving the desktop cursor. */
+export type ScrollAtCursorActionParams = Omit<ScrollActionParams, "x" | "y">;
 
 /**
  * Parameters for type text action
@@ -151,7 +164,9 @@ export type ComputerActionParams =
   | PressKeysActionParams
   | MoveMouseActionParams
   | ScreenshotActionParams
+  | CursorPositionActionParams
   | ScrollActionParams
+  | ScrollAtCursorActionParams
   | TypeTextActionParams
   | HoldKeyActionParams
   | MouseDownActionParams
@@ -181,7 +196,14 @@ export interface ComputerActionResponseDataListWindows {
   windows: ComputerActionWindow[];
 }
 
+/** Desktop cursor coordinates in physical screen pixels. */
+export interface ComputerActionResponseDataCursorPosition {
+  x: number;
+  y: number;
+}
+
 export type ComputerActionResponseData =
+  | ComputerActionResponseDataCursorPosition
   | ComputerActionResponseDataClipboardText
   | ComputerActionResponseDataListWindows;
 
