@@ -10,7 +10,6 @@ export enum ComputerAction {
   PRESS_KEYS = "press_keys",
   MOVE_MOUSE = "move_mouse",
   SCREENSHOT = "screenshot",
-  CURSOR_POSITION = "cursor_position",
   SCROLL = "scroll",
   TYPE_TEXT = "type_text",
   GET_CLIPBOARD_TEXT = "get_clipboard_text",
@@ -79,7 +78,7 @@ export interface ScreenshotActionParams {
 
 /** Parameters for reading the desktop cursor position. */
 export interface CursorPositionActionParams {
-  action: ComputerAction.CURSOR_POSITION;
+  action: "cursor_position";
   returnScreenshot?: boolean;
 }
 
@@ -88,13 +87,16 @@ export interface CursorPositionActionParams {
  */
 export interface ScrollActionParams {
   action: ComputerAction.SCROLL;
-  x?: number;
-  y?: number;
+  x: number;
+  y: number;
   keys?: string[];
   scrollX: number;
   scrollY: number;
   returnScreenshot?: boolean;
 }
+
+/** Parameters for scrolling without moving the desktop cursor. */
+export type ScrollAtCursorActionParams = Omit<ScrollActionParams, "x" | "y">;
 
 /**
  * Parameters for type text action
@@ -153,7 +155,7 @@ export interface ListWindowsActionParams {
 }
 
 /**
- * Union type for all computer action parameters
+ * Existing action parameters; cursor reads and cursor-relative scrolling use dedicated helpers.
  */
 export type ComputerActionParams =
   | ClickActionParams
@@ -161,7 +163,6 @@ export type ComputerActionParams =
   | PressKeysActionParams
   | MoveMouseActionParams
   | ScreenshotActionParams
-  | CursorPositionActionParams
   | ScrollActionParams
   | TypeTextActionParams
   | HoldKeyActionParams
@@ -199,7 +200,6 @@ export interface ComputerActionResponseDataCursorPosition {
 }
 
 export type ComputerActionResponseData =
-  | ComputerActionResponseDataCursorPosition
   | ComputerActionResponseDataClipboardText
   | ComputerActionResponseDataListWindows;
 
@@ -212,4 +212,9 @@ export interface ComputerActionResponse {
   data?: ComputerActionResponseData;
   error?: string;
   message?: string;
+}
+
+/** Response from reading the desktop cursor position. */
+export interface CursorPositionActionResponse extends Omit<ComputerActionResponse, "data"> {
+  data?: ComputerActionResponseDataCursorPosition;
 }
