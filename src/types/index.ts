@@ -1,4 +1,5 @@
 export { HyperbrowserConfig } from "./config";
+export * from "./webmcp";
 export {
   StartCrawlJobParams,
   StartCrawlJobResponse,

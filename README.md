@@ -16,6 +16,40 @@ or
 yarn add @hyperbrowser/sdk
 ```
 
+## WebMCP page tools
+
+Create a session with `enableWebMcp: true` (default: false), then navigate to a page
+that exposes WebMCP tools using Playwright or Puppeteer. With that session open:
+
+```typescript
+const discovery = await client.sessions.webmcp.listTools(session.id);
+// Select a tool using its name, source page/frame, and input schema.
+const tool = discovery.tools.find((tool) => tool.name === "search");
+if (!tool) throw new Error("The page has no search tool");
+const result = await client.sessions.webmcp.invoke(session.id, {
+  toolRef: tool.toolRef,
+  input: { query: "flights to Tokyo" }, // Match the selected tool's schema.
+});
+console.log(result.status, result.output);
+```
+
+For long-running tools or forms awaiting human submission, use
+`sessions.webmcp.start(sessionId, params)`, then
+`sessions.webmcp.getResult(sessionId, invocationId, { waitSeconds: 30 })` until the
+status is terminal. `sessions.webmcp.cancel(sessionId, invocationId)` requests
+best-effort cancellation. Blocking invocation defaults to 60 seconds (maximum
+120); `start` defaults to 300 seconds (maximum 3,600) via `timeoutSeconds`.
+
+Discover tools again after navigation. Invocations never automatically retry;
+losing a response can leave an unknown outcome. Handles are ephemeral and
+terminal results expire after 10 minutes or earlier eviction. Check result
+status and truncation metadata before using output. Public types, including
+`WebMCPTool`, `WebMCPInvocation`, and the request types, are exported from
+`@hyperbrowser/sdk/types`.
+
+See the [WebMCP guide](https://hyperbrowser.ai/docs/sessions/webmcp) for complete
+examples, cancellation behavior, human submission, and limits.
+
 ## Usage
 
 ### Playwright
