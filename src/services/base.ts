@@ -12,6 +12,9 @@ const getRequestId = (response: Response): string | undefined => {
   return response.headers.get("x-request-id") || response.headers.get("request-id") || undefined;
 };
 
+/** The API's machine codes, such as SECRET_NOT_FOUND. */
+const SERVER_ERROR_CODE_PATTERN = /^[A-Z][A-Z0-9]*(_[A-Z0-9]+)+$/;
+
 export class BaseService {
   constructor(
     protected readonly apiKey: string,
@@ -92,10 +95,26 @@ export class BaseService {
         let errorMessage: string;
         let errorDetails: unknown;
         let errorCode: string | undefined;
+        let retryable = RETRYABLE_STATUS_CODES.has(response.status);
         try {
           const errorData = await response.json();
           errorDetails = errorData;
           errorCode = typeof errorData?.code === "string" ? errorData.code : undefined;
+          // Some routes send the code as "error" next to a message, for
+          // example API_KEY_SCOPE_DENIED.
+          if (
+            errorCode === undefined &&
+            errorData?.message &&
+            typeof errorData.error === "string" &&
+            SERVER_ERROR_CODE_PATTERN.test(errorData.error)
+          ) {
+            errorCode = errorData.error;
+          }
+          // The server knows better when it says so: an ambiguous process
+          // start with secrets is a 502 that must not be retried blindly.
+          if (typeof errorData?.retryable === "boolean") {
+            retryable = errorData.retryable;
+          }
           errorMessage =
             errorData.message || errorData.error || `HTTP error! status: ${response.status}`;
         } catch (error) {
@@ -106,7 +125,7 @@ export class BaseService {
           statusCode: response.status,
           code: errorCode,
           requestId: getRequestId(response),
-          retryable: RETRYABLE_STATUS_CODES.has(response.status),
+          retryable,
           service: "control",
           details: errorDetails,
           method: init?.method ?? "GET",

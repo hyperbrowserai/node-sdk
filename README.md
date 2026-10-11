@@ -375,6 +375,52 @@ await sandbox.stop();
 await client.volumes.delete(sameVolume.id);
 ```
 
+Store secrets and deliver them to sandbox processes as environment variables:
+
+```typescript
+// The value is encrypted locally to the platform key; the API only receives
+// the envelope, and values are never returned.
+await client.secrets.create({
+  name: "provider-key",
+  description: "Provider API key",
+  value: process.env.PROVIDER_KEY!,
+});
+await client.secrets.addVersion("provider-key", newValue); // next version
+const secrets = await client.secrets.list({ search: "provider" });
+const detail = await client.secrets.get("provider-key"); // metadata and versions
+
+const sandbox = await client.sandboxes.create({ imageName: "node" });
+const result = await sandbox.exec("node app.js", {
+  secrets: { API_KEY: "provider-key", DB_URL: { name: "db-url", version: 2 } },
+});
+
+// Long-running processes report the versions they received.
+const worker = await sandbox.processes.start("node worker.js", {
+  secrets: { API_KEY: "provider-key" },
+});
+console.log(worker.secrets);
+
+// Secrets for the image's startup command (image launches only).
+await client.sandboxes.create({ imageName: "my-image", secrets: { API_KEY: "provider-key" } });
+
+await client.secrets.deleteVersion("provider-key", 1);
+await client.secrets.delete("provider-key");
+```
+
+- Secret methods take a secret's ID or exact name. Values are strings or bytes,
+  used byte-for-byte: 1 to 32,768 bytes of UTF-8 without NUL.
+- A secret is delivered only to the process it is passed to, but anything
+  running as the same user (or root) in the sandbox can read that process's
+  environment. The sandbox and its later snapshots are marked
+  `containsSecrets`.
+- Deleting a secret does not revoke a value already delivered to a sandbox.
+- Limits: 100 secrets per team, 10 stored versions per secret, 32 secrets per
+  process or sandbox. The API key needs the `secrets.read`, `secrets.manage`
+  or `secrets.use` scope for reading, managing or delivering secrets.
+- A process start with secrets is never retried. If it times out, the error
+  code is `secret_process_outcome_unknown`: check the sandbox's processes
+  before starting it again.
+
 List sandboxes with time-range and search filters:
 
 ```typescript

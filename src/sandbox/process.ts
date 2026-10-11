@@ -8,8 +8,14 @@ import {
   validateOutputLimit,
 } from "./process-output";
 import {
+  assertNoEnvSecretOverlap,
+  serializeSecretReferences,
+  WireSecretReference,
+} from "./secret-references";
+import {
   SandboxExecParams,
   SandboxExecOptions,
+  SandboxResolvedSecret,
   SandboxProcessListParams,
   SandboxProcessListResponse,
   SandboxProcessResult,
@@ -33,7 +39,7 @@ interface ProcessListWireResponse {
   next_cursor?: string;
 }
 
-interface RawProcessSummary extends Partial<SandboxProcessSummary> {
+export interface RawProcessSummary extends Partial<SandboxProcessSummary> {
   id: string;
   status: SandboxProcessSummary["status"];
   command: string;
@@ -44,6 +50,48 @@ interface RawProcessSummary extends Partial<SandboxProcessSummary> {
   started_at: number;
   completed_at?: number | null;
 }
+
+/** The body of a control API process start with secrets. */
+export interface SecretProcessStartPayload {
+  command: string;
+  cwd?: string;
+  env?: Record<string, string>;
+  timeoutMs?: number;
+  runAs?: string;
+  secrets: Record<string, WireSecretReference>;
+}
+
+export interface SecretProcessStartResponse {
+  /** The sandbox agent's summary, passed through unchanged. */
+  process?: RawProcessSummary;
+  secrets?: SandboxResolvedSecret[];
+}
+
+/** @internal Starts processes with secrets through the control API. */
+export interface SecretProcessStarter {
+  sandboxId: string;
+  /** Each runtime wait stays under the runtime request timeout. */
+  waitChunkMs: number;
+  start(payload: SecretProcessStartPayload): Promise<SecretProcessStartResponse>;
+}
+
+/** Errors from connecting at all; anything else may have reached the API. */
+const CONNECT_ERROR_CODES = new Set(["ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN", "EHOSTUNREACH"]);
+
+/**
+ * Whether a failed start may still have reached the API: it timed out or its
+ * response couldn't be read. API errors and failures to connect are excluded.
+ */
+const startMayHaveArrived = (error: unknown): boolean => {
+  if (!(error instanceof HyperbrowserError)) {
+    return true;
+  }
+  if (error.statusCode !== undefined && error.statusCode >= 400) {
+    return false;
+  }
+  const code = (error.cause as { code?: string } | undefined)?.code;
+  return !(code && CONNECT_ERROR_CODES.has(code));
+};
 
 const DEFAULT_PROCESS_KILL_WAIT_MS = 5_000;
 const SHELL_SAFE_TOKEN_PATTERN = /^[A-Za-z0-9_@%+=:,./-]+$/;
@@ -208,10 +256,16 @@ export class SandboxProcessHandle {
   private closeStream: (() => void) | null = null;
   private readonly changed = new ChangeSignal();
 
+  /** The secret versions delivered to a process started with `secrets`. */
+  public readonly secrets?: SandboxResolvedSecret[];
+
   constructor(
     private readonly transport: RuntimeTransport,
-    private summary: SandboxProcessSummary
-  ) {}
+    private summary: SandboxProcessSummary,
+    secrets?: SandboxResolvedSecret[]
+  ) {
+    this.secrets = secrets;
+  }
 
   /** @internal Collect output from the start-stream that created this process. */
   attachCollector(stream: RuntimeSSEStream, maxOutputBytes: number): void {
@@ -462,7 +516,10 @@ export class SandboxProcessHandle {
 }
 
 export class SandboxProcessesApi {
-  constructor(private readonly transport: RuntimeTransport) {}
+  constructor(
+    private readonly transport: RuntimeTransport,
+    private readonly secretStarter?: SecretProcessStarter
+  ) {}
 
   /** Run a command to completion, collecting its full output from process start. */
   async exec(command: string, options?: SandboxExecOptions): Promise<SandboxProcessResult>;
@@ -471,8 +528,11 @@ export class SandboxProcessesApi {
     input: string | SandboxExecParams,
     options?: SandboxExecOptions
   ): Promise<SandboxProcessResult> {
-    const handle =
-      typeof input === "string" ? await this.start(input, options) : await this.start(input);
+    const params = normalizeExecParams(input, options);
+    if (params.secrets && Object.keys(params.secrets).length > 0) {
+      return this.execWithSecrets(params);
+    }
+    const handle = await this.start(params);
     try {
       return await handle.wait();
     } finally {
@@ -492,6 +552,9 @@ export class SandboxProcessesApi {
     options?: SandboxExecOptions
   ): Promise<SandboxProcessHandle> {
     const params = normalizeExecParams(input, options);
+    if (params.secrets && Object.keys(params.secrets).length > 0) {
+      return this.startWithSecrets(params);
+    }
     const maxOutputBytes = params.maxOutputBytes ?? DEFAULT_MAX_PROCESS_OUTPUT_BYTES;
     validateOutputLimit(maxOutputBytes);
     const stream = await this.transport.openSSE("/sandbox/processes", undefined, {
@@ -519,6 +582,116 @@ export class SandboxProcessesApi {
     }
     handle.attachCollector(stream, maxOutputBytes);
     return handle;
+  }
+
+  /**
+   * Start through the control API so the sandbox service decrypts the
+   * secrets. Output is then read through the runtime's retained output.
+   */
+  private async startWithSecrets(params: SandboxExecParams): Promise<SandboxProcessHandle> {
+    const starter = this.secretStarter;
+    if (!starter) {
+      throw new HyperbrowserError("Starting a process with secrets requires a sandbox handle");
+    }
+    const secrets = serializeSecretReferences(params.secrets) as Record<
+      string,
+      WireSecretReference
+    >;
+    assertNoEnvSecretOverlap(params.env, secrets);
+    const timeoutMs =
+      params.timeoutMs ?? (params.timeoutSec !== undefined ? params.timeoutSec * 1000 : undefined);
+
+    let response: SecretProcessStartResponse;
+    try {
+      response = await starter.start({
+        command: params.command,
+        cwd: params.cwd,
+        env: params.env,
+        timeoutMs,
+        runAs: params.runAs,
+        secrets,
+      });
+    } catch (error) {
+      if (!startMayHaveArrived(error)) {
+        throw error;
+      }
+      throw new HyperbrowserError(
+        `The process start may have reached the API, but no result came back; the command may be running, so check the sandbox's processes before retrying`,
+        {
+          code: "secret_process_outcome_unknown",
+          retryable: false,
+          service: "control",
+          details: { sandboxId: starter.sandboxId },
+          cause: error,
+        }
+      );
+    }
+    if (!response.process?.id) {
+      // The start succeeded, so the command may be running with the secrets.
+      throw new HyperbrowserError(
+        "The API accepted the process start but returned no process ID; the command may be running, so check the sandbox's processes before retrying",
+        {
+          code: "secret_process_outcome_unknown",
+          retryable: false,
+          service: "control",
+          details: { sandboxId: starter.sandboxId },
+        }
+      );
+    }
+    return new SandboxProcessHandle(
+      this.transport,
+      normalizeProcessSummary(response.process),
+      response.secrets ?? []
+    );
+  }
+
+  /**
+   * Like one-shot exec: stdin is closed, then the command's final result is
+   * awaited. The command's own timeout is enforced in the sandbox, so an
+   * expired wait (408) only means it is still running.
+   */
+  private async execWithSecrets(params: SandboxExecParams): Promise<SandboxProcessResult> {
+    const handle = await this.startWithSecrets(params);
+    const starter = this.secretStarter as SecretProcessStarter;
+    try {
+      try {
+        await handle.writeStdin({ eof: true });
+      } catch (error) {
+        // 409: the command already exited; its result is still reported.
+        if (!(error instanceof HyperbrowserError) || error.statusCode !== 409) {
+          throw error;
+        }
+      }
+      for (;;) {
+        if (params.signal?.aborted) {
+          throw new HyperbrowserError("Request canceled", {
+            code: "request_aborted",
+            service: "runtime",
+          });
+        }
+        try {
+          return await handle.wait({ timeoutMs: starter.waitChunkMs });
+        } catch (error) {
+          if (!(error instanceof HyperbrowserError) || error.statusCode !== 408) {
+            throw error;
+          }
+        }
+      }
+    } catch (error) {
+      // Running exec again would start a second process with the secrets.
+      throw new HyperbrowserError(
+        `Process ${handle.id} started, but waiting for its result failed: ${
+          error instanceof Error ? error.message.replace(/^\[Hyperbrowser\]: /, "") : String(error)
+        }`,
+        {
+          code: "secret_process_failed",
+          retryable: false,
+          service: "runtime",
+          details: { sandboxId: starter.sandboxId, processId: handle.id },
+          cause: error,
+        }
+      );
+    }
   }
 
   async get(processId: string): Promise<SandboxProcessHandle> {

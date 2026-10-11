@@ -18,6 +18,7 @@ import { JevComputerUseService } from "./services/agents/jev-computer-use";
 import { WebService } from "./services/web";
 import { SandboxesService } from "./services/sandboxes";
 import { VolumesService } from "./services/volumes";
+import { SecretsService } from "./services/secrets";
 
 import { HyperbrowserError } from "./error";
 export { HyperbrowserError } from "./error";
@@ -45,6 +46,7 @@ export class HyperbrowserClient {
   public readonly computerAction: ComputerActionService;
   public readonly sandboxes: SandboxesService;
   public readonly volumes: VolumesService;
+  public readonly secrets: SecretsService;
 
   constructor(config: HyperbrowserConfig = {}) {
     const apiKey = config.apiKey || process.env["HYPERBROWSER_API_KEY"];
@@ -69,6 +71,7 @@ export class HyperbrowserClient {
     this.computerAction = new ComputerActionService(apiKey, baseUrl, timeout);
     this.sandboxes = new SandboxesService(apiKey, baseUrl, timeout, runtimeProxyOverride);
     this.volumes = new VolumesService(apiKey, baseUrl, timeout);
+    this.secrets = new SecretsService(apiKey, baseUrl, timeout);
 
     this.agents = {
       browserUse: new BrowserUseService(apiKey, baseUrl, timeout),

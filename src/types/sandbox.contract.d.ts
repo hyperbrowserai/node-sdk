@@ -42,6 +42,18 @@ type SnapshotMountsAllowed = {
 } extends CreateSandboxParams
   ? true
   : false;
+type ImageSecretsAllowed = {
+  imageName: "image";
+  secrets: { API_KEY: "provider-key"; DB_URL: { name: "db-url"; version: 2 } };
+} extends CreateSandboxParams
+  ? true
+  : false;
+type SnapshotSecretsAllowed = {
+  snapshotName: "snapshot";
+  secrets: { API_KEY: "provider-key" };
+} extends CreateSandboxParams
+  ? true
+  : false;
 
 type _NoSandboxNameSource = Assert<HasSandboxNameSource extends false ? true : false>;
 type _SnapshotSourceAllowed = Assert<SnapshotSourceAllowed>;
@@ -54,3 +66,5 @@ type _SnapshotCpuDisallowed = Assert<SnapshotCpuAllowed extends false ? true : f
 type _SnapshotMemoryDisallowed = Assert<SnapshotMemoryAllowed extends false ? true : false>;
 type _SnapshotDiskDisallowed = Assert<SnapshotDiskAllowed extends false ? true : false>;
 type _SnapshotMountsAllowed = Assert<SnapshotMountsAllowed>;
+type _ImageSecretsAllowed = Assert<ImageSecretsAllowed>;
+type _SnapshotSecretsDisallowed = Assert<SnapshotSecretsAllowed extends false ? true : false>;

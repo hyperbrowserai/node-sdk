@@ -2,7 +2,13 @@ import { HyperbrowserError } from "../error";
 import { SandboxFilesApi } from "../sandbox/files";
 import { RuntimeConnection, RuntimeTransport } from "../sandbox/base";
 import { runtimeSessionIdFromPath } from "../sandbox/runtime-path";
-import { SandboxProcessHandle, SandboxProcessesApi } from "../sandbox/process";
+import {
+  SandboxProcessHandle,
+  SandboxProcessesApi,
+  SecretProcessStartPayload,
+  SecretProcessStartResponse,
+} from "../sandbox/process";
+import { serializeSecretReferences } from "../sandbox/secret-references";
 import { SandboxTerminalApi } from "../sandbox/terminal";
 import {
   buildDockerImageFromDockerfile,
@@ -68,6 +74,8 @@ import { optionalInteger, optionalNumber } from "./normalize";
 import { BaseService } from "./base";
 
 const RUNTIME_SESSION_REFRESH_BUFFER_MS = 60_000;
+/** Runtime waits for secret processes stay well under the request timeout. */
+const SECRET_PROCESS_WAIT_CHUNK_MS = 20_000;
 
 type WireSandbox = Omit<Sandbox, "cpu" | "memoryMiB" | "diskMiB"> & {
   vcpus?: number | null;
@@ -159,6 +167,7 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
       allowInternetAccess: params.allowInternetAccess,
       allowOut: params.allowOut,
       denyOut: params.denyOut,
+      secrets: serializeSecretReferences(params.secrets),
     };
   }
 
@@ -166,7 +175,13 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
     cpu?: number;
     memoryMiB?: number;
     diskMiB?: number;
+    secrets?: unknown;
   };
+
+  if (snapshotParams.secrets !== undefined) {
+    // Snapshot launches do not run a startup command.
+    throw new HyperbrowserError("secrets are only supported for image launches");
+  }
 
   if (
     snapshotParams.cpu !== undefined ||
@@ -320,7 +335,11 @@ export class SandboxHandle {
       service.runtimeTimeout,
       service.runtimeProxyOverride
     );
-    this.processes = new SandboxProcessesApi(this.transport);
+    this.processes = new SandboxProcessesApi(this.transport, {
+      sandboxId: detail.id,
+      waitChunkMs: Math.min(SECRET_PROCESS_WAIT_CHUNK_MS, Math.max(1_000, service.runtimeTimeout / 2)),
+      start: (payload) => service.startSecretProcess(this.id, payload),
+    });
     this.files = new SandboxFilesApi(
       this.transport,
       () => this.resolveRuntimeSocketConnectionInfo(),
@@ -1351,6 +1370,32 @@ export class SandboxesService extends BaseService {
       }
       await sleep(IMAGE_BUILD_COMPLETE_RETRY_DELAY_MS);
       return this.completeImageBuild(buildId, params);
+    }
+  }
+
+  /**
+   * Start a process with secrets through the control API. Never retried: a
+   * failed start may still have run the command.
+   */
+  async startSecretProcess(
+    id: string,
+    payload: SecretProcessStartPayload
+  ): Promise<SecretProcessStartResponse> {
+    try {
+      return await this.request<SecretProcessStartResponse>(
+        `/sandbox/${encodeURIComponent(id)}/processes`,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+    } catch (error) {
+      if (error instanceof HyperbrowserError) {
+        throw error;
+      }
+      throw new HyperbrowserError(`Failed to start a process with secrets in sandbox ${id}`, {
+        cause: error,
+      });
     }
   }
 
