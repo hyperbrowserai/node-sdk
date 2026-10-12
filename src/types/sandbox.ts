@@ -65,6 +65,11 @@ export interface Sandbox {
   network?: SandboxNetworkPolicy | null;
   runtime: SandboxRuntimeTarget;
   exposedPorts: SandboxExposeResult[];
+  /**
+   * Secrets were delivered into the sandbox, or it was restored from a
+   * snapshot that may hold them.
+   */
+  containsSecrets?: boolean;
 }
 
 export interface SandboxDetail extends Sandbox {
@@ -73,6 +78,28 @@ export interface SandboxDetail extends Sandbox {
 }
 
 export type SandboxVolumeMountType = "rw" | "ro";
+
+/**
+ * A stored secret to deliver as an environment variable: its name, or
+ * `{ name, version }` to pin a version. The latest version is used otherwise.
+ */
+export type SandboxSecretReference =
+  | string
+  | {
+      name: string;
+      version?: number | "latest";
+    };
+
+/** Environment variable name to secret, at most 32 per process or sandbox. */
+export type SandboxSecrets = Record<string, SandboxSecretReference>;
+
+/** The secret version an environment variable received. */
+export interface SandboxResolvedSecret {
+  env: string;
+  name: string;
+  secretId: string;
+  version: number;
+}
 
 export interface SandboxVolumeMount {
   id: string;
@@ -101,6 +128,7 @@ export type CreateSandboxParams =
       cpu?: never;
       memoryMiB?: never;
       diskMiB?: never;
+      secrets?: never;
     })
   | (SandboxCreateCommonParams & {
       snapshotName?: never;
@@ -110,6 +138,12 @@ export type CreateSandboxParams =
       cpu?: number;
       memoryMiB?: number;
       diskMiB?: number;
+      /**
+       * Secrets for the image's startup command only; requires the API key's
+       * `secrets.use` scope and is not supported with `runtimeClass:
+       * "gvisor-cpu"`. The sandbox is marked as containing secrets.
+       */
+      secrets?: SandboxSecrets;
     });
 
 export interface SandboxListParams {
@@ -179,6 +213,8 @@ export interface SandboxSnapshotSummary {
   compatibilityTag?: string | null;
   metadata: Record<string, unknown>;
   uploaded: boolean;
+  /** The snapshot's memory may hold secrets. */
+  containsSecrets?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -485,6 +521,17 @@ export interface SandboxExecParams {
   timeoutMs?: number;
   timeoutSec?: number;
   runAs?: string;
+  /**
+   * Stored secrets to deliver as environment variables of this process only.
+   * The process is started through the control API, which has the sandbox
+   * service decrypt them; requires the API key's `secrets.use` scope. Anything
+   * running as the same user (or root) in the sandbox can read the process's
+   * environment, and the sandbox is marked as containing secrets.
+   *
+   * Output is read back from the process's retained output rather than the
+   * start stream, so `maxOutputBytes` does not apply.
+   */
+  secrets?: SandboxSecrets;
   /** @deprecated Ignored for process APIs. */
   useShell?: boolean;
 }

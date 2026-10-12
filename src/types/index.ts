@@ -175,6 +175,9 @@ export {
   SandboxDetail,
   SandboxVolumeMountType,
   SandboxVolumeMount,
+  SandboxSecretReference,
+  SandboxSecrets,
+  SandboxResolvedSecret,
   SandboxListParams,
   SandboxListResponse,
   SandboxImageSource,
@@ -265,6 +268,20 @@ export {
   VolumeListResponse,
   VolumeDeleteResult,
 } from "./volume";
+export {
+  SecretValue,
+  SecretsPublicKey,
+  SecretsPublicKeyJwk,
+  Secret,
+  SecretVersion,
+  SecretDetail,
+  CreateSecretParams,
+  UpdateSecretParams,
+  SecretListParams,
+  SecretListResponse,
+  SecretDeleteResult,
+  SecretVersionDeleteResult,
+} from "./secret";
 export {
   CreateProfileParams,
   ForkProfileParams,

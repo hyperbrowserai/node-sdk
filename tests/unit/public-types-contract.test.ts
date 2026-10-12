@@ -20,6 +20,7 @@ import type {
   SandboxImageListResponse,
   SandboxNetworkPolicy,
   SandboxSnapshotListResponse,
+  SandboxSnapshotSummary,
   SessionRegion,
   SessionStatus,
   VolumeListResponse,
@@ -58,6 +59,11 @@ function actionConsumer(params: ComputerActionParams): string {
 }
 
 describe("public type compatibility", () => {
+  test("accepts sandbox and snapshot objects created before secrets metadata existed", () => {
+    expectTypeOf<Omit<Sandbox, "containsSecrets">>().toExtend<Sandbox>();
+    expectTypeOf<Omit<SandboxSnapshotSummary, "containsSecrets">>().toExtend<SandboxSnapshotSummary>();
+  });
+
   test("exports cursor-position requests and typed coordinates with optional pointer modifiers", () => {
     const request: CursorPositionActionParams = { action: ComputerAction.CURSOR_POSITION };
     const response: ComputerActionResponseDataCursorPosition = { x: 10, y: 20 };

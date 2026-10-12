@@ -375,6 +375,76 @@ await sandbox.stop();
 await client.volumes.delete(sameVolume.id);
 ```
 
+Store secrets and deliver them to sandbox processes as environment variables:
+
+```typescript
+// The value is encrypted locally to the platform key; the API only receives
+// the envelope, and values are never returned.
+await client.secrets.create({
+  name: "provider-key",
+  description: "Provider API key",
+  value: process.env.PROVIDER_KEY!,
+});
+await client.secrets.addVersion("provider-key", newValue); // next version
+const secrets = await client.secrets.list({ search: "provider" });
+const detail = await client.secrets.get("provider-key"); // metadata and versions
+
+const sandbox = await client.sandboxes.create({ imageName: "node" });
+const result = await sandbox.exec("node app.js", {
+  secrets: { API_KEY: "provider-key", DB_URL: { name: "db-url", version: 2 } },
+});
+
+// Long-running processes report the versions they received.
+const worker = await sandbox.processes.start("node worker.js", {
+  secrets: { API_KEY: "provider-key" },
+});
+console.log(worker.secrets);
+
+// Secrets for the image's startup command (image launches only).
+await client.sandboxes.create({ imageName: "my-image", secrets: { API_KEY: "provider-key" } });
+
+await client.secrets.deleteVersion("provider-key", 1);
+await client.secrets.delete("provider-key");
+```
+
+- Secret methods take a secret's ID or exact name. Values are strings or bytes,
+  used byte-for-byte: 1 to 32,768 bytes of UTF-8 without NUL.
+- A secret is delivered only to the process it is passed to, but anything
+  running as the same user (or root) in the sandbox can read that process's
+  environment. The sandbox and its later snapshots are marked
+  `containsSecrets`.
+- Deleting a secret does not revoke a value already delivered to a sandbox.
+- Limits: 100 secrets per team, 10 stored versions per secret, 32 secrets per
+  process or sandbox. The API key needs the `secrets.read`, `secrets.manage`
+  or `secrets.use` scope for reading, managing or delivering secrets.
+  SDK updates, version additions, and deletions also require `secrets.read`
+  alongside `secrets.manage`: the SDK resolves the existing secret before
+  changing it, even when given an ID. Encryption also needs its encryption
+  context. Creating a new secret needs only `secrets.manage`.
+- A process start with secrets is never retried. If it times out, its
+  response is lost, or the API reports that the sandbox host did not confirm
+  the start (`SECRET_PROCESS_OUTCOME_UNKNOWN`), the error code is
+  `secret_process_outcome_unknown` and the API's response, if any, is in
+  `details`: check the sandbox's processes before starting it again.
+- The same applies to `sandboxes.create` with `secrets`: if the create result
+  can't be confirmed, the error code is `secret_process_outcome_unknown`, since
+  a sandbox may already be running its startup command with the secrets. List
+  sandboxes before creating it again.
+- Startup secrets need an image with a startup command and a Firecracker
+  sandbox. Otherwise the create fails with `SECRET_STARTUP_UNSUPPORTED`; create
+  the sandbox without `secrets` and pass them to `processes.exec` or
+  `processes.start` instead.
+- Secrets routes return 403 `SECRETS_FEATURE_DISABLED` when the team doesn't
+  have secrets enabled, and 503 `SECRETS_NOT_CONFIGURED` (not retryable) when
+  the server has no secrets encryption key.
+- A command timeout (`timeoutSec` or `timeoutMs`) for a process started with
+  secrets is sent in whole milliseconds and can be at most 24 hours.
+- Secret-started handles support `wait()` and `result()` without a local
+  deadline. An explicit wait timeout limits the whole local wait, leaving the
+  command running; the same handle can be awaited again. Runtime waits use
+  bounded requests below the client's request timeout. Output still comes from
+  the receiver's retained output, so `maxOutputBytes` does not apply.
+
 List sandboxes with time-range and search filters:
 
 ```typescript

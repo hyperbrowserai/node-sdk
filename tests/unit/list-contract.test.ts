@@ -39,6 +39,7 @@ describe("sandbox control list contract", () => {
               browserUrlExpiresAt: "2026-03-12T00:00:01Z",
             },
           ],
+          containsSecrets: false,
         },
       ],
       totalCount: 1,

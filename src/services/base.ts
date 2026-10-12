@@ -1,5 +1,10 @@
 import fetch, { HeadersInit, RequestInit, Response } from "node-fetch";
-import { errorRequestPath, HyperbrowserError, networkErrorMessage } from "../error";
+import {
+  errorRequestPath,
+  HyperbrowserError,
+  networkErrorMessage,
+  ResponseDecodingError,
+} from "../error";
 import {
   getRetryDelayMs,
   isRetryableNetworkError,
@@ -10,6 +15,34 @@ import {
 
 const getRequestId = (response: Response): string | undefined => {
   return response.headers.get("x-request-id") || response.headers.get("request-id") || undefined;
+};
+
+/** The API's machine codes, such as SECRET_NOT_FOUND. */
+const SERVER_ERROR_CODE_PATTERN = /^[A-Z][A-Z0-9]*(_[A-Z0-9]+)+$/;
+
+/** Codes whose retryable status default (such as 503) would be wrong. */
+const NON_RETRYABLE_ERROR_CODES = new Set(["SECRETS_NOT_CONFIGURED"]);
+
+/** The sandbox and secret an error is about, when the API names them. */
+const errorMessageContext = (errorData: {
+  sandboxId?: unknown;
+  details?: { env?: unknown; secretId?: unknown; version?: unknown } | null;
+}): string => {
+  let context = "";
+  // A failed create may leave a sandbox the caller has to stop.
+  if (typeof errorData.sandboxId === "string" && errorData.sandboxId.trim()) {
+    context += ` (sandbox ${errorData.sandboxId.trim()})`;
+  }
+  // Which of several secrets could not be used.
+  const secret = errorData.details;
+  if (secret && typeof secret.env === "string" && secret.env.trim()) {
+    const parts = [
+      typeof secret.secretId === "string" ? `secret ${secret.secretId}` : undefined,
+      typeof secret.version === "number" ? `version ${secret.version}` : undefined,
+    ].filter(Boolean);
+    context += ` (${secret.env.trim()}${parts.length > 0 ? `: ${parts.join(", ")}` : ""})`;
+  }
+  return context;
 };
 
 export class BaseService {
@@ -92,23 +125,50 @@ export class BaseService {
         let errorMessage: string;
         let errorDetails: unknown;
         let errorCode: string | undefined;
+        let decodingFailed = false;
+        let decodingCause: unknown;
+        let retryable = RETRYABLE_STATUS_CODES.has(response.status);
         try {
           const errorData = await response.json();
           errorDetails = errorData;
           errorCode = typeof errorData?.code === "string" ? errorData.code : undefined;
+          // Some routes send the code as "error" next to a message, for
+          // example API_KEY_SCOPE_DENIED.
+          if (
+            errorCode === undefined &&
+            errorData?.message &&
+            typeof errorData.error === "string" &&
+            SERVER_ERROR_CODE_PATTERN.test(errorData.error)
+          ) {
+            errorCode = errorData.error;
+          }
+          // The server knows better when it says so: an ambiguous process
+          // start with secrets is a 502 that must not be retried blindly.
+          if (typeof errorData?.retryable === "boolean") {
+            retryable = errorData.retryable;
+          } else if (errorCode !== undefined && NON_RETRYABLE_ERROR_CODES.has(errorCode)) {
+            retryable = false;
+          }
+          const message = errorData.message || errorData.error;
           errorMessage =
-            errorData.message || errorData.error || `HTTP error! status: ${response.status}`;
+            typeof message === "string" && message
+              ? `${message}${errorMessageContext(errorData)}`
+              : message || `HTTP error! status: ${response.status}`;
         } catch (error) {
           if (init?.signal?.aborted) throw error;
+          decodingFailed = true;
+          decodingCause = error;
           errorMessage = `HTTP error! status: ${response.status}`;
         }
-        throw new HyperbrowserError(errorMessage, {
+        const ErrorType = decodingFailed ? ResponseDecodingError : HyperbrowserError;
+        throw new ErrorType(errorMessage, {
           statusCode: response.status,
           code: errorCode,
           requestId: getRequestId(response),
-          retryable: RETRYABLE_STATUS_CODES.has(response.status),
+          retryable,
           service: "control",
           details: errorDetails,
+          cause: decodingCause,
           method: init?.method ?? "GET",
           path: errorRequestPath(path),
         });
