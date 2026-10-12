@@ -1,6 +1,7 @@
 import http, { IncomingMessage, ServerResponse } from "node:http";
 import { afterEach, describe, expect, test } from "vitest";
 import { HyperbrowserClient } from "../../src/client";
+import type { MetaComputerUseLlm } from "../../src/types";
 
 type RecordedRequest = {
   method?: string;
@@ -38,7 +39,9 @@ const sendJson = (response: ServerResponse, statusCode: number, payload: unknown
   response.end(encoded);
 };
 
-const startServer = async (): Promise<TestServer> => {
+const startServer = async (
+  metaModel: MetaComputerUseLlm = "muse-spark-1.3"
+): Promise<TestServer> => {
   const requests: RecordedRequest[] = [];
   const server = http.createServer(async (request, response) => {
     const body = await readJsonBody(request);
@@ -90,7 +93,7 @@ const startServer = async (): Promise<TestServer> => {
               output_text: "Second sentence in the Ecology section.",
               error: null,
               incomplete_details: null,
-              model: "muse-spark-1.3",
+              model: metaModel,
               output: [
                 {
                   type: "function_call",
@@ -389,76 +392,79 @@ describe("client HTTP integration", () => {
     ]);
   });
 
-  test("Meta Computer Use starts, polls, reads, and stops a task", async () => {
-    const server = await startServer();
-    servers.push(server);
-    const client = new HyperbrowserClient({
-      apiKey: "test-api-key",
-      baseUrl: server.baseUrl,
-    });
-
-    const started = await client.agents.metaComputerUse.start({
-      task: "Complete the task",
-      llm: "muse-spark-1.3",
-      reasoningEffort: "max",
-      useCustomApiKeys: true,
-      apiKeys: { meta: "meta-key" },
-    });
-    const status = await client.agents.metaComputerUse.getStatus(started.jobId);
-    const result = await client.agents.metaComputerUse.get(started.jobId);
-    const stopped = await client.agents.metaComputerUse.stop(started.jobId);
-
-    expect(started).toEqual({ jobId: "meta_job_123", liveUrl: null });
-    expect(status).toEqual({ status: "completed" });
-    expect(result.data?.finalResult).toBe("done");
-    expect(result.data?.steps[0]).toMatchObject({
-      created_at: 1788743504,
-      completed_at: 1788743511,
-      model: "muse-spark-1.3",
-      reasoning: { effort: "medium", summary: "concise" },
-    });
-    expect(result.data?.steps[0].output?.[0]).toMatchObject({
-      type: "function_call",
-      name: "computer.computer",
-    });
-    expect(stopped).toEqual({ success: true });
-    expect(server.requests).toEqual([
-      {
-        method: "POST",
-        url: "/api/task/meta-computer-use",
+  test.each(["muse-spark-1.3", "muse-wonder-1.0"] as const)(
+    "Meta Computer Use starts, polls, reads, and stops a %s task",
+    async (llm) => {
+      const server = await startServer(llm);
+      servers.push(server);
+      const client = new HyperbrowserClient({
         apiKey: "test-api-key",
-        contentType: "application/json",
-        body: {
-          task: "Complete the task",
-          llm: "muse-spark-1.3",
-          reasoningEffort: "max",
-          useCustomApiKeys: true,
-          apiKeys: { meta: "meta-key" },
+        baseUrl: server.baseUrl,
+      });
+
+      const started = await client.agents.metaComputerUse.start({
+        task: "Complete the task",
+        llm,
+        reasoningEffort: "max",
+        useCustomApiKeys: true,
+        apiKeys: { meta: "meta-key" },
+      });
+      const status = await client.agents.metaComputerUse.getStatus(started.jobId);
+      const result = await client.agents.metaComputerUse.get(started.jobId);
+      const stopped = await client.agents.metaComputerUse.stop(started.jobId);
+
+      expect(started).toEqual({ jobId: "meta_job_123", liveUrl: null });
+      expect(status).toEqual({ status: "completed" });
+      expect(result.data?.finalResult).toBe("done");
+      expect(result.data?.steps[0]).toMatchObject({
+        created_at: 1788743504,
+        completed_at: 1788743511,
+        model: llm,
+        reasoning: { effort: "medium", summary: "concise" },
+      });
+      expect(result.data?.steps[0].output?.[0]).toMatchObject({
+        type: "function_call",
+        name: "computer.computer",
+      });
+      expect(stopped).toEqual({ success: true });
+      expect(server.requests).toEqual([
+        {
+          method: "POST",
+          url: "/api/task/meta-computer-use",
+          apiKey: "test-api-key",
+          contentType: "application/json",
+          body: {
+            task: "Complete the task",
+            llm,
+            reasoningEffort: "max",
+            useCustomApiKeys: true,
+            apiKeys: { meta: "meta-key" },
+          },
         },
-      },
-      {
-        method: "GET",
-        url: "/api/task/meta-computer-use/meta_job_123/status",
-        apiKey: "test-api-key",
-        contentType: "application/json",
-        body: undefined,
-      },
-      {
-        method: "GET",
-        url: "/api/task/meta-computer-use/meta_job_123",
-        apiKey: "test-api-key",
-        contentType: "application/json",
-        body: undefined,
-      },
-      {
-        method: "PUT",
-        url: "/api/task/meta-computer-use/meta_job_123/stop",
-        apiKey: "test-api-key",
-        contentType: "application/json",
-        body: undefined,
-      },
-    ]);
-  });
+        {
+          method: "GET",
+          url: "/api/task/meta-computer-use/meta_job_123/status",
+          apiKey: "test-api-key",
+          contentType: "application/json",
+          body: undefined,
+        },
+        {
+          method: "GET",
+          url: "/api/task/meta-computer-use/meta_job_123",
+          apiKey: "test-api-key",
+          contentType: "application/json",
+          body: undefined,
+        },
+        {
+          method: "PUT",
+          url: "/api/task/meta-computer-use/meta_job_123/stop",
+          apiKey: "test-api-key",
+          contentType: "application/json",
+          body: undefined,
+        },
+      ]);
+    }
+  );
 
   test("Jev Computer Use starts, polls, reads, and stops a task", async () => {
     const server = await startServer();
