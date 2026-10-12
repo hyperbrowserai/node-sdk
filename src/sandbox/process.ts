@@ -1,4 +1,5 @@
-import { HyperbrowserError } from "../error";
+import { performance } from "perf_hooks";
+import { HyperbrowserError, ResponseDecodingError } from "../error";
 import { RuntimeSSEEvent, RuntimeSSEStream, RuntimeTransport } from "./base";
 import {
   DEFAULT_MAX_PROCESS_OUTPUT_BYTES,
@@ -72,7 +73,15 @@ export interface SecretProcessStarter {
   sandboxId: string;
   /** Each runtime wait stays under the runtime request timeout. */
   waitChunkMs: number;
-  start(payload: SecretProcessStartPayload): Promise<SecretProcessStartResponse>;
+  start(
+    payload: SecretProcessStartPayload,
+    signal?: AbortSignal
+  ): Promise<SecretProcessStartResponse>;
+}
+
+interface SecretProcessWaitContext {
+  chunkMs: number;
+  signal?: AbortSignal;
 }
 
 /** Errors from connecting at all; anything else may have reached the API. */
@@ -83,7 +92,15 @@ const CONNECT_ERROR_CODES = new Set(["ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN", "
  * response couldn't be read. API errors and failures to connect are excluded.
  */
 const startMayHaveArrived = (error: unknown): boolean => {
+  if (error instanceof ResponseDecodingError) {
+    return true;
+  }
   if (!(error instanceof HyperbrowserError)) {
+    return true;
+  }
+  // Pre-aborted calls are rejected before sending. Cancellation here may
+  // interrupt an error body after the API has already accepted the start.
+  if (error.code === "request_aborted") {
     return true;
   }
   if (error.statusCode !== undefined && error.statusCode >= 400) {
@@ -208,6 +225,20 @@ const localWaitTimeoutMs = (params: SandboxProcessWaitParams): number | undefine
   return undefined;
 };
 
+const waitTimeoutError = (): HyperbrowserError =>
+  new HyperbrowserError("Timed out waiting for command output", {
+    code: "wait_timeout",
+    service: "runtime",
+    retryable: false,
+  });
+
+const requestAbortedError = (): HyperbrowserError =>
+  new HyperbrowserError("Request canceled", {
+    code: "request_aborted",
+    retryable: false,
+    service: "runtime",
+  });
+
 const buildProcessPayload = (input: SandboxExecParams) => ({
   command: input.command,
   cwd: input.cwd,
@@ -262,7 +293,8 @@ export class SandboxProcessHandle {
   constructor(
     private readonly transport: RuntimeTransport,
     private summary: SandboxProcessSummary,
-    secrets?: SandboxResolvedSecret[]
+    secrets?: SandboxResolvedSecret[],
+    private readonly secretWait?: SecretProcessWaitContext
   ) {
     this.secrets = secrets;
   }
@@ -380,6 +412,73 @@ export class SandboxProcessHandle {
       }
       return this.collectedResult();
     }
+    if (this.secretWait) {
+      return this.waitWithSecrets(params);
+    }
+    return this.waitRetained(params);
+  }
+
+  /** Secret starts retain output on the receiver, so poll until the local deadline. */
+  private async waitWithSecrets(params: SandboxProcessWaitParams): Promise<SandboxProcessResult> {
+    const context = this.secretWait as SecretProcessWaitContext;
+    const timeoutMs = localWaitTimeoutMs(params);
+    const deadline = timeoutMs === undefined ? undefined : performance.now() + timeoutMs;
+    for (;;) {
+      if (context.signal?.aborted) throw requestAbortedError();
+      const remaining = deadline === undefined ? undefined : deadline - performance.now();
+      if (remaining !== undefined && remaining <= 0) throw waitTimeoutError();
+
+      const controller = new AbortController();
+      let deadlineExpired = false;
+      let cancelWait!: (error: HyperbrowserError) => void;
+      const canceled = new Promise<never>((_, reject) => {
+        cancelWait = reject;
+      });
+      const abort = () => {
+        controller.abort();
+        cancelWait(requestAbortedError());
+      };
+      context.signal?.addEventListener("abort", abort, { once: true });
+      // Node timers cannot represent intervals above 2^31-1 ms. Long local
+      // deadlines are checked again after every bounded request instead.
+      const timer =
+        remaining !== undefined && remaining <= 2_147_483_647
+          ? setTimeout(() => {
+              deadlineExpired = true;
+              controller.abort();
+              cancelWait(waitTimeoutError());
+            }, remaining)
+          : undefined;
+      try {
+        const result = await Promise.race([
+          this.waitRetained(
+            { timeoutMs: Math.max(1, Math.floor(Math.min(context.chunkMs, remaining ?? Infinity))) },
+            controller.signal
+          ),
+          canceled,
+        ]);
+        if (context.signal?.aborted) throw requestAbortedError();
+        if (deadlineExpired || (deadline !== undefined && performance.now() >= deadline)) {
+          throw waitTimeoutError();
+        }
+        return result;
+      } catch (error) {
+        if (context.signal?.aborted) throw requestAbortedError();
+        if (deadlineExpired || (deadline !== undefined && performance.now() >= deadline)) {
+          throw waitTimeoutError();
+        }
+        if (!(error instanceof HyperbrowserError) || error.statusCode !== 408) throw error;
+      } finally {
+        clearTimeout(timer);
+        context.signal?.removeEventListener("abort", abort);
+      }
+    }
+  }
+
+  private async waitRetained(
+    params: SandboxProcessWaitParams,
+    signal?: AbortSignal
+  ): Promise<SandboxProcessResult> {
     const response = await this.transport.requestJSON<ProcessResultResponse>(
       `/sandbox/processes/${this.id}/wait`,
       {
@@ -391,6 +490,7 @@ export class SandboxProcessHandle {
         headers: {
           "content-type": "application/json",
         },
+        signal,
       }
     );
     const result = normalizeProcessResult(response.result);
@@ -589,6 +689,7 @@ export class SandboxProcessesApi {
    * secrets. Output is then read through the runtime's retained output.
    */
   private async startWithSecrets(params: SandboxExecParams): Promise<SandboxProcessHandle> {
+    if (params.signal?.aborted) throw requestAbortedError();
     const starter = this.secretStarter;
     if (!starter) {
       throw new HyperbrowserError("Starting a process with secrets requires a sandbox handle");
@@ -598,19 +699,22 @@ export class SandboxProcessesApi {
       WireSecretReference
     >;
     assertNoEnvSecretOverlap(params.env, secrets);
-    const timeoutMs =
-      params.timeoutMs ?? (params.timeoutSec !== undefined ? params.timeoutSec * 1000 : undefined);
+    // Match the receiver: positive seconds take precedence over milliseconds.
+    const timeoutMs = localWaitTimeoutMs(params);
 
     let response: SecretProcessStartResponse;
     try {
-      response = await starter.start({
-        command: params.command,
-        cwd: params.cwd,
-        env: params.env,
-        timeoutMs,
-        runAs: params.runAs,
-        secrets,
-      });
+      response = await starter.start(
+        {
+          command: params.command,
+          cwd: params.cwd,
+          env: params.env,
+          timeoutMs,
+          runAs: params.runAs,
+          secrets,
+        },
+        params.signal
+      );
     } catch (error) {
       if (!startMayHaveArrived(error)) {
         throw error;
@@ -641,7 +745,8 @@ export class SandboxProcessesApi {
     return new SandboxProcessHandle(
       this.transport,
       normalizeProcessSummary(response.process),
-      response.secrets ?? []
+      response.secrets ?? [],
+      { chunkMs: starter.waitChunkMs, signal: params.signal }
     );
   }
 
@@ -655,28 +760,19 @@ export class SandboxProcessesApi {
     const starter = this.secretStarter as SecretProcessStarter;
     try {
       try {
-        await handle.writeStdin({ eof: true });
+        await this.transport.requestJSON(`/sandbox/processes/${handle.id}/stdin`, {
+          method: "POST",
+          body: JSON.stringify({ eof: true }),
+          headers: { "content-type": "application/json" },
+          signal: params.signal,
+        });
       } catch (error) {
         // 409: the command already exited; its result is still reported.
         if (!(error instanceof HyperbrowserError) || error.statusCode !== 409) {
           throw error;
         }
       }
-      for (;;) {
-        if (params.signal?.aborted) {
-          throw new HyperbrowserError("Request canceled", {
-            code: "request_aborted",
-            service: "runtime",
-          });
-        }
-        try {
-          return await handle.wait({ timeoutMs: starter.waitChunkMs });
-        } catch (error) {
-          if (!(error instanceof HyperbrowserError) || error.statusCode !== 408) {
-            throw error;
-          }
-        }
-      }
+      return await handle.wait();
     } catch (error) {
       // Running exec again would start a second process with the secrets.
       throw new HyperbrowserError(

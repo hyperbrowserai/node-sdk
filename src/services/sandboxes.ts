@@ -337,8 +337,11 @@ export class SandboxHandle {
     );
     this.processes = new SandboxProcessesApi(this.transport, {
       sandboxId: detail.id,
-      waitChunkMs: Math.min(SECRET_PROCESS_WAIT_CHUNK_MS, Math.max(1_000, service.runtimeTimeout / 2)),
-      start: (payload) => service.startSecretProcess(this.id, payload),
+      waitChunkMs: Math.max(
+        1,
+        Math.floor(Math.min(SECRET_PROCESS_WAIT_CHUNK_MS, service.runtimeTimeout / 2))
+      ),
+      start: (payload, signal) => service.startSecretProcess(this.id, payload, signal),
     });
     this.files = new SandboxFilesApi(
       this.transport,
@@ -1379,7 +1382,8 @@ export class SandboxesService extends BaseService {
    */
   async startSecretProcess(
     id: string,
-    payload: SecretProcessStartPayload
+    payload: SecretProcessStartPayload,
+    signal?: AbortSignal
   ): Promise<SecretProcessStartResponse> {
     try {
       return await this.request<SecretProcessStartResponse>(
@@ -1387,6 +1391,7 @@ export class SandboxesService extends BaseService {
         {
           method: "POST",
           body: JSON.stringify(payload),
+          signal,
         }
       );
     } catch (error) {

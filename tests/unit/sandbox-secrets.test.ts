@@ -119,14 +119,17 @@ describe("processes with secrets", () => {
     });
 
     expect(openSSE).not.toHaveBeenCalled();
-    expect(start.start).toHaveBeenCalledWith({
-      command: "node app.js",
-      cwd: "/app",
-      env: { NODE_ENV: "production" },
-      timeoutMs: 30_000,
-      runAs: "root",
-      secrets: { API_KEY: { name: "provider-key", version: "latest" } },
-    });
+    expect(start.start).toHaveBeenCalledWith(
+      {
+        command: "node app.js",
+        cwd: "/app",
+        env: { NODE_ENV: "production" },
+        timeoutMs: 30_000,
+        runAs: "root",
+        secrets: { API_KEY: { name: "provider-key", version: "latest" } },
+      },
+      undefined
+    );
     expect(handle.id).toBe("proc_1");
     expect(handle.toJSON()).toMatchObject({ pid: 42, startedAt: 10, cwd: "/app" });
     expect(handle.secrets).toEqual(resolved);

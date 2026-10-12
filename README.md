@@ -417,9 +417,18 @@ await client.secrets.delete("provider-key");
 - Limits: 100 secrets per team, 10 stored versions per secret, 32 secrets per
   process or sandbox. The API key needs the `secrets.read`, `secrets.manage`
   or `secrets.use` scope for reading, managing or delivering secrets.
+  SDK updates, version additions, and deletions also require `secrets.read`
+  alongside `secrets.manage`: the SDK resolves the existing secret before
+  changing it, even when given an ID. Encryption also needs its encryption
+  context. Creating a new secret needs only `secrets.manage`.
 - A process start with secrets is never retried. If it times out, the error
   code is `secret_process_outcome_unknown`: check the sandbox's processes
   before starting it again.
+- Secret-started handles support `wait()` and `result()` without a local
+  deadline. An explicit wait timeout limits the whole local wait, leaving the
+  command running; the same handle can be awaited again. Runtime waits use
+  bounded requests below the client's request timeout. Output still comes from
+  the receiver's retained output, so `maxOutputBytes` does not apply.
 
 List sandboxes with time-range and search filters:
 

@@ -1,5 +1,10 @@
 import fetch, { HeadersInit, RequestInit, Response } from "node-fetch";
-import { errorRequestPath, HyperbrowserError, networkErrorMessage } from "../error";
+import {
+  errorRequestPath,
+  HyperbrowserError,
+  networkErrorMessage,
+  ResponseDecodingError,
+} from "../error";
 import {
   getRetryDelayMs,
   isRetryableNetworkError,
@@ -95,6 +100,8 @@ export class BaseService {
         let errorMessage: string;
         let errorDetails: unknown;
         let errorCode: string | undefined;
+        let decodingFailed = false;
+        let decodingCause: unknown;
         let retryable = RETRYABLE_STATUS_CODES.has(response.status);
         try {
           const errorData = await response.json();
@@ -119,15 +126,19 @@ export class BaseService {
             errorData.message || errorData.error || `HTTP error! status: ${response.status}`;
         } catch (error) {
           if (init?.signal?.aborted) throw error;
+          decodingFailed = true;
+          decodingCause = error;
           errorMessage = `HTTP error! status: ${response.status}`;
         }
-        throw new HyperbrowserError(errorMessage, {
+        const ErrorType = decodingFailed ? ResponseDecodingError : HyperbrowserError;
+        throw new ErrorType(errorMessage, {
           statusCode: response.status,
           code: errorCode,
           requestId: getRequestId(response),
           retryable,
           service: "control",
           details: errorDetails,
+          cause: decodingCause,
           method: init?.method ?? "GET",
           path: errorRequestPath(path),
         });

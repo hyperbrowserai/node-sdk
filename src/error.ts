@@ -52,3 +52,6 @@ export class HyperbrowserError extends Error {
     this.path = normalized.path;
   }
 }
+
+/** @internal The response body could not be read or decoded as JSON. */
+export class ResponseDecodingError extends HyperbrowserError {}
