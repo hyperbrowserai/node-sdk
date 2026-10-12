@@ -1452,6 +1452,12 @@ export class SandboxesService extends BaseService {
         method: "POST",
         body: JSON.stringify(body),
       });
+      if (
+        body.secrets !== undefined &&
+        (typeof detail?.id !== "string" || !detail.id.trim())
+      ) {
+        throw new Error("The API accepted the create but returned no sandbox ID");
+      }
       return normalizeSandboxDetail(detail);
     } catch (error) {
       if (body.secrets !== undefined && requestMayHaveArrived(error)) {

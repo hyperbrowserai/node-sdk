@@ -69,7 +69,7 @@ export interface Sandbox {
    * Secrets were delivered into the sandbox, or it was restored from a
    * snapshot that may hold them.
    */
-  containsSecrets: boolean;
+  containsSecrets?: boolean;
 }
 
 export interface SandboxDetail extends Sandbox {
@@ -214,7 +214,7 @@ export interface SandboxSnapshotSummary {
   metadata: Record<string, unknown>;
   uploaded: boolean;
   /** The snapshot's memory may hold secrets. */
-  containsSecrets: boolean;
+  containsSecrets?: boolean;
   createdAt: string;
   updatedAt: string;
 }

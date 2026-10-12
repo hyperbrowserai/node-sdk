@@ -64,7 +64,7 @@ export interface SecretProcessStartPayload {
 
 export interface SecretProcessStartResponse {
   /** The sandbox agent's summary, passed through unchanged. */
-  process?: RawProcessSummary;
+  process?: Omit<RawProcessSummary, "id"> & { id?: string; processId?: string };
   secrets?: SandboxResolvedSecret[];
 }
 
@@ -782,7 +782,9 @@ export class SandboxProcessesApi {
         }
       );
     }
-    if (!response.process?.id) {
+    const process = response?.process;
+    const processId = process?.id || process?.processId;
+    if (!process || typeof processId !== "string" || !processId.trim()) {
       // The start succeeded, so the command may be running with the secrets.
       throw new HyperbrowserError(
         "The API accepted the process start but returned no process ID; the command may be running, so check the sandbox's processes before retrying",
@@ -796,7 +798,7 @@ export class SandboxProcessesApi {
     }
     return new SandboxProcessHandle(
       this.transport,
-      normalizeProcessSummary(response.process),
+      normalizeProcessSummary({ ...process, id: processId.trim() }),
       response.secrets ?? [],
       { chunkMs: starter.waitChunkMs, signal: params.signal }
     );

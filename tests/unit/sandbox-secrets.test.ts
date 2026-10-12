@@ -190,9 +190,42 @@ describe("sandbox create with secrets and an unknown result", () => {
     fetchMock.mockRejectedValueOnce(new FetchError("network timeout", "request-timeout"));
     await expect(create()).resolves.toMatchObject({ code: undefined, retryable: true });
   });
+
+  test.each([null, {}, { ...wireDetail, id: "" }, { ...wireDetail, id: 42 }])(
+    "an incomplete create response is an unknown outcome: %j",
+    async (body) => {
+      fetchMock.mockResolvedValueOnce(new Response(JSON.stringify(body), { status: 200 }));
+      await expect(create({ API_KEY: "provider-key" })).resolves.toMatchObject({
+        code: "secret_process_outcome_unknown",
+        retryable: false,
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    }
+  );
 });
 
 describe("processes with secrets", () => {
+  test.each([null, {}, { process: null }, { process: { id: " " } }, { process: { id: 42 } }])(
+    "an incomplete process response preserves the unknown outcome: %j",
+    async (response) => {
+      const start = starter(async () => response as any);
+      const api = new SandboxProcessesApi(runtime({}).transport, start);
+      await expect(api.start("x", { secrets: { A: "s" } })).rejects.toMatchObject({
+        code: "secret_process_outcome_unknown",
+        retryable: false,
+        details: { sandboxId: "sbx_123" },
+      });
+      expect(start.start).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  test("accepts the receiver's processId alias", async () => {
+    const { id, ...process } = rawProcess;
+    const start = starter(async () => ({ process: { ...process, processId: id } }) as any);
+    const api = new SandboxProcessesApi(runtime({}).transport, start);
+    expect((await api.start("x", { secrets: { A: "s" } })).id).toBe(id);
+  });
+
   test("start goes through the control API and reports the delivered versions", async () => {
     const start = starter();
     const { transport, openSSE } = runtime({});
