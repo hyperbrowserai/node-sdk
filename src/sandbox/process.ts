@@ -64,7 +64,7 @@ export interface SecretProcessStartPayload {
 
 export interface SecretProcessStartResponse {
   /** The sandbox agent's summary, passed through unchanged. */
-  process?: Omit<RawProcessSummary, "id"> & { id?: string; processId?: string };
+  process?: RawProcessSummary;
   secrets?: SandboxResolvedSecret[];
 }
 
@@ -783,7 +783,7 @@ export class SandboxProcessesApi {
       );
     }
     const process = response?.process;
-    const processId = process?.id || process?.processId;
+    const processId = process?.id;
     if (!process || typeof processId !== "string" || !processId.trim()) {
       // The start succeeded, so the command may be running with the secrets.
       throw new HyperbrowserError(

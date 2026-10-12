@@ -219,13 +219,6 @@ describe("processes with secrets", () => {
     }
   );
 
-  test("accepts the receiver's processId alias", async () => {
-    const { id, ...process } = rawProcess;
-    const start = starter(async () => ({ process: { ...process, processId: id } }) as any);
-    const api = new SandboxProcessesApi(runtime({}).transport, start);
-    expect((await api.start("x", { secrets: { A: "s" } })).id).toBe(id);
-  });
-
   test("start goes through the control API and reports the delivered versions", async () => {
     const start = starter();
     const { transport, openSSE } = runtime({});
