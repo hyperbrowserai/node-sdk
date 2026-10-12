@@ -2,7 +2,9 @@ import { HyperbrowserError } from "../error";
 import { SandboxSecrets } from "../types/sandbox";
 
 const ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
-const SECRET_NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/;
+export const SECRET_NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/;
+/** The largest version number the API stores. */
+export const MAX_SECRET_VERSION = 2_147_483_647;
 const MAX_SECRETS = 32;
 
 export interface WireSecretReference {
@@ -43,10 +45,12 @@ export const serializeSecretReferences = (
     if (
       version !== undefined &&
       version !== "latest" &&
-      (!Number.isSafeInteger(version) || (version as number) < 1)
+      (!Number.isSafeInteger(version) ||
+        (version as number) < 1 ||
+        (version as number) > MAX_SECRET_VERSION)
     ) {
       throw new HyperbrowserError(
-        `Secret version for ${env} must be a positive integer or "latest"`
+        `Secret version for ${env} must be an integer from 1 to ${MAX_SECRET_VERSION} or "latest"`
       );
     }
     wire[env] = version === undefined ? { name } : { name, version };

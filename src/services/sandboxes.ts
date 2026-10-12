@@ -3,6 +3,7 @@ import { SandboxFilesApi } from "../sandbox/files";
 import { RuntimeConnection, RuntimeTransport } from "../sandbox/base";
 import { runtimeSessionIdFromPath } from "../sandbox/runtime-path";
 import {
+  requestMayHaveArrived,
   SandboxProcessHandle,
   SandboxProcessesApi,
   SecretProcessStartPayload,
@@ -108,6 +109,7 @@ const normalizeSandbox = (sandbox: WireSandbox): Sandbox => {
     timeoutMinutes: optionalInteger(rest.timeoutMinutes),
     creditsUsed: optionalNumber(rest.creditsUsed) ?? null,
     exposedPorts: rest.exposedPorts ?? [],
+    containsSecrets: rest.containsSecrets ?? false,
     network: rest.network ? { ...rest.network, allowOut: rest.network.allowOut ?? [], denyOut: rest.network.denyOut ?? [] } : rest.network,
   };
 };
@@ -152,6 +154,10 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
   )
     throw new HyperbrowserError("Unsupported sandbox runtimeClass");
   if (typeof params.imageName === "string") {
+    const secrets = serializeSecretReferences(params.secrets);
+    // The startup command with secrets runs only in Firecracker sandboxes.
+    if (secrets !== undefined && params.runtimeClass === "gvisor-cpu")
+      throw new HyperbrowserError("secrets are not supported with runtimeClass gvisor-cpu");
     return {
       runtimeClass: params.runtimeClass,
       imageName: params.imageName,
@@ -167,7 +173,7 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
       allowInternetAccess: params.allowInternetAccess,
       allowOut: params.allowOut,
       denyOut: params.denyOut,
-      secrets: serializeSecretReferences(params.secrets),
+      secrets,
     };
   }
 
@@ -1435,14 +1441,36 @@ export class SandboxesService extends BaseService {
     }
   }
 
+  /**
+   * With secrets, a create whose result is unknown is never retried: the
+   * sandbox may exist and be running its startup command with the secrets.
+   */
   private async createDetail(params: CreateSandboxParams): Promise<SandboxDetail> {
+    const body = serializeCreateSandboxParams(params);
     try {
       const detail = await this.request<WireSandboxDetail>("/sandbox", {
         method: "POST",
-        body: JSON.stringify(serializeCreateSandboxParams(params)),
+        body: JSON.stringify(body),
       });
       return normalizeSandboxDetail(detail);
     } catch (error) {
+      if (body.secrets !== undefined && requestMayHaveArrived(error)) {
+        throw new HyperbrowserError(
+          `could not confirm the create result: ${
+            error instanceof Error
+              ? error.message.replace(/^\[Hyperbrowser\]: /, "")
+              : String(error)
+          }; a sandbox may have been created with the secrets, so list sandboxes before retrying`,
+          {
+            code: "secret_process_outcome_unknown",
+            retryable: false,
+            service: "control",
+            cause: error,
+            method: "POST",
+            path: "/sandbox",
+          }
+        );
+      }
       if (error instanceof HyperbrowserError) {
         throw error;
       }

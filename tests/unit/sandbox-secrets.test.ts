@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { Headers, Response } from "node-fetch";
+import { FetchError, Headers, Response } from "node-fetch";
 
 const fetchMock = vi.fn();
 vi.mock("node-fetch", async () => {
@@ -99,8 +99,96 @@ describe("sandbox create with secrets", () => {
     );
     await expect(
       service.create({ imageName: "node", secrets: { A: { name: "x", version: 0 } } })
-    ).rejects.toThrow(/positive integer/);
+    ).rejects.toThrow(/integer from 1 to 2147483647/);
+    await expect(
+      service.create({ imageName: "node", secrets: { A: { name: "x", version: 2 ** 31 } } })
+    ).rejects.toThrow(/integer from 1 to 2147483647/);
+    await expect(
+      service.create({ imageName: "node", runtimeClass: "gvisor-cpu", secrets: { A: "x" } })
+    ).rejects.toThrow(/not supported with runtimeClass gvisor-cpu/);
     expect(requestSpy).not.toHaveBeenCalled();
+  });
+
+  test("containsSecrets defaults to false when a response omits it", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const { containsSecrets: _omitted, ...withoutFlag } = wireDetail;
+    vi.spyOn(service as any, "request").mockResolvedValue(withoutFlag);
+    expect((await service.get("sbx_123")).toJSON().containsSecrets).toBe(false);
+  });
+});
+
+describe("sandbox create with secrets and an unknown result", () => {
+  afterEach(() => fetchMock.mockReset());
+
+  const service = () => new SandboxesService("test-key", "https://api.example.com", 1_000);
+  const create = (secrets?: Record<string, string>) =>
+    service()
+      .create({ imageName: "node", ...(secrets ? { secrets } : {}) })
+      .catch((error: unknown) => error) as Promise<HyperbrowserError>;
+
+  test("a timed-out create is never retried and reports that a sandbox may exist", async () => {
+    fetchMock.mockRejectedValue(
+      new FetchError("network timeout at: /api/sandbox", "request-timeout")
+    );
+
+    const error = await create({ API_KEY: "provider-key" });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(error).toBeInstanceOf(HyperbrowserError);
+    expect(error).toMatchObject({
+      code: "secret_process_outcome_unknown",
+      retryable: false,
+      service: "control",
+      cause: { retryable: true },
+    });
+    expect(error.message).toContain(
+      "could not confirm the create result: network timeout at: /api/sandbox; a sandbox may have been created with the secrets"
+    );
+    expect(error.message).toContain("list sandboxes before retrying");
+  });
+
+  test("an unreadable create response is an unknown outcome", async () => {
+    fetchMock.mockResolvedValueOnce(new Response("<html>ok</html>", { status: 200 }));
+    await expect(create({ API_KEY: "provider-key" })).resolves.toMatchObject({
+      code: "secret_process_outcome_unknown",
+      retryable: false,
+    });
+    fetchMock.mockResolvedValueOnce(new Response("<html>Bad gateway</html>", { status: 502 }));
+    await expect(create({ API_KEY: "provider-key" })).resolves.toMatchObject({
+      code: "secret_process_outcome_unknown",
+      cause: { statusCode: 502 },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  test("API errors, failed connections and creates without secrets pass through", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ code: "SECRET_NOT_FOUND", message: "missing" }), {
+        status: 404,
+        headers: new Headers({ "content-type": "application/json" }),
+      })
+    );
+    await expect(create({ API_KEY: "provider-key" })).resolves.toMatchObject({
+      code: "SECRET_NOT_FOUND",
+      statusCode: 404,
+    });
+
+    fetchMock.mockRejectedValueOnce(
+      new FetchError(
+        "connect ECONNREFUSED",
+        "system",
+        Object.assign(new Error("refused"), {
+          code: "ECONNREFUSED",
+        })
+      )
+    );
+    await expect(create({ API_KEY: "provider-key" })).resolves.toMatchObject({
+      code: undefined,
+      retryable: true,
+    });
+
+    fetchMock.mockRejectedValueOnce(new FetchError("network timeout", "request-timeout"));
+    await expect(create()).resolves.toMatchObject({ code: undefined, retryable: true });
   });
 });
 
@@ -133,6 +221,72 @@ describe("processes with secrets", () => {
     expect(handle.id).toBe("proc_1");
     expect(handle.toJSON()).toMatchObject({ pid: 42, startedAt: 10, cwd: "/app" });
     expect(handle.secrets).toEqual(resolved);
+  });
+
+  test("command timeouts are sent as whole milliseconds within the API's range", async () => {
+    for (const [timeouts, timeoutMs] of [
+      [{ timeoutSec: 1.5 }, 1_500],
+      [{ timeoutSec: 1.1 }, 1_100],
+      [{ timeoutSec: 0.0001 }, 1],
+      [{ timeoutMs: 2.4 }, 2],
+      [{ timeoutSec: 0, timeoutMs: 250 }, 250],
+      [{ timeoutSec: 86_400 }, 86_400_000],
+      [{ timeoutSec: 0 }, undefined],
+    ] as const) {
+      const start = starter();
+      const api = new SandboxProcessesApi(runtime({}).transport, start);
+      await api.start({ command: "x", ...timeouts, secrets: { A: "s" } });
+      expect(start.start.mock.calls[0][0].timeoutMs).toBe(timeoutMs);
+    }
+
+    for (const timeouts of [
+      { timeoutSec: 86_400.001 },
+      { timeoutMs: 86_400_001 },
+      { timeoutSec: -1 },
+      { timeoutMs: Number.NaN },
+      { timeoutSec: Number.POSITIVE_INFINITY },
+    ]) {
+      const start = starter();
+      const api = new SandboxProcessesApi(runtime({}).transport, start);
+      await expect(api.start({ command: "x", ...timeouts, secrets: { A: "s" } })).rejects.toThrow(
+        /non-negative number|at most 86400 seconds/
+      );
+      expect(start.start).not.toHaveBeenCalled();
+    }
+  });
+
+  test("the API's unconfirmed start becomes secret_process_outcome_unknown", async () => {
+    const body = {
+      code: "SECRET_PROCESS_OUTCOME_UNKNOWN",
+      message: "The sandbox host did not confirm the process start",
+      retryable: false,
+    };
+    const apiError = new HyperbrowserError(body.message, {
+      statusCode: 502,
+      code: body.code,
+      requestId: "req_1",
+      retryable: false,
+      service: "control",
+      details: body,
+    });
+    const api = new SandboxProcessesApi(
+      runtime({}).transport,
+      starter(async () => {
+        throw apiError;
+      })
+    );
+
+    const error = await api.start({ command: "x", secrets: { A: "s" } }).catch((e) => e);
+
+    expect(error).toMatchObject({
+      statusCode: 502,
+      code: "secret_process_outcome_unknown",
+      requestId: "req_1",
+      retryable: false,
+      details: { ...body, sandboxId: "sbx_123" },
+      cause: apiError,
+    });
+    expect(error.message).toBe(`[Hyperbrowser]: ${body.message}`);
   });
 
   test("a variable set by both env and secrets is rejected before starting", async () => {
@@ -279,6 +433,51 @@ describe("control API error fields", () => {
     expect(error).toMatchObject({ code: "API_KEY_SCOPE_DENIED", statusCode: 403 });
     expect(error.message).toContain("denied");
     expect(error.details).toMatchObject({ requiredScopes: ["secrets.use"] });
+  });
+
+  test("SECRETS_NOT_CONFIGURED is not retried despite its 503", async () => {
+    respond(503, { code: "SECRETS_NOT_CONFIGURED", message: "not configured" });
+    const service = new TestService("key", "https://api.example.com", 1_000);
+    await expect(service.post("/x")).rejects.toMatchObject({
+      statusCode: 503,
+      code: "SECRETS_NOT_CONFIGURED",
+      retryable: false,
+    });
+
+    class GetService extends BaseService {
+      get<T>(path: string) {
+        return this.request<T>(path);
+      }
+    }
+    respond(503, { code: "SECRETS_NOT_CONFIGURED", message: "not configured" });
+    await expect(
+      new GetService("key", "https://api.example.com", 1_000).get("/secrets/public-key")
+    ).rejects.toMatchObject({ retryable: false });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  test("messages name the sandbox and the secret an error is about", async () => {
+    const service = new TestService("key", "https://api.example.com", 1_000);
+    respond(500, {
+      code: "SECRET_STARTUP_FAILED",
+      message: "Startup failed",
+      sandboxId: "sbx_9",
+      details: { env: "API_KEY", secretId: "secret_1", version: 3 },
+    });
+    const error = (await service.post("/x").catch((e: unknown) => e)) as HyperbrowserError;
+    expect(error.message).toBe(
+      "[Hyperbrowser]: Startup failed (sandbox sbx_9) (API_KEY: secret secret_1, version 3)"
+    );
+    expect(error.details).toMatchObject({ sandboxId: "sbx_9" });
+
+    respond(400, { error: "Bad secret", details: { env: "DB_URL" } });
+    await expect(service.post("/x")).rejects.toThrow(/^\[Hyperbrowser\]: Bad secret \(DB_URL\)$/);
+
+    respond(400, { message: "Invalid", details: { reason: "other shape" } });
+    await expect(service.post("/x")).rejects.toThrow(/^\[Hyperbrowser\]: Invalid$/);
+
+    respond(409, { sandboxId: "sbx_9" });
+    await expect(service.post("/x")).rejects.toThrow(/^\[Hyperbrowser\]: HTTP error! status: 409$/);
   });
 
   test("a plain error message is not taken as a code", async () => {

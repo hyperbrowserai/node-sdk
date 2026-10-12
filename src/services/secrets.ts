@@ -1,4 +1,5 @@
 import { HyperbrowserError } from "../error";
+import { MAX_SECRET_VERSION, SECRET_NAME_PATTERN } from "../sandbox/secret-references";
 import { secretValueBytes, SecretsSealer } from "../secrets-envelope";
 import {
   CreateSecretParams,
@@ -16,8 +17,10 @@ import {
 import { BaseService } from "./base";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** The most secrets one list page can hold. */
+const MAX_LIST_LIMIT = 100;
 /** Teams hold at most 100 secrets, so one page of search results covers every match. */
-const NAME_LOOKUP_LIMIT = 100;
+const NAME_LOOKUP_LIMIT = MAX_LIST_LIMIT;
 
 const secretPath = (id: string): string => `/secrets/${encodeURIComponent(id)}`;
 
@@ -47,6 +50,16 @@ export class SecretsService extends BaseService {
   }
 
   async list(params: SecretListParams = {}): Promise<SecretListResponse> {
+    const { page, limit } = params;
+    if (page !== undefined && (!Number.isSafeInteger(page) || page < 1)) {
+      throw new HyperbrowserError("page must be a positive integer");
+    }
+    if (
+      limit !== undefined &&
+      (!Number.isSafeInteger(limit) || limit < 1 || limit > MAX_LIST_LIMIT)
+    ) {
+      throw new HyperbrowserError(`limit must be an integer from 1 to ${MAX_LIST_LIMIT}`);
+    }
     try {
       return await this.request<SecretListResponse>("/secrets", undefined, {
         search: params.search,
@@ -65,6 +78,11 @@ export class SecretsService extends BaseService {
    */
   async create(params: CreateSecretParams): Promise<Secret> {
     const { name, description, value } = params ?? ({} as CreateSecretParams);
+    if (typeof name !== "string" || !SECRET_NAME_PATTERN.test(name)) {
+      throw new HyperbrowserError(
+        "Secret name must be 1-128 letters, digits, '_' or '-', starting with a letter or digit"
+      );
+    }
     const sealer = value === undefined ? undefined : await this.prepareSealer(value);
 
     let secret: Secret;
@@ -147,8 +165,8 @@ export class SecretsService extends BaseService {
 
   /** Delete one stored version. The latest version cannot be deleted. */
   async deleteVersion(secret: string, version: number): Promise<SecretVersionDeleteResult> {
-    if (!Number.isSafeInteger(version) || version < 1) {
-      throw new HyperbrowserError("version must be a positive integer");
+    if (!Number.isSafeInteger(version) || version < 1 || version > MAX_SECRET_VERSION) {
+      throw new HyperbrowserError(`version must be an integer from 1 to ${MAX_SECRET_VERSION}`);
     }
     try {
       const { id } = await this.resolve(secret);

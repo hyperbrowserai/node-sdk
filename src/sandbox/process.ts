@@ -87,11 +87,18 @@ interface SecretProcessWaitContext {
 /** Errors from connecting at all; anything else may have reached the API. */
 const CONNECT_ERROR_CODES = new Set(["ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN", "EHOSTUNREACH"]);
 
+/** The control API's code for a secret process start it could not confirm. */
+const SERVER_OUTCOME_UNKNOWN_CODE = "SECRET_PROCESS_OUTCOME_UNKNOWN";
+
+/** The control API's limit on a secret process's `timeoutMs`. */
+const MAX_SECRET_PROCESS_TIMEOUT_MS = 86_400_000;
+
 /**
- * Whether a failed start may still have reached the API: it timed out or its
- * response couldn't be read. API errors and failures to connect are excluded.
+ * @internal Whether a failed control API request may still have reached the
+ * API: it timed out or its response couldn't be read. API errors and failures
+ * to connect are excluded.
  */
-const startMayHaveArrived = (error: unknown): boolean => {
+export const requestMayHaveArrived = (error: unknown): boolean => {
   if (error instanceof ResponseDecodingError) {
     return true;
   }
@@ -223,6 +230,35 @@ const localWaitTimeoutMs = (params: SandboxProcessWaitParams): number | undefine
     return params.timeoutMs;
   }
   return undefined;
+};
+
+/**
+ * The command timeout for a secret process start, as the whole milliseconds
+ * the control API accepts. Rounded, but a positive timeout stays at least 1ms
+ * rather than becoming 0 (no timeout).
+ */
+const secretProcessTimeoutMs = (params: SandboxExecParams): number | undefined => {
+  for (const name of ["timeoutSec", "timeoutMs"] as const) {
+    const value = params[name];
+    if (
+      value !== undefined &&
+      (typeof value !== "number" || !Number.isFinite(value) || value < 0)
+    ) {
+      throw new HyperbrowserError(`${name} must be a non-negative number`);
+    }
+  }
+  // Match the receiver: positive seconds take precedence over milliseconds.
+  const timeoutMs = localWaitTimeoutMs(params);
+  if (timeoutMs === undefined) {
+    return undefined;
+  }
+  const wholeMs = Math.max(1, Math.round(timeoutMs));
+  if (wholeMs > MAX_SECRET_PROCESS_TIMEOUT_MS) {
+    throw new HyperbrowserError(
+      `A process started with secrets can run for at most ${MAX_SECRET_PROCESS_TIMEOUT_MS / 1000} seconds`
+    );
+  }
+  return wholeMs;
 };
 
 const waitTimeoutError = (): HyperbrowserError =>
@@ -699,8 +735,7 @@ export class SandboxProcessesApi {
       WireSecretReference
     >;
     assertNoEnvSecretOverlap(params.env, secrets);
-    // Match the receiver: positive seconds take precedence over milliseconds.
-    const timeoutMs = localWaitTimeoutMs(params);
+    const timeoutMs = secretProcessTimeoutMs(params);
 
     let response: SecretProcessStartResponse;
     try {
@@ -716,7 +751,24 @@ export class SandboxProcessesApi {
         params.signal
       );
     } catch (error) {
-      if (!startMayHaveArrived(error)) {
+      if (error instanceof HyperbrowserError && error.code === SERVER_OUTCOME_UNKNOWN_CODE) {
+        // The API reached the sandbox host but could not confirm the start.
+        throw new HyperbrowserError(error.message.replace(/^\[Hyperbrowser\]: /, ""), {
+          statusCode: error.statusCode,
+          code: "secret_process_outcome_unknown",
+          requestId: error.requestId,
+          retryable: false,
+          service: "control",
+          details: {
+            ...(typeof error.details === "object" ? error.details : undefined),
+            sandboxId: starter.sandboxId,
+          },
+          cause: error,
+          method: error.method,
+          path: error.path,
+        });
+      }
+      if (!requestMayHaveArrived(error)) {
         throw error;
       }
       throw new HyperbrowserError(

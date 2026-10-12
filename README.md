@@ -421,9 +421,24 @@ await client.secrets.delete("provider-key");
   alongside `secrets.manage`: the SDK resolves the existing secret before
   changing it, even when given an ID. Encryption also needs its encryption
   context. Creating a new secret needs only `secrets.manage`.
-- A process start with secrets is never retried. If it times out, the error
-  code is `secret_process_outcome_unknown`: check the sandbox's processes
-  before starting it again.
+- A process start with secrets is never retried. If it times out, its
+  response is lost, or the API reports that the sandbox host did not confirm
+  the start (`SECRET_PROCESS_OUTCOME_UNKNOWN`), the error code is
+  `secret_process_outcome_unknown` and the API's response, if any, is in
+  `details`: check the sandbox's processes before starting it again.
+- The same applies to `sandboxes.create` with `secrets`: if the create result
+  can't be confirmed, the error code is `secret_process_outcome_unknown`, since
+  a sandbox may already be running its startup command with the secrets. List
+  sandboxes before creating it again.
+- Startup secrets need an image with a startup command and a Firecracker
+  sandbox. Otherwise the create fails with `SECRET_STARTUP_UNSUPPORTED`; create
+  the sandbox without `secrets` and pass them to `processes.exec` or
+  `processes.start` instead.
+- Secrets routes return 403 `SECRETS_FEATURE_DISABLED` when the team doesn't
+  have secrets enabled, and 503 `SECRETS_NOT_CONFIGURED` (not retryable) when
+  the server has no secrets encryption key.
+- A command timeout (`timeoutSec` or `timeoutMs`) for a process started with
+  secrets is sent in whole milliseconds and can be at most 24 hours.
 - Secret-started handles support `wait()` and `result()` without a local
   deadline. An explicit wait timeout limits the whole local wait, leaving the
   command running; the same handle can be awaited again. Runtime waits use

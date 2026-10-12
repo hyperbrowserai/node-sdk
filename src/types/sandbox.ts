@@ -69,7 +69,7 @@ export interface Sandbox {
    * Secrets were delivered into the sandbox, or it was restored from a
    * snapshot that may hold them.
    */
-  containsSecrets?: boolean;
+  containsSecrets: boolean;
 }
 
 export interface SandboxDetail extends Sandbox {
@@ -140,7 +140,8 @@ export type CreateSandboxParams =
       diskMiB?: number;
       /**
        * Secrets for the image's startup command only; requires the API key's
-       * `secrets.use` scope. The sandbox is marked as containing secrets.
+       * `secrets.use` scope and is not supported with `runtimeClass:
+       * "gvisor-cpu"`. The sandbox is marked as containing secrets.
        */
       secrets?: SandboxSecrets;
     });
@@ -213,7 +214,7 @@ export interface SandboxSnapshotSummary {
   metadata: Record<string, unknown>;
   uploaded: boolean;
   /** The snapshot's memory may hold secrets. */
-  containsSecrets?: boolean;
+  containsSecrets: boolean;
   createdAt: string;
   updatedAt: string;
 }

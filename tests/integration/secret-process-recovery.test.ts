@@ -372,9 +372,34 @@ describe("secret start error responses over HTTP", () => {
     }
   );
 
+  test("the API's unconfirmed start is reported as an unknown outcome without a retry", async () => {
+    const body = {
+      code: "SECRET_PROCESS_OUTCOME_UNKNOWN",
+      message: "The sandbox host did not confirm the process start",
+      retryable: false,
+    };
+    const api = await setup((_req, res, call) => {
+      if (call.path !== startPath) return false;
+      json(res, body, 502);
+      return true;
+    });
+    const error = await api.sandbox.processes.start(command).catch((error: unknown) => error);
+
+    expect(error).toBeInstanceOf(HyperbrowserError);
+    expect(error).toMatchObject({
+      statusCode: 502,
+      code: "secret_process_outcome_unknown",
+      retryable: false,
+      service: "control",
+      details: { ...body, sandboxId },
+      cause: { code: "SECRET_PROCESS_OUTCOME_UNKNOWN" },
+    });
+    expect(api.calls.filter((call) => call.path === startPath)).toHaveLength(1);
+  });
+
   test.each([
-    { status: 502, code: "SECRET_PROCESS_OUTCOME_UNKNOWN", retryable: false },
-    { status: 503, code: "SECRET_START_NOT_DISPATCHED", retryable: true },
+    { status: 503, code: "SECRET_PROCESS_NOT_STARTED", retryable: true },
+    { status: 500, code: "SECRET_DECRYPT_FAILED", retryable: false },
   ])("a valid $status API error preserves its code and retryable=$retryable", async (response) => {
     const api = await setup((_req, res, call) => {
       if (call.path !== startPath) return false;

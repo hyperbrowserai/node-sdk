@@ -170,6 +170,23 @@ describe("secrets service", () => {
     expect(calls()).toEqual(["GET /secrets/public-key"]);
   });
 
+  test("invalid names, list pages and version numbers are rejected locally", async () => {
+    const { service, calls } = mockService(() => secret());
+    for (const name of ["", "-leading-dash", "has space", "x".repeat(129)]) {
+      await expect(service.create({ name })).rejects.toThrow(/Secret name must be/);
+    }
+    await expect(service.list({ limit: 0 })).rejects.toThrow(
+      /limit must be an integer from 1 to 100/
+    );
+    await expect(service.list({ limit: 101 })).rejects.toThrow(/limit must be/);
+    await expect(service.list({ limit: 1.5 })).rejects.toThrow(/limit must be/);
+    await expect(service.list({ page: 0 })).rejects.toThrow(/page must be a positive integer/);
+    await expect(service.deleteVersion("provider-key", 2 ** 31)).rejects.toThrow(
+      /version must be an integer from 1 to 2147483647/
+    );
+    expect(calls()).toEqual([]);
+  });
+
   test("a failed upload after creating reports the partial create", async () => {
     const { service } = mockService((method, path) => {
       if (path === "/secrets/public-key") return platformPublicKey;
