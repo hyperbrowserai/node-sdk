@@ -53,5 +53,9 @@ export class HyperbrowserError extends Error {
   }
 }
 
+/** @internal A request the SDK refuses to send because the API would reject it. */
+export const invalidRequest = (message: string): HyperbrowserError =>
+  new HyperbrowserError(message, { code: "invalid_request", retryable: false });
+
 /** @internal The response body could not be read or decoded as JSON. */
 export class ResponseDecodingError extends HyperbrowserError {}

@@ -4,6 +4,8 @@ import {
   CLAUDE_COMPUTER_USE_SCHEMA,
   CRAWL_SCHEMA,
   EXTRACT_SCHEMA,
+  FILL_CREDENTIAL_DESCRIPTION,
+  FILL_CREDENTIAL_SCHEMA,
   OPENAI_CUA_DESCRIPTION,
   OPENAI_CUA_SCHEMA,
   SCRAPE_SCHEMA,
@@ -92,4 +94,10 @@ export const OPENAI_CUA_TOOL_ANTHROPIC: Tool = {
   input_schema: OPENAI_CUA_SCHEMA,
   name: "openai_cua",
   description: OPENAI_CUA_DESCRIPTION,
+};
+
+export const FILL_CREDENTIAL_TOOL_ANTHROPIC: Tool = {
+  input_schema: FILL_CREDENTIAL_SCHEMA,
+  name: "fill_credential",
+  description: FILL_CREDENTIAL_DESCRIPTION,
 };

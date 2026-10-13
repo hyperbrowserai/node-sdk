@@ -10,6 +10,7 @@ import {
   SessionRegion,
   State,
 } from "./constants";
+import { SessionCredential } from "./credential";
 
 export type SessionStatus = "active" | "closed" | "close-error" | "error";
 export type BrowserMemorySize = "small" | "medium" | "large";
@@ -91,6 +92,8 @@ export interface SessionDetail extends Session {
   liveUrl?: string;
   liveDomain?: string;
   token: string;
+  /** Credentials attached at creation, when there are any. */
+  credentials?: SessionCredential[];
 }
 
 export interface SessionGetParams {
@@ -265,6 +268,12 @@ export interface CreateSessionParams {
   disablePostQuantumKeyAgreement?: boolean;
   browserMemorySize?: BrowserMemorySize;
   startFromSnapshot?: StartSessionFromSnapshotParams;
+  /**
+   * Names of credentials (at most 20) that `sessions.credentials.fill` may type
+   * into pages. Credentials can only be attached at creation; the session runs
+   * on Firecracker with Chrome's password manager off.
+   */
+  credentials?: string[];
 }
 
 export interface CreateSessionSnapshotResponse {

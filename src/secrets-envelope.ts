@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { HyperbrowserError } from "./error";
-import { SecretsPublicKey, SecretValue } from "./types/secret";
+import { CredentialValue, SecretsPublicKey, SecretValue } from "./types/secret";
 
 /** The largest secret value the platform accepts. */
 export const MAX_SECRET_VALUE_BYTES = 32 * 1024;
@@ -35,6 +35,57 @@ export const secretValueBytes = (value: SecretValue): Buffer => {
     new TextDecoder("utf-8", { fatal: true }).decode(bytes);
   } catch {
     throw invalid("Secret value must be valid UTF-8");
+  }
+  return bytes;
+};
+
+/** Credential field names: the keys a fill can write. */
+export const CREDENTIAL_FIELD_PATTERN = /^[a-zA-Z0-9_.-]{1,64}$/;
+
+const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+
+/** A plain object, as opposed to an array, bytes or a class instance. */
+export const isPlainObject = (value: unknown): value is Record<string, unknown> => {
+  if (value === null || typeof value !== "object") return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+};
+
+/**
+ * Apply the platform's credential rules locally and return the UTF-8 JSON
+ * that is encrypted. Messages name fields, never values.
+ */
+export const credentialValueBytes = (value: CredentialValue): Buffer => {
+  if (!isPlainObject(value)) {
+    throw invalid("Credential value must be an object of field names to strings");
+  }
+  const fields = Object.keys(value);
+  if (fields.length === 0) {
+    throw invalid("Credential value has no fields");
+  }
+  for (const field of fields) {
+    if (!CREDENTIAL_FIELD_PATTERN.test(field)) {
+      throw invalid(
+        `Credential field name ${JSON.stringify(field.slice(0, 64))} must be 1-64 letters, digits, '_', '.' or '-'`
+      );
+    }
+    const fieldValue: unknown = value[field];
+    if (typeof fieldValue !== "string") {
+      throw invalid(`Credential field ${field} must be a string`);
+    }
+    if (fieldValue.length === 0) {
+      throw invalid(`Credential field ${field} is empty`);
+    }
+    if (fieldValue.includes("\0")) {
+      throw invalid(`Credential field ${field} must not contain NUL characters`);
+    }
+    if (LONE_SURROGATE.test(fieldValue)) {
+      throw invalid(`Credential field ${field} must be valid UTF-8 text`);
+    }
+  }
+  const bytes = Buffer.from(JSON.stringify(value), "utf8");
+  if (bytes.length > MAX_SECRET_VALUE_BYTES) {
+    throw invalid(`Credential value is more than ${MAX_SECRET_VALUE_BYTES} bytes as JSON`);
   }
   return bytes;
 };

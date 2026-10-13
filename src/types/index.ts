@@ -273,6 +273,12 @@ export {
 } from "./volume";
 export {
   SecretValue,
+  SecretType,
+  CredentialValue,
+  SecretBrowserMetadata,
+  SecretMetadata,
+  CreateCredentialParams,
+  UpdateSecretMetadata,
   SecretsPublicKey,
   SecretsPublicKeyJwk,
   Secret,
@@ -285,6 +291,15 @@ export {
   SecretDeleteResult,
   SecretVersionDeleteResult,
 } from "./secret";
+export {
+  SessionCredential,
+  CredentialFillField,
+  FillCredentialParams,
+  CredentialFillOutcome,
+  CredentialFillFieldResult,
+  CredentialFillResult,
+  CredentialFillPage,
+} from "./credential";
 export {
   CreateProfileParams,
   ForkProfileParams,

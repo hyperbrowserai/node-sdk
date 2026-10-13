@@ -284,3 +284,229 @@ describe("secrets service", () => {
     });
   });
 });
+
+describe("credentials", () => {
+  const CREDENTIAL_CONTEXT = `hb-secret-v1:team:${ID}:credential`;
+  const credential = (overrides: Record<string, unknown> = {}) =>
+    secret({
+      name: "github",
+      type: "credential",
+      metadata: { browser: { allowedOrigins: ["https://github.com"] } },
+      encryptionContext: CREDENTIAL_CONTEXT,
+      ...overrides,
+    });
+  const login = { username: "lovelace-1815", password: "pässwörd-1" };
+  const listOf = (item: unknown) => ({ secrets: [item], totalCount: 1, page: 1, perPage: 100 });
+  const version = (n: number) => ({ version: n, kid: platformPublicKey.kid, createdAt: "" });
+
+  test("createCredential creates a typed secret and seals its JSON to the returned context", async () => {
+    const { service, calls, requestSpy } = mockService((method, path) => {
+      if (path === "/secrets/public-key") return platformPublicKey;
+      if (method === "POST" && path === "/secrets") return credential();
+      if (method === "POST" && path === `/secrets/${ID}/versions`) return version(1);
+      throw new Error(`unexpected ${method} ${path}`);
+    });
+
+    const created = await service.createCredential({
+      name: "github",
+      value: login,
+      allowedOrigins: ["https://github.com"],
+      description: "GitHub bot",
+    });
+
+    expect(calls()).toEqual([
+      "GET /secrets/public-key",
+      "POST /secrets",
+      `POST /secrets/${ID}/versions`,
+    ]);
+    const createBody = (requestSpy.mock.calls[1][1] as any).body as string;
+    expect(JSON.parse(createBody)).toEqual({
+      name: "github",
+      description: "GitHub bot",
+      type: "credential",
+      metadata: { browser: { allowedOrigins: ["https://github.com"] } },
+    });
+    const uploadBody = (requestSpy.mock.calls[2][1] as any).body as string;
+    const { header, value } = open(JSON.parse(uploadBody).envelope);
+    expect(header.ctx).toBe(CREDENTIAL_CONTEXT);
+    expect(value.toString("utf8")).toBe(JSON.stringify(login));
+    // The plaintext is nowhere else on the wire.
+    for (const [, init] of requestSpy.mock.calls as any[]) {
+      expect(String(init?.body ?? "")).not.toContain("lovelace");
+      expect(String(init?.body ?? "")).not.toContain("pässwörd");
+    }
+    expect(created).toMatchObject({ type: "credential", latestVersion: 1 });
+  });
+
+  test("create with type credential takes the same path", async () => {
+    const { service, requestSpy } = mockService((method, path) => {
+      if (path === "/secrets/public-key") return platformPublicKey;
+      if (method === "POST" && path === "/secrets") return credential();
+      return version(1);
+    });
+    await service.create({ name: "github", type: "credential", value: { token: "t" } });
+    expect(
+      open(JSON.parse((requestSpy.mock.calls[2][1] as any).body).envelope).value.toString()
+    ).toBe('{"token":"t"}');
+  });
+
+  test.each([
+    ["an empty object", {}, /no fields/],
+    ["a bad key", { "user name": "ada" }, /field name "user name"/],
+    ["a long key", { ["k".repeat(65)]: "x" }, /must be 1-64/],
+    ["an empty value", { username: "" }, /username is empty/],
+    ["a non-string value", { pin: 1234 }, /pin must be a string/],
+    ["a NUL", { password: "a\0b" }, /NUL/],
+    ["a lone surrogate", { password: "a\uD800b" }, /valid UTF-8/],
+    ["an array", ["ada"], /object of field names/],
+    ["a string", "ada:pw", /must be an object of field names/],
+    ["bytes", new Uint8Array([1]), /must be an object of field names/],
+    ["an oversized value", { password: "x".repeat(32 * 1024) }, /more than 32768 bytes/],
+  ])("credential values with %s fail locally", async (_name, value, message) => {
+    const { service, calls } = mockService(() => platformPublicKey);
+    const error = await service
+      .create({ name: "github", type: "credential", value: value as any })
+      .catch((e) => e);
+    expect(error).toBeInstanceOf(HyperbrowserError);
+    expect(error.code).toBe("invalid_secret_value");
+    expect(error.message).toMatch(message);
+    expect(error.message).not.toContain("a\0b");
+    expect(calls()).toEqual([]);
+  });
+
+  test("plain secrets reject objects, and createCredential checks its inputs, before any request", async () => {
+    const { service, calls } = mockService(() => platformPublicKey);
+    await expect(service.create({ name: "k", value: login })).rejects.toMatchObject({
+      code: "invalid_secret_value",
+    });
+    await expect(
+      service.createCredential({ name: "github", value: login, allowedOrigins: [] })
+    ).rejects.toMatchObject({ code: "invalid_request" });
+    await expect(
+      service.createCredential({ name: "github", value: login, allowedOrigins: [""] })
+    ).rejects.toMatchObject({ code: "invalid_request" });
+    await expect(
+      service.createCredential({
+        name: "github",
+        value: "secret" as any,
+        allowedOrigins: ["https://github.com"],
+      })
+    ).rejects.toMatchObject({ code: "invalid_secret_value" });
+    await expect(service.create({ name: "k", type: "password" as any })).rejects.toMatchObject({
+      code: "invalid_request",
+    });
+    expect(calls()).toEqual([]);
+  });
+
+  test("the largest credential value is accepted", async () => {
+    const { service } = mockService((method, path) => {
+      if (path === "/secrets/public-key") return platformPublicKey;
+      if (method === "POST" && path === "/secrets") return credential();
+      return version(1);
+    });
+    const padding = 32 * 1024 - JSON.stringify({ p: "" }).length;
+    await expect(
+      service.create({ name: "github", type: "credential", value: { p: "x".repeat(padding) } })
+    ).resolves.toMatchObject({ latestVersion: 1 });
+  });
+
+  test("a failed upload after creating a credential reports the partial create", async () => {
+    const { service } = mockService((method, path) => {
+      if (path === "/secrets/public-key") return platformPublicKey;
+      if (method === "POST" && path === "/secrets") return credential();
+      return new HyperbrowserError("key outdated", { statusCode: 409 });
+    });
+    await expect(
+      service.createCredential({
+        name: "github",
+        value: login,
+        allowedOrigins: ["https://github.com"],
+      })
+    ).rejects.toMatchObject({ code: "secret_value_not_stored", details: { secret: credential() } });
+  });
+
+  test("addVersion requires the shape of the resolved secret's type", async () => {
+    const plain = secret();
+    const { service, calls, requestSpy } = mockService((method, path, _body, params) => {
+      if (path === "/secrets/public-key") return platformPublicKey;
+      if (path === "/secrets") return listOf(params.search === "github" ? credential() : plain);
+      if (method === "POST") return version(2);
+      throw new Error(`unexpected ${method} ${path}`);
+    });
+
+    await expect(service.addVersion("github", "just-a-string")).rejects.toMatchObject({
+      code: "invalid_secret_value",
+    });
+    await expect(service.addVersion("provider-key", login)).rejects.toMatchObject({
+      code: "invalid_secret_value",
+    });
+    expect(calls().filter((call) => call.startsWith("POST"))).toEqual([]);
+
+    await expect(service.addVersion("github", login)).resolves.toMatchObject({ version: 2 });
+    const { header, value } = open(JSON.parse((requestSpy.mock.lastCall![1] as any).body).envelope);
+    expect(header.ctx).toBe(CREDENTIAL_CONTEXT);
+    expect(value.toString("utf8")).toBe(JSON.stringify(login));
+
+    await expect(service.addVersion("provider-key", "next")).resolves.toMatchObject({ version: 2 });
+    expect(
+      open(JSON.parse((requestSpy.mock.lastCall![1] as any).body).envelope).value.toString()
+    ).toBe("next");
+  });
+
+  test("addVersion rejects invalid values of either shape before any request", async () => {
+    const { service, calls } = mockService(() => platformPublicKey);
+    await expect(service.addVersion("github", { username: "" })).rejects.toThrow(/empty/);
+    await expect(service.addVersion("github", 42 as any)).rejects.toMatchObject({
+      code: "invalid_secret_value",
+    });
+    expect(calls()).toEqual([]);
+  });
+
+  test("setAllowedOrigins replaces or clears metadata.browser", async () => {
+    const { service, calls, requestSpy } = mockService((method, path) => {
+      if (path === "/secrets") return listOf(credential());
+      if (method === "PATCH") return credential({ metadata: {} });
+      throw new Error(`unexpected ${method} ${path}`);
+    });
+
+    await service.setAllowedOrigins("github", ["https://github.com", "https://*.github.com"]);
+    expect(JSON.parse((requestSpy.mock.calls[1][1] as any).body)).toEqual({
+      metadata: { browser: { allowedOrigins: ["https://github.com", "https://*.github.com"] } },
+    });
+    await expect(service.setAllowedOrigins("github", null)).resolves.toMatchObject({
+      metadata: {},
+    });
+    expect((requestSpy.mock.calls[3][1] as any).body).toBe('{"metadata":{"browser":null}}');
+    expect(calls()).toEqual([
+      "GET /secrets",
+      `PATCH /secrets/${ID}`,
+      "GET /secrets",
+      `PATCH /secrets/${ID}`,
+    ]);
+
+    await expect(service.setAllowedOrigins("github", [])).rejects.toMatchObject({
+      code: "invalid_request",
+    });
+    await expect(
+      service.setAllowedOrigins("github", Array(21).fill("https://github.com"))
+    ).rejects.toMatchObject({ code: "invalid_request" });
+    await expect(service.update("github", {})).rejects.toMatchObject({ code: "invalid_request" });
+    expect(calls()).toHaveLength(4);
+  });
+
+  test("list filters by type", async () => {
+    const { service, requestSpy } = mockService(() => listOf(credential()));
+    await expect(service.list({ type: "credential" })).resolves.toMatchObject({
+      secrets: [{ type: "credential" }],
+    });
+    expect(requestSpy.mock.calls[0][2]).toEqual({
+      search: undefined,
+      page: undefined,
+      limit: undefined,
+      type: "credential",
+    });
+    await expect(service.list({ type: "login" as any })).rejects.toMatchObject({
+      code: "invalid_request",
+    });
+  });
+});
