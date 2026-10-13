@@ -9,7 +9,14 @@ vi.mock("node-fetch", async () => {
 
 import { HyperbrowserClient as Hyperbrowser, HyperbrowserError } from "../../src/client";
 import {
+  BrowserUseTool,
+  ClaudeComputerUseTool,
   CredentialFillTool,
+  OpenAICuaTool,
+  WebsiteCrawlTool,
+  WebsiteExtractTool,
+  WebsiteScrapeTool,
+  WebsiteScreenshotTool,
   FILL_CREDENTIAL_SCHEMA,
   FILL_CREDENTIAL_TOOL_ANTHROPIC,
   FILL_CREDENTIAL_TOOL_GEMINI,
@@ -114,7 +121,7 @@ describe("sessions", () => {
     expect(result.fields[0].outcome).toBe("not_visible_yet");
   });
 
-  test("errors carry the server's code, retryable flag and details", async () => {
+  test("errors carry the server's code, retryable flag and body as details", async () => {
     fetchMock.mockResolvedValue(respond(ambiguous, 409));
     const error = await client()
       .sessions.credentials.fill(SESSION, { credential: "github", fields })
@@ -124,20 +131,20 @@ describe("sessions", () => {
       statusCode: 409,
       code: "CREDENTIAL_PAGE_AMBIGUOUS",
       retryable: false,
-      details: ambiguous.details,
+      details: ambiguous,
     });
+    expect(error.details.details.pages).toEqual(ambiguous.details.pages);
     expect(error.message).toContain("Several pages could be the target");
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
-    fetchMock.mockResolvedValue(
-      respond({ code: "CREDENTIAL_FILL_TIMEOUT", message: "timed out", retryable: true }, 504)
-    );
+    const timeout = { code: "CREDENTIAL_FILL_TIMEOUT", message: "timed out", retryable: true };
+    fetchMock.mockResolvedValue(respond(timeout, 504));
     await expect(
       client().sessions.credentials.fill(SESSION, { credential: "github", fields })
     ).rejects.toMatchObject({
       code: "CREDENTIAL_FILL_TIMEOUT",
       retryable: true,
-      details: undefined,
+      details: timeout,
     });
   });
 
@@ -299,6 +306,26 @@ describe("fill_credential tool", () => {
     });
   });
 
+  test.each([
+    WebsiteScrapeTool,
+    WebsiteScreenshotTool,
+    WebsiteCrawlTool,
+    WebsiteExtractTool,
+    BrowserUseTool,
+    ClaudeComputerUseTool,
+    OpenAICuaTool,
+    CredentialFillTool,
+  ])("$name has a Gemini declaration matching its OpenAI definition", (tool) => {
+    const declaration = tool.geminiToolDefinition;
+    expect(declaration.name).toBe(tool.openaiToolDefinition.function.name);
+    expect(declaration.description).toBe(tool.openaiToolDefinition.function.description);
+    expect(declaration.parameters?.type).toBe("OBJECT");
+    expect(collectKeys(declaration.parameters).has("additionalProperties")).toBe(false);
+    expect(Object.keys(declaration.parameters?.properties ?? {})).toEqual(
+      Object.keys((tool.openaiToolDefinition.function.parameters as any).properties)
+    );
+  });
+
   test("the Gemini converter refuses schemas it can't express", () => {
     expect(() => toGeminiSchema({ type: ["string", "number"] })).toThrow(/Unsupported/);
     expect(toGeminiSchema({ type: "integer", enum: ["1"], default: 1 })).toEqual({
@@ -339,7 +366,7 @@ describe("fill_credential tool", () => {
     expect(lastRequest().body).toEqual({ credential: "github", fields });
   });
 
-  test("API errors come back as JSON for the model", async () => {
+  test("API errors come back as JSON with the server's own details", async () => {
     fetchMock.mockResolvedValue(respond(ambiguous, 409));
     const output = await CredentialFillTool.runnable(client(), SESSION, {
       credential: "github",
@@ -353,6 +380,22 @@ describe("fill_credential tool", () => {
         message: "Several pages could be the target; pass pageId",
         retryable: false,
         details: ambiguous.details,
+      },
+    });
+
+    fetchMock.mockResolvedValue(
+      respond({ code: "CREDENTIAL_FILL_TIMEOUT", message: "timed out", retryable: true }, 504)
+    );
+    const timedOut = await CredentialFillTool.runnable(client(), SESSION, {
+      credential: "github",
+      fields,
+    });
+    expect(JSON.parse(timedOut)).toEqual({
+      error: {
+        code: "CREDENTIAL_FILL_TIMEOUT",
+        message: "timed out",
+        retryable: true,
+        details: null,
       },
     });
   });

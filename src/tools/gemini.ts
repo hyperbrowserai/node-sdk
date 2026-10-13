@@ -1,3 +1,13 @@
+import {
+  BROWSER_USE_TOOL_OPENAI,
+  ChatCompletionTool,
+  CLAUDE_COMPUTER_USE_TOOL_OPENAI,
+  CRAWL_TOOL_OPENAI,
+  EXTRACT_TOOL_OPENAI,
+  OPENAI_CUA_TOOL_OPENAI,
+  SCRAPE_TOOL_OPENAI,
+  SCREENSHOT_TOOL_OPENAI,
+} from "./openai";
 import { FILL_CREDENTIAL_DESCRIPTION, FILL_CREDENTIAL_SCHEMA } from "./schema";
 
 /** Gemini's schema types, as `@google/genai`'s `Type` enum spells them. */
@@ -117,6 +127,22 @@ export const toGeminiFunctionDeclaration = (
   description: string,
   parameters: Record<string, any>
 ): FunctionDeclaration => ({ name, description, parameters: toGeminiSchema(parameters) });
+
+/** The Gemini form of an OpenAI tool definition: same name, description and schema. */
+const fromOpenAI = ({ function: definition }: ChatCompletionTool): FunctionDeclaration =>
+  toGeminiFunctionDeclaration(
+    definition.name,
+    definition.description ?? "",
+    definition.parameters ?? { type: "object", properties: {} }
+  );
+
+export const SCRAPE_TOOL_GEMINI = fromOpenAI(SCRAPE_TOOL_OPENAI);
+export const SCREENSHOT_TOOL_GEMINI = fromOpenAI(SCREENSHOT_TOOL_OPENAI);
+export const CRAWL_TOOL_GEMINI = fromOpenAI(CRAWL_TOOL_OPENAI);
+export const EXTRACT_TOOL_GEMINI = fromOpenAI(EXTRACT_TOOL_OPENAI);
+export const BROWSER_USE_TOOL_GEMINI = fromOpenAI(BROWSER_USE_TOOL_OPENAI);
+export const CLAUDE_COMPUTER_USE_TOOL_GEMINI = fromOpenAI(CLAUDE_COMPUTER_USE_TOOL_OPENAI);
+export const OPENAI_CUA_TOOL_GEMINI = fromOpenAI(OPENAI_CUA_TOOL_OPENAI);
 
 export const FILL_CREDENTIAL_TOOL_GEMINI: FunctionDeclaration = toGeminiFunctionDeclaration(
   "fill_credential",

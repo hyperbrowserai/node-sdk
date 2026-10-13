@@ -148,8 +148,8 @@ call `sessions.credentials.fill` the same way, then `page.click(...)` or
   submit before filling the next.
 - Without `pageId`, fill uses the only tab, else the single tab on an allowed
   origin, else the single visible tab; otherwise it fails with
-  `CREDENTIAL_PAGE_AMBIGUOUS` and the candidate tabs in `error.details.pages`
-  (`{ pageId, url, title }`). Under Playwright every tab reports as visible, so
+  `CREDENTIAL_PAGE_AMBIGUOUS` and the candidate tabs in
+  `error.details.details.pages` (`{ pageId, url, title }`). Under Playwright every tab reports as visible, so
   with several tabs on allowed origins, pass the page's target ID:
 
   ```typescript
@@ -177,9 +177,10 @@ call `sessions.credentials.fill` the same way, then `page.click(...)` or
   `browser-sessions.update`. Attaching credentials runs the session on
   Firecracker with Chrome's password manager off. Fills are recorded in the
   session event log as `credential_filled` and `credential_fill_refused`.
-- Fill errors are `HyperbrowserError`s with `code`, `retryable` and `details`:
-  `CREDENTIAL_NOT_ATTACHED`, `CREDENTIAL_ORIGIN_NOT_ALLOWED` (`details.origin`;
-  nothing was typed), `CREDENTIAL_NOT_READY` (no allowed origins or no value),
+- Fill errors are `HyperbrowserError`s with `code` and `retryable`; `details`
+  is the API's error body, whose own `details` holds the specifics (such as
+  `error.details.details.origin`). Codes: `CREDENTIAL_NOT_ATTACHED`,
+  `CREDENTIAL_ORIGIN_NOT_ALLOWED` (nothing was typed), `CREDENTIAL_NOT_READY` (no allowed origins or no value),
   `SECRET_TYPE_MISMATCH`, `SECRET_NOT_FOUND`, `SESSION_NOT_ACTIVE`,
   `CREDENTIAL_PAGE_NOT_FOUND`, `CREDENTIAL_FRAME_NOT_FOUND`,
   `CREDENTIAL_PAGE_AMBIGUOUS`, `CREDENTIAL_FRAME_AMBIGUOUS`,
@@ -194,7 +195,8 @@ call `sessions.credentials.fill` the same way, then `page.click(...)` or
 `CredentialFillTool` from `@hyperbrowser/sdk/tools` exposes fill as a
 `fill_credential` tool. Your application binds the session ID; the model picks
 only the credential name, fields, selectors and, when needed, `page_id` or
-`frame_url`. Results and errors come back as JSON text, and never contain values.
+`frame_url`. Results and errors come back as JSON text, and never contain values;
+an error's `details` there is the API's own details object (such as `pages`).
 Fill doesn't submit, so give the model your other browser tools as well (to
 click the login button, for example).
 
@@ -242,7 +244,7 @@ const messages: Anthropic.MessageParam[] = [
 ];
 for (;;) {
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-5",
+    model: "claude-sonnet-5-5",
     max_tokens: 4096,
     tools: [CredentialFillTool.anthropicToolDefinition /* , your browser tools */],
     messages,
@@ -302,7 +304,9 @@ for (;;) {
 
 `FILL_CREDENTIAL_TOOL_OPENAI`, `FILL_CREDENTIAL_TOOL_ANTHROPIC` and
 `FILL_CREDENTIAL_TOOL_GEMINI` are also exported, along with `toGeminiSchema` for
-converting the SDK's JSON Schemas to Gemini's schema form.
+converting the SDK's JSON Schemas to Gemini's schema form. Every tool class in
+`@hyperbrowser/sdk/tools` (such as `WebsiteScrapeTool`) has a
+`geminiToolDefinition` next to its OpenAI and Anthropic definitions.
 
 ## Usage
 

@@ -1,4 +1,4 @@
-import { HyperbrowserError, invalidRequest, ResponseDecodingError } from "../error";
+import { invalidRequest } from "../error";
 import { CREDENTIAL_FIELD_PATTERN, isPlainObject } from "../secrets-envelope";
 import { CredentialFillResult, FillCredentialParams } from "../types/credential";
 import { BaseService } from "./base";
@@ -64,33 +64,6 @@ const fillBody = (params: FillCredentialParams): string => {
   });
 };
 
-/**
- * The fill route's errors carry their data in the body's `details`, such as
- * `details.pages` for `CREDENTIAL_PAGE_AMBIGUOUS`; surface that as the error's
- * `details` rather than the whole body.
- */
-const withServerDetails = (error: unknown): unknown => {
-  if (
-    !(error instanceof HyperbrowserError) ||
-    error instanceof ResponseDecodingError ||
-    !isPlainObject(error.details)
-  ) {
-    return error;
-  }
-  const details = error.details.details;
-  return new HyperbrowserError(error.message.replace(/^\[Hyperbrowser\]: /, ""), {
-    statusCode: error.statusCode,
-    code: error.code,
-    requestId: error.requestId,
-    retryable: error.retryable,
-    service: error.service,
-    details: details === null ? undefined : details,
-    cause: error.cause ?? error,
-    method: error.method,
-    path: error.path,
-  });
-};
-
 /** Fill credentials attached to a browser session into its pages. */
 export class CredentialsService extends BaseService {
   /**
@@ -98,23 +71,22 @@ export class CredentialsService extends BaseService {
    * pages. Only types; never submits, so click the login button or press
    * Enter afterwards. Values never leave the platform: the result lists an
    * outcome per field. Safe to retry; it is not retried automatically.
+   *
+   * API errors are `HyperbrowserError`s whose `details` is the error body; the
+   * server's own details are in `details.details`, such as `details.details.pages`
+   * for `CREDENTIAL_PAGE_AMBIGUOUS`.
    */
   async fill(sessionId: string, params: FillCredentialParams): Promise<CredentialFillResult> {
     if (typeof sessionId !== "string" || !sessionId.trim()) {
       throw invalidRequest("A session ID is required");
     }
-    const body = fillBody(params);
-    try {
-      return await this.request<CredentialFillResult>(
-        `/session/${encodeURIComponent(sessionId)}/credentials/fill`,
-        {
-          method: "POST",
-          body,
-          timeout: Math.max(this.timeout, MIN_FILL_TIMEOUT_MS),
-        }
-      );
-    } catch (error) {
-      throw withServerDetails(error);
-    }
+    return this.request<CredentialFillResult>(
+      `/session/${encodeURIComponent(sessionId)}/credentials/fill`,
+      {
+        method: "POST",
+        body: fillBody(params),
+        timeout: Math.max(this.timeout, MIN_FILL_TIMEOUT_MS),
+      }
+    );
   }
 }
