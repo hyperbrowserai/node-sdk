@@ -89,6 +89,221 @@ or `*` (every host). Proxy routes only apply to `sessions.create` and cannot be
 combined with `allowInternetAccess: false`, `allowOut`, or `denyOut`. See the
 [proxy routes guide](https://hyperbrowser.ai/docs/sessions/proxy-routes).
 
+## Fill credentials into browser sessions
+
+Store a website login as a credential, attach it when you create a session, and
+fill it into the page's login form. The value is encrypted locally before upload;
+after that, neither the API, your code, nor an LLM ever sees it.
+
+```typescript
+import { chromium } from "playwright-core";
+import { Hyperbrowser } from "@hyperbrowser/sdk";
+
+const client = new Hyperbrowser({ apiKey: process.env.HYPERBROWSER_API_KEY });
+
+// Once: a credential is a secret of type "credential" whose value is an object
+// of fields, usable only on its allowed origins.
+await client.secrets.createCredential({
+  name: "github",
+  value: { username: "ada", password: process.env.GITHUB_PASSWORD! },
+  allowedOrigins: ["https://github.com"],
+});
+
+// Credentials can only be attached when the session is created.
+const session = await client.sessions.create({ credentials: ["github"] });
+try {
+  const browser = await chromium.connectOverCDP(session.wsEndpoint);
+  const page = await browser.contexts()[0].newPage();
+  await page.goto("https://github.com/login");
+
+  // Fill only types into the inputs; it never submits.
+  const result = await client.sessions.credentials.fill(session.id, {
+    credential: "github",
+    fields: [
+      { field: "username", selector: "#login_field" },
+      { field: "password", selector: "#password" },
+    ],
+  });
+  if (result.fields.every(({ outcome }) => outcome === "filled")) {
+    await page.click('input[type="submit"]');
+  } else {
+    console.log(result.fields); // e.g. [{ field: "password", outcome: "not_found" }]
+  }
+} finally {
+  await client.sessions.stop(session.id);
+}
+```
+
+With Puppeteer, connect as usual (`connect({ browserWSEndpoint: session.wsEndpoint })`),
+call `sessions.credentials.fill` the same way, then `page.click(...)` or
+`page.keyboard.press("Enter")` to submit.
+
+- Each field reports an outcome: `filled` (the input holds exactly the value),
+  `not_found` (no input matched), `ambiguous` (several visible inputs matched),
+  `not_editable` (disabled, read-only, hidden or not a text input), `not_accepted`
+  (the page didn't keep the value, e.g. `maxlength`), or `not_populated` (the
+  stored value has no such field). Submit only when the fields you need are
+  `filled`. Fill is safe to retry; it is not retried automatically.
+- For logins split over several screens, fill the fields on each screen and
+  submit before filling the next.
+- Without `pageId`, fill uses the only tab, else the single tab on an allowed
+  origin, else the single visible tab; otherwise it fails with
+  `CREDENTIAL_PAGE_AMBIGUOUS` and the candidate tabs in `error.details.pages`
+  (`{ pageId, url, title }`). Under Playwright every tab reports as visible, so
+  with several tabs on allowed origins, pass the page's target ID:
+
+  ```typescript
+  const cdp = await page.context().newCDPSession(page);
+  const { targetInfo } = await cdp.send("Target.getTargetInfo");
+  await client.sessions.credentials.fill(session.id, {
+    credential: "github",
+    fields: [{ field: "password", selector: "#password" }],
+    pageId: targetInfo.targetId,
+  });
+  ```
+
+  In Puppeteer, `(await page.createCDPSession()).send("Target.getTargetInfo")`
+  returns the same ID. For a login form inside an iframe, pass
+  `frame: { url: "https://accounts.example.com/" }` (matched as a URL prefix).
+- Manage credentials with the other `secrets` methods: `addVersion(name, value)`
+  stores a new value object, `setAllowedOrigins(name, origins)` replaces the
+  allowed origins (`null` clears them, so the credential can't be filled), and
+  `list({ type: "credential" })` lists credentials. Origins are
+  `scheme://host[:port]`; a leading `*.` matches subdomains only, and `http:` is
+  accepted only for `localhost`, `127.0.0.1` and `[::1]`. Values are objects of
+  non-empty strings whose keys match `^[a-zA-Z0-9_.-]{1,64}$`, at most 32 KiB as
+  JSON; they are checked locally (`invalid_secret_value`) before anything is sent.
+- Session create needs the API key scope `secrets.use`; fill also needs
+  `browser-sessions.update`. Attaching credentials runs the session on
+  Firecracker with Chrome's password manager off. Fills are recorded in the
+  session event log as `credential_filled` and `credential_fill_refused`.
+- Fill errors are `HyperbrowserError`s with `code`, `retryable` and `details`:
+  `CREDENTIAL_NOT_ATTACHED`, `CREDENTIAL_ORIGIN_NOT_ALLOWED` (`details.origin`;
+  nothing was typed), `CREDENTIAL_NOT_READY` (no allowed origins or no value),
+  `SECRET_TYPE_MISMATCH`, `SECRET_NOT_FOUND`, `SESSION_NOT_ACTIVE`,
+  `CREDENTIAL_PAGE_NOT_FOUND`, `CREDENTIAL_FRAME_NOT_FOUND`,
+  `CREDENTIAL_PAGE_AMBIGUOUS`, `CREDENTIAL_FRAME_AMBIGUOUS`,
+  `CREDENTIAL_FILL_TIMEOUT` (retryable), `CREDENTIAL_FILL_FAILED`,
+  `CREDENTIAL_FILL_UNSUPPORTED` (the browser image predates fill),
+  `CREDENTIALS_UNSUPPORTED_RUNTIME`, `SECRET_VALUE_INVALID` and
+  `SECRETS_FEATURE_DISABLED`. Requests the API would reject fail locally with
+  `invalid_request`.
+
+### Use with LLM SDKs
+
+`CredentialFillTool` from `@hyperbrowser/sdk/tools` exposes fill as a
+`fill_credential` tool. Your application binds the session ID; the model picks
+only the credential name, fields, selectors and, when needed, `page_id` or
+`frame_url`. Results and errors come back as JSON text, and never contain values.
+Fill doesn't submit, so give the model your other browser tools as well (to
+click the login button, for example).
+
+OpenAI (Chat Completions):
+
+```typescript
+import OpenAI from "openai";
+import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+import { CredentialFillTool } from "@hyperbrowser/sdk/tools";
+
+const openai = new OpenAI();
+const messages: ChatCompletionMessageParam[] = [
+  { role: "user", content: "Sign in to GitHub with the github credential." },
+];
+for (;;) {
+  const completion = await openai.chat.completions.create({
+    model: "gpt-5",
+    messages,
+    tools: [CredentialFillTool.openaiToolDefinition /* , your browser tools */],
+  });
+  const message = completion.choices[0].message;
+  messages.push(message);
+  if (!message.tool_calls?.length) break;
+  for (const call of message.tool_calls) {
+    if (call.type !== "function" || call.function.name !== "fill_credential") continue;
+    const content = await CredentialFillTool.runnable(
+      client,
+      session.id,
+      JSON.parse(call.function.arguments)
+    );
+    messages.push({ role: "tool", tool_call_id: call.id, content });
+  }
+}
+```
+
+Anthropic (Messages):
+
+```typescript
+import Anthropic from "@anthropic-ai/sdk";
+import { CredentialFillTool, type CredentialFillToolParams } from "@hyperbrowser/sdk/tools";
+
+const anthropic = new Anthropic();
+const messages: Anthropic.MessageParam[] = [
+  { role: "user", content: "Sign in to GitHub with the github credential." },
+];
+for (;;) {
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-5",
+    max_tokens: 4096,
+    tools: [CredentialFillTool.anthropicToolDefinition /* , your browser tools */],
+    messages,
+  });
+  messages.push({ role: "assistant", content: response.content });
+  if (response.stop_reason !== "tool_use") break;
+  const results: Anthropic.ToolResultBlockParam[] = [];
+  for (const block of response.content) {
+    if (block.type !== "tool_use" || block.name !== "fill_credential") continue;
+    const content = await CredentialFillTool.runnable(
+      client,
+      session.id,
+      block.input as CredentialFillToolParams
+    );
+    results.push({ type: "tool_result", tool_use_id: block.id, content });
+  }
+  messages.push({ role: "user", content: results });
+}
+```
+
+Gemini (`@google/genai`):
+
+```typescript
+import { GoogleGenAI, type Content, type Part } from "@google/genai";
+import { CredentialFillTool, type CredentialFillToolParams } from "@hyperbrowser/sdk/tools";
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const contents: Content[] = [
+  { role: "user", parts: [{ text: "Sign in to GitHub with the github credential." }] },
+];
+for (;;) {
+  const response = await ai.models.generateContent({
+    model: "gemini-3.5-flash",
+    contents,
+    config: {
+      tools: [{ functionDeclarations: [CredentialFillTool.geminiToolDefinition] }],
+    },
+  });
+  const calls = response.functionCalls ?? [];
+  if (calls.length === 0) break;
+  contents.push(response.candidates![0].content!);
+  const parts: Part[] = [];
+  for (const call of calls) {
+    if (call.name !== "fill_credential") continue;
+    const output = await CredentialFillTool.runnable(
+      client,
+      session.id,
+      call.args as unknown as CredentialFillToolParams
+    );
+    parts.push({
+      functionResponse: { id: call.id, name: call.name, response: JSON.parse(output) },
+    });
+  }
+  contents.push({ role: "user", parts });
+}
+```
+
+`FILL_CREDENTIAL_TOOL_OPENAI`, `FILL_CREDENTIAL_TOOL_ANTHROPIC` and
+`FILL_CREDENTIAL_TOOL_GEMINI` are also exported, along with `toGeminiSchema` for
+converting the SDK's JSON Schemas to Gemini's schema form.
+
 ## Usage
 
 ### Playwright
