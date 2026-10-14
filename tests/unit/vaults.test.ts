@@ -295,6 +295,7 @@ describe("vaults service", () => {
   test.each([
     ["nothing", {}],
     ["a source type change", { source: { type: "stored" } }],
+    ["an empty source", { source: {} }],
     ["a bad token name", { source: { tokenSecret: "-t" } }],
     ["a bad 1Password vault", { source: { vault: "a/b" } }],
     ["a bad entry", { entries: { A: { name: "" } } }],

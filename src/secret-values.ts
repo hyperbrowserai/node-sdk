@@ -4,9 +4,9 @@ import { SecretValue } from "./types/secret";
 const TOTP_ALGORITHMS = new Set(["SHA1", "SHA256", "SHA512"]);
 const MAX_TOTP_PERIOD_SECONDS = 300;
 /**
- * Unpadded base32 can't end with 1, 3 or 6 characters of a block. vm-service
- * would silently drop such trailing characters, so a seed copied incompletely
- * would give wrong codes; it is refused instead.
+ * Unpadded base32 can't end with 1, 3 or 6 characters of a block, so such a
+ * seed was copied incompletely. vm-service refuses it too (older hosts
+ * dropped the extra characters and gave wrong codes).
  */
 const BASE32_TAIL_LENGTHS = new Set([0, 2, 4, 5, 7]);
 const BYTE_ORDER_MARK = "\uFEFF";

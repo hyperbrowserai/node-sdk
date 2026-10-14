@@ -216,6 +216,9 @@ const serializeUpdate = (params: UpdateVaultParams): Record<string, unknown> => 
         "source must be { tokenSecret?, vault? }: a vault's source type can't change"
       );
     }
+    if (source.tokenSecret === undefined && source.vault === undefined) {
+      throw invalidRequest("source must name a tokenSecret, a vault, or both");
+    }
     if (
       source.tokenSecret !== undefined &&
       (typeof source.tokenSecret !== "string" || !SECRET_NAME_PATTERN.test(source.tokenSecret))
