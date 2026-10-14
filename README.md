@@ -251,7 +251,7 @@ own `details` holds the specifics (such as `error.details.details.origin`).
 | `CREDENTIAL_PAGE_AMBIGUOUS`, `CREDENTIAL_FRAME_AMBIGUOUS` | Several matched; pass `pageId` or `pageUrl` (`details.pages`), or a longer `frameUrl`. |
 | `CREDENTIAL_FILL_TIMEOUT` | Retryable. |
 | `CREDENTIAL_FILL_FAILED` | The fill failed in the browser. |
-| `CREDENTIAL_FILL_UNSUPPORTED`, `CREDENTIAL_VALUE_UNSUPPORTED` | The browser image predates fill, or the host can't resolve this value type (such as TOTP). |
+| `CREDENTIAL_FILL_UNSUPPORTED`, `CREDENTIAL_VALUE_UNSUPPORTED` | The browser image predates fill, or the host can't resolve this value type. |
 | `CREDENTIALS_UNSUPPORTED_RUNTIME`, `CREDENTIALS_SNAPSHOT_PASSWORD_MANAGER_ENABLED` | Session create: secrets need Firecracker, and a snapshot taken with the password manager off. |
 | `SESSION_NOT_ACTIVE` | The session has stopped. |
 | `SECRET_NOT_FOUND`, `SECRET_VERSION_NOT_FOUND` | |
