@@ -12,6 +12,7 @@ import type { RuntimeTransport } from "../../src/sandbox/base";
 import { SandboxProcessesApi, SecretProcessStarter } from "../../src/sandbox/process";
 import { BaseService } from "../../src/services/base";
 import { SandboxesService } from "../../src/services/sandboxes";
+import type { SandboxResolvedSecret } from "../../src/types";
 
 const wireDetail = {
   id: "sbx_123",
@@ -33,7 +34,9 @@ const rawProcess = {
   started_at: 10,
 };
 
-const resolved = [{ env: "API_KEY", name: "provider-key", secretId: "s1", version: 2 }];
+const resolved = [
+  { env: "API_KEY", name: "provider-key", secretId: "s1", version: 2, source: { type: "secrets" } },
+];
 
 const result = {
   id: "proc_1",
@@ -418,6 +421,102 @@ describe("processes with secrets", () => {
       command: "node app.js",
       secrets: { API_KEY: { name: "provider-key" } },
     });
+  });
+});
+
+describe("vaults in sandboxes", () => {
+  afterEach(() => fetchMock.mockReset());
+
+  const vaultBindings: SandboxResolvedSecret[] = [
+    {
+      env: "API_KEY",
+      name: "provider-key",
+      secretId: "s1",
+      version: 2,
+      source: { type: "secrets" },
+      overrides: [{ type: "vault", name: "app-env" }],
+    },
+    {
+      env: "OTP",
+      name: "github-otp",
+      secretId: "s2",
+      version: 1,
+      secretType: "totp",
+      source: { type: "vault", name: "app-env" },
+    },
+    {
+      env: "DB_PASS",
+      reference: "op://Engineering/Postgres/prod/password",
+      tokenSecret: "op-token",
+      source: { type: "vault", name: "app-env" },
+    },
+  ];
+
+  test("image launches send the vault and report the startup bindings", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const requestSpy = vi
+      .spyOn(service as any, "request")
+      .mockResolvedValue({ ...wireDetail, startupSecrets: vaultBindings });
+
+    const sandbox = await service.create({
+      imageName: "node",
+      vault: "app-env",
+      secrets: { API_KEY: "provider-key" },
+    });
+
+    const body = JSON.parse((requestSpy.mock.calls[0][1] as any).body);
+    expect(body).toMatchObject({
+      vault: "app-env",
+      secrets: { API_KEY: { name: "provider-key" } },
+    });
+    expect(sandbox.toJSON().startupSecrets).toEqual(vaultBindings);
+  });
+
+  test("vault is checked locally like secrets", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue(wireDetail);
+    await expect(
+      service.create({ snapshotName: "snap", vault: "app-env" } as any)
+    ).rejects.toThrow(/only supported for image launches/);
+    await expect(service.create({ imageName: "node", vault: "app env" })).rejects.toThrow(
+      /vault name/
+    );
+    await expect(
+      service.create({ imageName: "node", runtimeClass: "gvisor-cpu", vault: "app-env" })
+    ).rejects.toThrow(/not supported with runtimeClass gvisor-cpu/);
+    expect(requestSpy).not.toHaveBeenCalled();
+  });
+
+  test("a timed-out create with only a vault is an unknown outcome", async () => {
+    fetchMock.mockRejectedValue(new FetchError("network timeout", "request-timeout"));
+    const error = await new SandboxesService("test-key", "https://api.example.com", 1_000)
+      .create({ imageName: "node", vault: "app-env" })
+      .catch((e) => e);
+    expect(error).toMatchObject({ code: "secret_process_outcome_unknown", retryable: false });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  test("a process with only a vault starts through the control API", async () => {
+    const start = starter(async () => ({ process: rawProcess, secrets: vaultBindings }));
+    const { transport, openSSE } = runtime({});
+    const api = new SandboxProcessesApi(transport, start);
+
+    const handle = await api.start("node app.js", {
+      env: { NODE_ENV: "production" },
+      vault: "app-env",
+      secrets: {},
+    });
+
+    expect(openSSE).not.toHaveBeenCalled();
+    expect(start.start.mock.calls[0][0]).toEqual({
+      command: "node app.js",
+      env: { NODE_ENV: "production" },
+      vault: "app-env",
+    });
+    expect(handle.secrets).toEqual(vaultBindings);
+
+    await expect(api.start("x", { vault: "" })).rejects.toThrow(/vault name/);
+    expect(start.start).toHaveBeenCalledTimes(1);
   });
 });
 

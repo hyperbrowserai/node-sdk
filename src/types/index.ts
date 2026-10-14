@@ -181,6 +181,7 @@ export {
   SandboxSecretReference,
   SandboxSecrets,
   SandboxResolvedSecret,
+  SandboxSecretSource,
   SandboxListParams,
   SandboxListResponse,
   SandboxImageSource,

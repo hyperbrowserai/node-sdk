@@ -10,6 +10,7 @@ import {
 } from "./process-output";
 import {
   assertNoEnvSecretOverlap,
+  checkVaultName,
   serializeSecretReferences,
   WireSecretReference,
 } from "./secret-references";
@@ -59,7 +60,9 @@ export interface SecretProcessStartPayload {
   env?: Record<string, string>;
   timeoutMs?: number;
   runAs?: string;
-  secrets: Record<string, WireSecretReference>;
+  secrets?: Record<string, WireSecretReference>;
+  /** A vault name; `secrets` is merged over its entries. */
+  vault?: string;
 }
 
 export interface SecretProcessStartResponse {
@@ -67,6 +70,13 @@ export interface SecretProcessStartResponse {
   process?: RawProcessSummary;
   secrets?: SandboxResolvedSecret[];
 }
+
+/** Whether a start delivers secrets, so it goes through the control API. */
+const deliversSecrets = (params: SandboxExecParams): boolean =>
+  params.vault !== undefined ||
+  (params.secrets !== undefined &&
+    params.secrets !== null &&
+    Object.keys(params.secrets).length > 0);
 
 /** @internal Starts processes with secrets through the control API. */
 export interface SecretProcessStarter {
@@ -323,7 +333,7 @@ export class SandboxProcessHandle {
   private closeStream: (() => void) | null = null;
   private readonly changed = new ChangeSignal();
 
-  /** The secret versions delivered to a process started with `secrets`. */
+  /** What a process started with `secrets` or `vault` received. */
   public readonly secrets?: SandboxResolvedSecret[];
 
   constructor(
@@ -665,7 +675,7 @@ export class SandboxProcessesApi {
     options?: SandboxExecOptions
   ): Promise<SandboxProcessResult> {
     const params = normalizeExecParams(input, options);
-    if (params.secrets && Object.keys(params.secrets).length > 0) {
+    if (deliversSecrets(params)) {
       return this.execWithSecrets(params);
     }
     const handle = await this.start(params);
@@ -688,7 +698,7 @@ export class SandboxProcessesApi {
     options?: SandboxExecOptions
   ): Promise<SandboxProcessHandle> {
     const params = normalizeExecParams(input, options);
-    if (params.secrets && Object.keys(params.secrets).length > 0) {
+    if (deliversSecrets(params)) {
       return this.startWithSecrets(params);
     }
     const maxOutputBytes = params.maxOutputBytes ?? DEFAULT_MAX_PROCESS_OUTPUT_BYTES;
@@ -730,11 +740,10 @@ export class SandboxProcessesApi {
     if (!starter) {
       throw new HyperbrowserError("Starting a process with secrets requires a sandbox handle");
     }
-    const secrets = serializeSecretReferences(params.secrets) as Record<
-      string,
-      WireSecretReference
-    >;
-    assertNoEnvSecretOverlap(params.env, secrets);
+    const secrets = serializeSecretReferences(params.secrets);
+    const vault = params.vault === undefined ? undefined : checkVaultName(params.vault);
+    // A clash between env and the vault's variables is reported by the API.
+    if (secrets !== undefined) assertNoEnvSecretOverlap(params.env, secrets);
     const timeoutMs = secretProcessTimeoutMs(params);
 
     let response: SecretProcessStartResponse;
@@ -747,6 +756,7 @@ export class SandboxProcessesApi {
           timeoutMs,
           runAs: params.runAs,
           secrets,
+          vault,
         },
         params.signal
       );

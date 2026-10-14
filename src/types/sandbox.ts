@@ -75,6 +75,8 @@ export interface Sandbox {
 export interface SandboxDetail extends Sandbox {
   token: string | null;
   tokenExpiresAt: string | null;
+  /** On create with `secrets` or `vault`: what the startup command received. */
+  startupSecrets?: SandboxResolvedSecret[];
 }
 
 export type SandboxVolumeMountType = "rw" | "ro";
@@ -93,12 +95,31 @@ export type SandboxSecretReference =
 /** Environment variable name to secret, at most 32 per process or sandbox. */
 export type SandboxSecrets = Record<string, SandboxSecretReference>;
 
-/** The secret version an environment variable received. */
+/** Where a delivered variable came from: a vault or the request's `secrets`. */
+export type SandboxSecretSource =
+  | { type: "vault"; name: string }
+  | { type: "secrets" }
+  | { type: string; [member: string]: unknown };
+
+/**
+ * What an environment variable received: a stored secret's version, or for
+ * a 1Password vault the `op://` reference that was read. Never a value.
+ */
 export interface SandboxResolvedSecret {
   env: string;
-  name: string;
-  secretId: string;
-  version: number;
+  /** The stored secret's name; absent for 1Password values. */
+  name?: string;
+  secretId?: string;
+  version?: number;
+  /** `"totp"` when the variable holds a TOTP secret's code from process start. */
+  secretType?: string;
+  /** The 1Password reference, such as `op://Engineering/Postgres/password`. */
+  reference?: string;
+  /** The name of the `op_token` secret that signed in to 1Password. */
+  tokenSecret?: string;
+  source: SandboxSecretSource;
+  /** Earlier sources that set the same variable and were overridden, oldest first. */
+  overrides?: SandboxSecretSource[];
 }
 
 export interface SandboxVolumeMount {
@@ -129,6 +150,7 @@ export type CreateSandboxParams =
       memoryMiB?: never;
       diskMiB?: never;
       secrets?: never;
+      vault?: never;
     })
   | (SandboxCreateCommonParams & {
       snapshotName?: never;
@@ -144,6 +166,12 @@ export type CreateSandboxParams =
        * "gvisor-cpu"`. The sandbox is marked as containing secrets.
        */
       secrets?: SandboxSecrets;
+      /**
+       * A vault, by name, whose entries become the startup command's
+       * environment variables; `secrets` is merged over it and wins on a
+       * clash. Same requirements as `secrets`.
+       */
+      vault?: string;
     });
 
 export interface SandboxListParams {
@@ -532,6 +560,13 @@ export interface SandboxExecParams {
    * start stream, so `maxOutputBytes` does not apply.
    */
   secrets?: SandboxSecrets;
+  /**
+   * A vault, by name, whose entries become environment variables of this
+   * process, delivered like `secrets`. `secrets` is merged over it and wins
+   * on a clash; `env` can't set a variable either of them sets. Together
+   * they hold at most 32 variables.
+   */
+  vault?: string;
   /** @deprecated Ignored for process APIs. */
   useShell?: boolean;
 }
