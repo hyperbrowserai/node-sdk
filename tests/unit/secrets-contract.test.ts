@@ -361,6 +361,12 @@ describe("typed secrets and allowed origins", () => {
     ["a padded integer", `otpauth://totp/x?secret=${SEED}&digits=0000000008`],
     ["hyphens and surrounding whitespace", "  JBSW-Y3DP-EHPK-3PXP\n"],
     ["a short seed (5 bytes)", "JBSWY3DP"],
+    // The platform skips line breaks, as Go's base32 decoder does.
+    ["a seed split across lines", "JBSWY3DPEHPK3\nPXP"],
+    ["a seed split with CRLF", "JBSWY3DP\r\nEHPK3PXP"],
+    // Go upper-cases one character at a time: "ı" reads as "I".
+    ["a dotless i", "\u0131BSWY3DPEHPK3PXP"],
+    ["an encoded line break in the URI secret", "otpauth://totp/x?secret=JBSWY3DP%0AEHPK3PXP"],
     ["an otpauth URI", `otpauth://totp/GitHub:ada?secret=${SEED}&issuer=GitHub`],
     [
       "an otpauth URI with every option",
@@ -379,6 +385,9 @@ describe("typed secrets and allowed origins", () => {
     ["not base32", "not-a-seed!"],
     ["digits outside base32", "JBSWY3DPEH1K3PXP"],
     ["a length of 1 mod 8", "JBSWY3DPE"],
+    // ...but "ß" and "ﬀ" stay as they are rather than becoming "SS" and "FF".
+    ["an eszett", "JBSWY3DPEHPK3P\u00df"],
+    ["an ff ligature", "\ufb00AAAAAA"],
     ["a length of 3 mod 8", "JBSWY3DPEHP"],
     ["a length of 6 mod 8 after spaces, hyphens and padding", "jbsw-y3 dpeh pk3p xpjb swy3=="],
     ["'=' inside the seed", "JBSW=Y3DPEHPK3PXP"],

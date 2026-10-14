@@ -102,14 +102,18 @@ const otpauthQuery = (uri: string): string => {
 
 /**
  * The bytes a base32 seed decodes to, read the way the platform reads it:
- * spaces, '-', lowercase and trailing '=' padding are accepted. Undefined
+ * spaces, '-', line breaks, lowercase and trailing '=' padding are accepted. Undefined
  * when it isn't ASCII base32 or has an impossible length.
  */
 const base32SeedBytes = (seed: string): number | undefined => {
-  const compact = seed.replace(/[ -]/g, "");
-  // Checked before uppercasing, which maps characters such as "ß" to ASCII.
-  if (!/^[A-Za-z2-7]+=*$/.test(compact)) return undefined;
-  const normalized = compact.replace(/=+$/, "");
+  // Upper-cased one character at a time, as Go does, so "ß" can't turn into
+  // "SS" while "ı" still reads as "I".
+  const upper = Array.from(seed.replace(/[ \r\n-]/g, ""), (char) => {
+    const mapped = char.toUpperCase();
+    return mapped.length === 1 ? mapped : char;
+  }).join("");
+  if (!/^[A-Z2-7]+=*$/.test(upper)) return undefined;
+  const normalized = upper.replace(/=+$/, "");
   return BASE32_TAIL_LENGTHS.has(normalized.length % 8)
     ? Math.floor((normalized.length * 5) / 8)
     : undefined;

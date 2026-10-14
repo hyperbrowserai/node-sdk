@@ -187,7 +187,7 @@ try {
   type.
 - Values are checked locally before anything is sent (`invalid_secret_value`):
   1 byte to 32 KiB of UTF-8 without NUL, and for TOTP a base32 seed (spaces,
-  hyphens, lowercase and trailing `=` padding are fine) or an `otpauth://totp/`
+  hyphens, line breaks, lowercase and trailing `=` padding are fine) or an `otpauth://totp/`
   URI with `secret` and optionally `algorithm` (SHA1, SHA256, SHA512), `digits`
   (6 or 8) and `period` (1-300). HOTP is not supported, and a seed whose
   length is 1, 3 or 6 characters past a multiple of 8 is refused as
