@@ -50,6 +50,45 @@ status and truncation metadata before using output. Public types, including
 See the [WebMCP guide](https://hyperbrowser.ai/docs/sessions/webmcp) for complete
 examples, cancellation behavior, human submission, and limits.
 
+## Web Bot Auth
+
+A session can sign its requests with Web Bot Auth so websites can verify that they
+come from Hyperbrowser. Web Bot Auth is enabled for teams on request.
+
+```typescript
+const session = await client.sessions.create({ webBotAuth: true });
+console.log(session.launchState?.webBotAuth?.signatureAgent); // "https://www.hyperbrowser.ai"
+
+// Sign only requests to these hosts and their subdomains:
+await client.sessions.create({ webBotAuth: { onlyDomains: ["example.com"] } });
+```
+
+Agent tasks accept `webBotAuth` in `sessionOptions`; scrape, crawl, and extract
+jobs do not. It cannot be combined with `useUltraStealth` or `startFromSnapshot`.
+See the [Web Bot Auth guide](https://hyperbrowser.ai/docs/sessions/web-bot-auth).
+
+## Proxy routes
+
+`proxyRoutes` sends some hosts' traffic straight out instead of through the
+session's proxy, or the other way round. The first route that matches a host
+decides; hosts that no route matches use the proxy. Proxy routes require
+`useProxy` and are enabled for teams on request.
+
+```typescript
+const session = await client.sessions.create({
+  useProxy: true,
+  proxyRoutes: [
+    { match: "api.example.com", proxy: "default" }, // stays on the proxy
+    { match: ["*.example.com", "cdn.example.net"], proxy: "direct" },
+  ],
+});
+```
+
+A pattern is a hostname, `*.example.com` (its subdomains, not `example.com` itself),
+or `*` (every host). Proxy routes only apply to `sessions.create` and cannot be
+combined with `allowInternetAccess: false`, `allowOut`, or `denyOut`. See the
+[proxy routes guide](https://hyperbrowser.ai/docs/sessions/proxy-routes).
+
 ## Usage
 
 ### Playwright
