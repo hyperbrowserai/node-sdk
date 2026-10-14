@@ -3,6 +3,7 @@ export type SessionEventLogType =
   | "captcha_solved"
   | "captcha_error"
   | "file_downloaded"
+  | "tab_opened"
   | "credential_filled"
   | "credential_fill_refused";
 export type ScrapeFormat = "markdown" | "html" | "links" | "screenshot";
