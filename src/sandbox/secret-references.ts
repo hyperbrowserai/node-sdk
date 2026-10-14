@@ -135,11 +135,57 @@ const checkOnePasswordPart = (value: unknown, what: string, pattern = ONEPASSWOR
 };
 
 /** The API refuses unknown members, so refuse them before sending. */
-const checkMembers = (value: Record<string, unknown>, allowed: string[], what: string): void => {
+export const checkMembers = (
+  value: Record<string, unknown>,
+  allowed: string[],
+  what: string
+): void => {
   const unknown = Object.keys(value).filter((key) => !allowed.includes(key));
   if (unknown.length > 0) {
     throw invalidRequest(`${what} has unknown members: ${unknown.sort().join(", ")}`);
   }
+};
+
+/** The `op_token` secret a 1Password source signs in with, by name. */
+export const checkOnePasswordToken = (token: unknown, what = "onePassword.token"): string => {
+  if (typeof token !== "string" || !SECRET_NAME_PATTERN.test(token)) {
+    throw invalidRequest(`${what} must be the name of an op_token secret`);
+  }
+  return token;
+};
+
+/** The 1Password vault's name or ID. */
+export const checkOnePasswordVault = (vault: unknown, what = "onePassword.vault"): string => {
+  checkOnePasswordPart(vault, what);
+  return vault as string;
+};
+
+/**
+ * Check a field of an item in `vault`, `{ item, section?, field }`, and its
+ * full op:// reference, and convert it to the API's shape.
+ */
+export const serializeOnePasswordField = (
+  entry: unknown,
+  vault: string,
+  what: string
+): WireOnePasswordField => {
+  if (!isPlainObject(entry)) {
+    throw invalidRequest(`${what} must be { item, section?, field }`);
+  }
+  checkMembers(entry, ["item", "section", "field"], what);
+  const { item, section, field } = entry;
+  checkOnePasswordPart(item, `${what}.item`);
+  if (section !== undefined) checkOnePasswordPart(section, `${what}.section`);
+  checkOnePasswordPart(field, `${what}.field`, ONEPASSWORD_FIELD_PATTERN);
+  const reference = `op://${[vault, item, ...(section === undefined ? [] : [section]), field].join("/")}`;
+  if (Buffer.byteLength(reference, "utf8") > MAX_ONEPASSWORD_REFERENCE_BYTES) {
+    throw invalidRequest(
+      `${what}: the 1Password reference is more than ${MAX_ONEPASSWORD_REFERENCE_BYTES} bytes`
+    );
+  }
+  return (
+    section === undefined ? { item, field } : { item, section, field }
+  ) as WireOnePasswordField;
 };
 
 /**
@@ -154,11 +200,9 @@ export const serializeOnePassword = (onePassword: unknown): WireOnePassword | un
     throw invalidRequest("onePassword must be { token, vault, fields }");
   }
   checkMembers(onePassword, ["token", "vault", "fields"], "onePassword");
-  const { token, vault, fields } = onePassword;
-  if (typeof token !== "string" || !SECRET_NAME_PATTERN.test(token)) {
-    throw invalidRequest("onePassword.token must be the name of an op_token secret");
-  }
-  checkOnePasswordPart(vault, "onePassword.vault");
+  const token = checkOnePasswordToken(onePassword.token);
+  const vault = checkOnePasswordVault(onePassword.vault);
+  const { fields } = onePassword;
   if (!isPlainObject(fields)) {
     throw invalidRequest("onePassword.fields must map environment variable names to fields");
   }
@@ -173,26 +217,9 @@ export const serializeOnePassword = (onePassword: unknown): WireOnePassword | un
         `Invalid environment variable name for a 1Password field: ${(env as string).slice(0, 64)}`
       );
     }
-    const what = `onePassword.fields.${env}`;
-    if (!isPlainObject(entry)) {
-      throw invalidRequest(`${what} must be { item, section?, field }`);
-    }
-    checkMembers(entry, ["item", "section", "field"], what);
-    const { item, section, field } = entry;
-    checkOnePasswordPart(item, `${what}.item`);
-    if (section !== undefined) checkOnePasswordPart(section, `${what}.section`);
-    checkOnePasswordPart(field, `${what}.field`, ONEPASSWORD_FIELD_PATTERN);
-    const reference = `op://${[vault, item, ...(section === undefined ? [] : [section]), field].join("/")}`;
-    if (Buffer.byteLength(reference, "utf8") > MAX_ONEPASSWORD_REFERENCE_BYTES) {
-      throw invalidRequest(
-        `${what}: the 1Password reference is more than ${MAX_ONEPASSWORD_REFERENCE_BYTES} bytes`
-      );
-    }
-    wire[env] = (
-      section === undefined ? { item, field } : { item, section, field }
-    ) as WireOnePasswordField;
+    wire[env] = serializeOnePasswordField(entry, vault, `onePassword.fields.${env}`);
   }
-  return { token, vault: vault as string, fields: wire };
+  return { token, vault, fields: wire };
 };
 
 /**

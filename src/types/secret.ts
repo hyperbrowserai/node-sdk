@@ -8,8 +8,8 @@ export type SecretValue = string | Uint8Array;
  * - `"totp"`: a TOTP seed, as base32 or an `otpauth://totp/` URI. Sandboxes
  *   and browser fills get its current one-time code, never the seed.
  * - `"op_token"`: a 1Password service account token, used only as the
- *   `token` of a sandbox's `onePassword` fields. It is never an environment
- *   variable or filled into a page.
+ *   `token` of a sandbox's or a browser fill's `onePassword` fields. It is
+ *   never an environment variable or filled into a page itself.
  */
 export type SecretType = "secret" | "totp" | "op_token";
 

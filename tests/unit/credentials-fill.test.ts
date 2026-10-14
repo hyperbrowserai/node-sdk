@@ -257,6 +257,237 @@ describe("sessions", () => {
   });
 });
 
+describe("1Password fills", () => {
+  const onePassword = {
+    token: "op-token",
+    vault: "Dev Vault for Testing",
+    allowedOrigins: ["https://www.scrapingcourse.com"],
+  };
+  const refFields = [
+    { selector: "#email", ref: { item: "scrapingcourse login", field: "username" } },
+    {
+      selector: "#otp",
+      ref: { item: "scrapingcourse login", section: "Security", field: "otp?attribute=totp" },
+    },
+  ];
+  const opResult: CredentialFillResult = {
+    pageId: "TARGET-1",
+    origin: "https://www.scrapingcourse.com",
+    fields: [
+      {
+        selector: "#email",
+        outcome: "filled",
+        secretId: "tok",
+        version: 2,
+        reference: "op://Dev Vault for Testing/scrapingcourse login/username",
+      },
+      {
+        selector: "#otp",
+        outcome: "filled",
+        secretId: "tok",
+        version: 2,
+        reference: "op://Dev Vault for Testing/scrapingcourse login/Security/otp?attribute=totp",
+      },
+    ],
+  };
+
+  test("create attaches an op_token as { onePassword }", async () => {
+    fetchMock.mockResolvedValue(respond({ id: "session" }));
+    const params: CreateSessionParams = {
+      credentials: ["github-password", { vault: "github-login" }, { onePassword: "op-token" }],
+    };
+    await client().sessions.create(params);
+    expect(lastRequest().body).toEqual({
+      credentials: ["github-password", { vault: "github-login" }, { onePassword: "op-token" }],
+    });
+  });
+
+  test("create accepts 20 credentials and no credentials", async () => {
+    fetchMock.mockImplementation(async () => respond({ id: "session" }));
+    await client().sessions.create({
+      credentials: Array.from({ length: 20 }, (_, i) => ({ onePassword: `op-${i}` })),
+    });
+    await client().sessions.create();
+    await client().sessions.create({ credentials: [] });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  test.each([
+    ["21 items", Array.from({ length: 21 }, (_, i) => `s-${i}`)],
+    ["a name with a space", [{ onePassword: "op token" }]],
+    ["an empty name", [""]],
+    ["a non-string name", [{ onePassword: 1 }]],
+    ["two kinds in one item", [{ onePassword: "op-token", secret: "s" }]],
+    ["an unknown kind", [{ token: "op-token" }]],
+    ["an empty object", [{}]],
+    ["not a list", "op-token"],
+  ])("create rejects credentials with %s before any request", async (_name, credentials) => {
+    await expect(
+      client().sessions.create({ credentials: credentials as any })
+    ).rejects.toMatchObject({ code: "invalid_request", retryable: false });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test("fill sends onePassword and each field's ref, and returns references", async () => {
+    fetchMock.mockResolvedValue(respond(opResult));
+    const result = await client().sessions.credentials.fill(SESSION, {
+      onePassword,
+      fields: refFields,
+      pageUrl: "https://www.scrapingcourse.com/login",
+      frameUrl: "https://www.scrapingcourse.com/",
+    });
+    const { url, body } = lastRequest();
+    expect(url).toBe(FILL_URL);
+    expect(body).toEqual({
+      onePassword,
+      fields: refFields,
+      pageUrl: "https://www.scrapingcourse.com/login",
+      frame: { url: "https://www.scrapingcourse.com/" },
+    });
+    expect(result).toEqual(opResult);
+    expect(result.version).toBeUndefined();
+    expect(result.fields[1].reference).toBe(
+      "op://Dev Vault for Testing/scrapingcourse login/Security/otp?attribute=totp"
+    );
+    expectTypeOf(result.fields[0].reference).toEqualTypeOf<string | undefined>();
+    expectTypeOf(result.version).toEqualTypeOf<number | undefined>();
+  });
+
+  test("local and wildcard origins, and a 512-byte reference, are accepted", async () => {
+    fetchMock.mockImplementation(async () => respond(opResult));
+    await client().sessions.credentials.fill(SESSION, {
+      onePassword: {
+        token: "op-token",
+        vault: "v",
+        allowedOrigins: [
+          "http://localhost:3000",
+          "http://127.0.0.1",
+          "http://[::1]:8080",
+          "https://*.example.com",
+          "HTTPS://Example.com:443/",
+          ...Array.from({ length: 15 }, (_, i) => `https://a${i}.example.com`),
+        ],
+      },
+      // 256 characters, 503 bytes: op://v/i/ makes 512.
+      fields: [{ selector: "#f", ref: { item: "i", field: "é".repeat(247) + "x".repeat(9) } }],
+      pageId: "TARGET-1",
+    });
+    expect(Buffer.byteLength(`op://v/i/${lastRequest().body.fields[0].ref.field}`)).toBe(512);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  const opFill = (overrides: Record<string, unknown> = {}, fieldList: unknown = refFields) => ({
+    onePassword: { ...onePassword, ...overrides },
+    fields: fieldList,
+  });
+  const ref = (value: Record<string, unknown>) => [{ selector: "#f", ref: value }];
+
+  test.each([
+    ["onePassword with credential", { ...opFill(), credential: "github-password" }],
+    ["onePassword with vault", { ...opFill(), vault: "github-login" }],
+    ["a field without ref", opFill({}, [refFields[0], { selector: "#otp" }])],
+    ["a ref without onePassword", { credential: "github-password", fields: refFields }],
+    [
+      "a ref in a vault fill",
+      { vault: "github-login", fields: [{ ...vaultFields[0], ref: refFields[0].ref }] },
+    ],
+    ["a field with onePassword", opFill({}, [{ ...refFields[0], field: "USERNAME" }])],
+    ["onePassword that isn't an object", { onePassword: "op-token", fields: refFields }],
+    ["a token that isn't a secret name", opFill({ token: "op token" })],
+    ["no token", opFill({ token: undefined })],
+    ["an empty vault", opFill({ vault: "" })],
+    ["a vault with a slash", opFill({ vault: "Dev/Vault" })],
+    ["a vault of '..'", opFill({ vault: ".." })],
+    ["a vault over 256 characters", opFill({ vault: "v".repeat(257) })],
+    ["no allowedOrigins", opFill({ allowedOrigins: undefined })],
+    ["0 allowedOrigins", opFill({ allowedOrigins: [] })],
+    [
+      "21 allowedOrigins",
+      opFill({ allowedOrigins: Array.from({ length: 21 }, (_, i) => `https://a${i}.example.com`) }),
+    ],
+    ["an http origin", opFill({ allowedOrigins: ["http://example.com"] })],
+    ["a wildcard on a single label", opFill({ allowedOrigins: ["https://*.com"] })],
+    ["a wildcard on an IP address", opFill({ allowedOrigins: ["https://*.10.0.0.1"] })],
+    ["an origin with a path", opFill({ allowedOrigins: ["https://example.com/login"] })],
+    ["an origin without a scheme", opFill({ allowedOrigins: ["example.com"] })],
+    ["an origin over 512 characters", opFill({ allowedOrigins: [`https://${"a".repeat(505)}`] })],
+    ["a bad IPv6 origin", opFill({ allowedOrigins: ["https://[nope]"] })],
+    ["an unknown member of onePassword", opFill({ fields: {} })],
+    ["an unknown member of ref", opFill({}, ref({ item: "i", field: "f", vault: "v" }))],
+    ["a ref that isn't an object", opFill({}, [{ selector: "#f", ref: "op://v/i/f" }])],
+    ["a ref without item", opFill({}, ref({ field: "password" }))],
+    ["a ref without field", opFill({}, ref({ item: "i" }))],
+    ["an item with a slash", opFill({}, ref({ item: "a/b", field: "f" }))],
+    ["an item with a question mark", opFill({}, ref({ item: "a?b", field: "f" }))],
+    ["an item with a control character", opFill({}, ref({ item: "a\u0007", field: "f" }))],
+    ["an empty section", opFill({}, ref({ item: "i", section: "", field: "f" }))],
+    ["a section of '.'", opFill({}, ref({ item: "i", section: ".", field: "f" }))],
+    ["a field over 256 characters", opFill({}, ref({ item: "i", field: "f".repeat(257) }))],
+    [
+      "a field query with an uppercase key",
+      opFill({}, ref({ item: "i", field: "otp?Attribute=otp" })),
+    ],
+    ["a field with an empty query", opFill({}, ref({ item: "i", field: "otp?" }))],
+    ["a field of '..'", opFill({}, ref({ item: "i", field: "..?attribute=otp" }))],
+    [
+      "a 513-byte reference",
+      opFill({ vault: "v" }, ref({ item: "i", field: "é".repeat(248) + "x".repeat(8) })),
+    ],
+    [
+      "a repeated selector",
+      opFill({}, [refFields[0], { selector: "#email", ref: refFields[1].ref }]),
+    ],
+    ["no fields", opFill({}, [])],
+    [
+      "17 fields",
+      opFill(
+        {},
+        Array.from({ length: 17 }, (_, i) => ({ selector: `#f${i}`, ref: refFields[0].ref }))
+      ),
+    ],
+  ])("fill rejects %s before any request", async (_name, params) => {
+    await expect(client().sessions.credentials.fill(SESSION, params as any)).rejects.toMatchObject({
+      code: "invalid_request",
+      retryable: false,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test("a reference failure keeps the selectors and reasons in details", async () => {
+    const failure = {
+      code: "SECRET_ONEPASSWORD_REFERENCE_FAILED",
+      message: "A 1Password field could not be read; nothing was filled",
+      retryable: false,
+      details: {
+        selectors: ["#otp"],
+        reason: "field not found",
+        reasons: { "#otp": "field not found" },
+        tokenSecretId: "tok",
+        tokenVersion: 2,
+      },
+    };
+    fetchMock.mockResolvedValue(respond(failure, 422));
+    await expect(
+      client().sessions.credentials.fill(SESSION, { onePassword, fields: refFields })
+    ).rejects.toMatchObject({
+      statusCode: 422,
+      code: "SECRET_ONEPASSWORD_REFERENCE_FAILED",
+      retryable: false,
+      details: failure,
+    });
+  });
+
+  test("the fill_credential tool has no onePassword and drops one a model sends", async () => {
+    expect(JSON.stringify(FILL_CREDENTIAL_SCHEMA)).not.toMatch(/onePassword|one_password|"ref"/);
+    const output = await CredentialFillTool.runnable(client(), SESSION, {
+      onePassword,
+      fields: refFields,
+    } as any);
+    expect(JSON.parse(output)).toMatchObject({ error: { code: "invalid_request" } });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
 /** Every object schema lists all its properties as required and allows no others. */
 const expectStrict = (schema: any, path = "$"): void => {
   if (schema.type === "object" || (Array.isArray(schema.type) && schema.type.includes("object"))) {

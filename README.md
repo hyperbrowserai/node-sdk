@@ -153,8 +153,10 @@ try {
 }
 ```
 
-- `credentials` takes up to 20 items: a secret's name (or `{ secret }`), or
-  `{ vault }` for the secrets a stored vault names when the session is created.
+- `credentials` takes up to 20 items: a secret's name (or `{ secret }`),
+  `{ vault }` for the secrets a stored vault names when the session is created,
+  or `{ onePassword }` for an `op_token` secret (see
+  [Fill from 1Password](#fill-from-1password)); names are checked locally.
   `session.credentials` lists the attached secrets as `{ id, name }`. Fill a
   single secret with `{ credential: "github-password", fields: [{ selector }] }`;
   with `vault`, each field names its entry in `field`.
@@ -177,8 +179,10 @@ try {
   (in Puppeteer, `page.createCDPSession()`) returns it as `targetInfo.targetId`.
   For a form inside an iframe, pass `frameUrl` (a URL prefix).
 - Origins are `scheme://host[:port]`, 1-20 per secret; a leading `*.` matches
-  subdomains only, and `http:` is accepted only for `localhost`, `127.0.0.1`
-  and `[::1]`. `setAllowedOrigins(secret, origins)` replaces them and `null`
+  subdomains only (of a domain such as `example.com`, not `*.com` or an IP
+  address), and `http:` is accepted only for `localhost`, `127.0.0.1` and
+  `[::1]`. They are checked locally (`invalid_request`).
+  `setAllowedOrigins(secret, origins)` replaces them and `null`
   clears them (the secret then can't be filled). `list({ type })` filters by
   type.
 - Values are checked locally before anything is sent (`invalid_secret_value`):
@@ -234,9 +238,9 @@ Sandbox processes, and an image's startup command, can read fields from a
 `processes.exec` or `sandboxes.create`. It signs in with a service account
 token stored as an `op_token` secret. Tokens start with `ops_`, but the SDK
 doesn't refuse other values. `op_token` secrets are never environment
-variables and are never filled into browsers, so they take no
-`allowedOrigins`. Nothing about the fields is stored, and browser sessions
-can't use 1Password.
+variables or typed into pages themselves, so they take no `allowedOrigins`.
+Nothing about the fields is stored. Browser sessions can fill 1Password
+fields too: see [Fill from 1Password](#fill-from-1password).
 
 ```typescript
 await client.secrets.create({
@@ -277,6 +281,63 @@ console.log(worker.secrets); // [{ env: "DB_PASS", reference: "op://Engineering/
 - Requirements are those of `secrets`: the `secrets.use` scope, and for
   `sandboxes.create` an image launch with a startup command on Firecracker.
 
+### Fill from 1Password
+
+Attach the `op_token` secret when the session is created, then fill fields
+read with it. The request names the 1Password vault, each input's field as
+`ref`, and the origins the values may be typed on: nothing stored says where
+a 1Password value belongs.
+
+```typescript
+const session = await client.sessions.create({ credentials: [{ onePassword: "op-token" }] });
+// ... open https://www.scrapingcourse.com/login in the session ...
+const result = await client.sessions.credentials.fill(session.id, {
+  onePassword: {
+    token: "op-token",
+    vault: "Dev Vault for Testing",
+    allowedOrigins: ["https://www.scrapingcourse.com"],
+  },
+  fields: [
+    { selector: "#email", ref: { item: "scrapingcourse login", field: "username" } },
+    { selector: "#password", ref: { item: "scrapingcourse login", field: "password" } },
+  ],
+  pageUrl: "https://www.scrapingcourse.com/login",
+});
+console.log(result.fields);
+// [{ selector: "#email", outcome: "filled", secretId: "<op-token's ID>", version: 1,
+//    reference: "op://Dev Vault for Testing/scrapingcourse login/username" }, ...]
+```
+
+- Pass exactly one of `credential`, `vault` and `onePassword`. With
+  `onePassword` every field needs `ref` (`{ item, section?, field }`) and none
+  may have `field`; without it, none may have `ref`.
+- `token` names an `op_token` secret attached as `{ onePassword }` (its
+  latest version is used), and `vault` is the 1Password vault's name or ID.
+  `ref` and `vault` follow the rules of sandbox `onePassword` fields above,
+  so `{ field: "one-time password?attribute=otp" }` types the current code,
+  and each `op://` reference is at most 512 bytes.
+- `allowedOrigins` is required: 1-20 origins with the same rules as a
+  secret's. A page on any other origin is refused with
+  `CREDENTIAL_ORIGIN_NOT_ALLOWED`, and tab choice treats these as the
+  allowed origins.
+- All of this is checked locally (`invalid_request`), including unknown
+  members of `onePassword` and `ref`, along with the usual 1-16 fields and
+  unique selectors.
+- The result has no top-level `version`. Each field's `secretId` and
+  `version` are the `op_token`'s, and `reference` is the field that was read.
+- A missing item or field fails with `SECRET_ONEPASSWORD_REFERENCE_FAILED`
+  and fills nothing; `error.details.details.selectors` lists the inputs and
+  `reasons` says why, by selector. Without the token attached it is
+  `CREDENTIAL_NOT_ATTACHED`; a host that can't read 1Password for browsers
+  gives `CREDENTIAL_VALUE_UNSUPPORTED`.
+- An `op_token` is still refused as a plain credential (`"op-token"` or
+  `{ secret: "op-token" }` at create, or `credential` in a fill) with
+  `SECRET_TYPE_MISMATCH`.
+- The session event log records these fills with the token's name as
+  `onePasswordToken` and its `secretId` in the metadata.
+- `CredentialFillTool` can't fill from 1Password; call
+  `sessions.credentials.fill` directly (see [Use with LLM SDKs](#use-with-llm-sdks)).
+
 ### Errors
 
 API errors are `HyperbrowserError`s with `statusCode`, `code` and `retryable`
@@ -285,23 +346,23 @@ own `details` holds the specifics (such as `error.details.details.origin`).
 
 | Code | Meaning |
 |---|---|
-| `CREDENTIAL_NOT_ATTACHED` | The secret or vault wasn't attached to the session, or a vault entry was repointed since. |
-| `CREDENTIAL_ORIGIN_NOT_ALLOWED` | The page isn't on the secret's allowed origins; nothing was typed. |
+| `CREDENTIAL_NOT_ATTACHED` | The secret, vault or 1Password token wasn't attached to the session, or a vault entry was repointed since. |
+| `CREDENTIAL_ORIGIN_NOT_ALLOWED` | The page isn't on the secret's allowed origins (for 1Password, the request's); nothing was typed. |
 | `CREDENTIAL_NOT_READY` | The secret has no allowed origins or no value. |
 | `CREDENTIAL_PAGE_NOT_FOUND`, `CREDENTIAL_FRAME_NOT_FOUND` | No tab or iframe matched. |
 | `CREDENTIAL_PAGE_AMBIGUOUS`, `CREDENTIAL_FRAME_AMBIGUOUS` | Several matched; pass `pageId` or `pageUrl` (`details.pages`), or a longer `frameUrl`. |
 | `CREDENTIAL_FILL_TIMEOUT` | Retryable. |
 | `CREDENTIAL_FILL_FAILED` | The fill failed in the browser. |
-| `CREDENTIAL_FILL_UNSUPPORTED`, `CREDENTIAL_VALUE_UNSUPPORTED` | The browser image predates fill, or the host can't resolve this value type. |
+| `CREDENTIAL_FILL_UNSUPPORTED`, `CREDENTIAL_VALUE_UNSUPPORTED` | The browser image predates fill, or the host can't resolve this value type (such as 1Password). |
 | `CREDENTIALS_UNSUPPORTED_RUNTIME`, `CREDENTIALS_SNAPSHOT_PASSWORD_MANAGER_ENABLED` | Session create: secrets need Firecracker, and a snapshot taken with the password manager off. |
 | `SESSION_NOT_ACTIVE` | The session has stopped. |
 | `SECRET_NOT_FOUND`, `SECRET_VERSION_NOT_FOUND` | |
-| `SECRET_TYPE_MISMATCH` | A secret used where its type can't be, such as an `op_token` in `secrets`, a vault entry or a fill, or another type as a `onePassword` token. |
+| `SECRET_TYPE_MISMATCH` | A secret used where its type can't be, such as an `op_token` in `secrets`, a vault entry, or attached or filled as a plain credential, or another type as a `onePassword` token. |
 | `SECRET_METADATA_INVALID` | A bad allowed origin, or allowed origins on an `op_token`. |
 | `SECRET_VALUE_INVALID` | The stored value is unusable (such as a bad TOTP seed); add a new version. |
 | `SECRET_IN_USE`, `SECRET_VERSION_IN_USE`, `SECRET_VERSION_IS_LATEST` | Delete refused: a vault uses the secret or pins the version, or the version is the latest. An `op_token` is never in use. |
 | `SECRET_TOTP_UNSUPPORTED`, `SECRET_ONEPASSWORD_UNSUPPORTED` | The sandbox host predates TOTP or 1Password, so nothing started. Retryable on sandbox create (another host), not on a process start. |
-| `SECRET_ONEPASSWORD_REFERENCE_FAILED` | A 1Password field couldn't be read; `details` names the variables. |
+| `SECRET_ONEPASSWORD_REFERENCE_FAILED` | A 1Password field couldn't be read; `details` names the variables (`envs`), or on a fill the inputs (`selectors`), with `reasons` for each. |
 | `SECRET_ONEPASSWORD_AUTH_FAILED` | 1Password refused the token, or it signs in to a host other than `*.1password.com`, `.ca` or `.eu`. |
 | `SECRET_ONEPASSWORD_RATE_LIMITED`, `SECRET_ONEPASSWORD_FAILED` | Retryable. |
 | `SECRET_SOURCES_INVALID` | Bad `vault`/`onePassword`/`secrets`/`env` combination, such as a `onePassword` variable also set by the vault, more than 32 variables, or a vault with no entries. |
@@ -319,6 +380,10 @@ property is required, so unused ones are `null`. Results and errors come back as
 JSON text and never contain values; an error's `details` there is the API's own
 details object (such as `pages`). Fill doesn't submit, so give the model your
 other browser tools as well (to click the login button, for example).
+
+The tool has no `onePassword`: a 1Password fill names the origins its values
+may be typed on, and a model shouldn't choose those. Call
+`sessions.credentials.fill` directly for [1Password](#fill-from-1password).
 
 OpenAI (Chat Completions):
 

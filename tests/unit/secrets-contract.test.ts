@@ -455,6 +455,12 @@ describe("typed secrets and allowed origins", () => {
       ["x".repeat(513)],
       Array(21).fill("https://a.com"),
       "https://a.com",
+      ["http://example.com"],
+      ["https://*.com"],
+      ["https://example.com/login"],
+      ["ftp://example.com"],
+      ["https://-a.com"],
+      ["https://example.com:70000"],
     ]) {
       await expect(
         service.create({ name: "k", value: "v", allowedOrigins: allowedOrigins as any })

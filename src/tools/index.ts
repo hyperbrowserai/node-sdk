@@ -154,6 +154,10 @@ export class OpenAICuaTool {
  * Lets a model fill a secret, or a vault's entries, attached to a browser
  * session. The application binds the session; the model chooses only names,
  * selectors and which tab, and never sees values.
+ *
+ * It deliberately has no `onePassword`: a 1Password fill names its own
+ * allowed origins, and a model choosing them would defeat the origin check.
+ * Applications call `sessions.credentials.fill` directly for 1Password.
  */
 export class CredentialFillTool {
   static openaiToolDefinition = FILL_CREDENTIAL_TOOL_OPENAI;

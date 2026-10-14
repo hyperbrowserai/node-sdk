@@ -298,6 +298,8 @@ export {
   SessionCredential,
   SessionCredentialSource,
   CredentialFillField,
+  CredentialFillRef,
+  CredentialFillOnePassword,
   FillCredentialParams,
   CredentialFillOutcome,
   CredentialFillFieldResult,
