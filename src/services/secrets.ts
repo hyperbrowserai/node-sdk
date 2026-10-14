@@ -1,4 +1,3 @@
-import { isIPv6 } from "node:net";
 import { HyperbrowserError, invalidRequest } from "../error";
 import { MAX_SECRET_VERSION, SECRET_NAME_PATTERN } from "../sandbox/secret-references";
 import { secretPlaintext } from "../secret-values";
@@ -26,89 +25,11 @@ const NAME_LOOKUP_LIMIT = MAX_LIST_LIMIT;
 
 const secretPath = (id: string): string => `/secrets/${encodeURIComponent(id)}`;
 
-/** The most allowed origins a secret or a 1Password fill can have, and the longest one. */
-const MAX_ALLOWED_ORIGINS = 20;
-const MAX_ALLOWED_ORIGIN_LENGTH = 512;
-
-const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
-const HOST_LABEL = /^(?!-)[a-z0-9-]{1,63}(?<!-)$/;
-
 const rethrow = (error: unknown, message: string): never => {
   if (error instanceof HyperbrowserError) {
     throw error;
   }
   throw new HyperbrowserError(message, { cause: error });
-};
-
-/**
- * Why the API would refuse an allowed origin, or undefined if it accepts it.
- * Mirrors the API's rules: `scheme://host[:port]` with no path, https only
- * (http for localhost, 127.0.0.1 and [::1]), and a leading `*.` only on a
- * domain of two or more labels, never on an IP address. The API normalizes
- * accepted origins (case, default ports).
- */
-const allowedOriginProblem = (origin: string): string | undefined => {
-  const match = /^([a-z]+):\/\/(\*\.)?([^/:?#]+|\[[^\]]+\])(?::(\d{1,5}))?\/?$/i.exec(
-    origin.trim()
-  );
-  if (!match) {
-    return "must be scheme://host[:port] with no path";
-  }
-  const scheme = match[1].toLowerCase();
-  const wildcard = Boolean(match[2]);
-  const host = match[3].toLowerCase();
-  if (scheme !== "https" && scheme !== "http") {
-    return "must use https";
-  }
-  if (scheme === "http" && (wildcard || !LOCAL_HOSTS.has(host))) {
-    return "must use https unless it is localhost";
-  }
-  if (match[4] && Number(match[4]) > 65535) {
-    return "has an invalid port";
-  }
-  if (host.startsWith("[")) {
-    if (wildcard) return "cannot use a wildcard with an IP address";
-    return isIPv6(host.slice(1, -1)) ? undefined : "has an invalid host";
-  }
-  const labels = host.split(".");
-  if (!labels.every((label) => HOST_LABEL.test(label))) {
-    return "has an invalid host";
-  }
-  // `*.com` would cover a whole public suffix.
-  if (wildcard && labels.length < 2) {
-    return "wildcard must name a registrable domain";
-  }
-  // No top-level domain is numeric, so this is (part of) an IPv4 address.
-  if (wildcard && /^\d+$/.test(labels[labels.length - 1])) {
-    return "cannot use a wildcard with an IP address";
-  }
-  return undefined;
-};
-
-/**
- * @internal Check allowed origins locally, as the API would: 1-20 origins of
- * at most 512 characters, each by the API's rules (see allowedOriginProblem).
- */
-export const checkAllowedOrigins = (allowedOrigins: unknown, what = "allowedOrigins"): void => {
-  if (
-    !Array.isArray(allowedOrigins) ||
-    allowedOrigins.length < 1 ||
-    allowedOrigins.length > MAX_ALLOWED_ORIGINS ||
-    allowedOrigins.some(
-      (origin) =>
-        typeof origin !== "string" || !origin.trim() || origin.length > MAX_ALLOWED_ORIGIN_LENGTH
-    )
-  ) {
-    throw invalidRequest(
-      `${what} must be 1-${MAX_ALLOWED_ORIGINS} origins such as "https://example.com"`
-    );
-  }
-  for (const origin of allowedOrigins as string[]) {
-    const problem = allowedOriginProblem(origin);
-    if (problem) {
-      throw invalidRequest(`${what}: "${origin}" ${problem}`);
-    }
-  }
 };
 
 /**
@@ -170,14 +91,6 @@ export class SecretsService extends BaseService {
     }
     if (type !== undefined && (typeof type !== "string" || !type)) {
       throw invalidRequest('type must be "secret", "totp" or "op_token"');
-    }
-    if (allowedOrigins !== undefined) {
-      if (type === "op_token") {
-        throw invalidRequest(
-          "op_token secrets can't have allowedOrigins: a 1Password fill names its origins in the request"
-        );
-      }
-      checkAllowedOrigins(allowedOrigins);
     }
     const plaintext = value === undefined ? undefined : secretPlaintext(type ?? "secret", value);
     const sealer =
@@ -273,9 +186,6 @@ export class SecretsService extends BaseService {
    * again). Not for `op_token` secrets.
    */
   async setAllowedOrigins(secret: string, allowedOrigins: string[] | null): Promise<Secret> {
-    if (allowedOrigins !== null) {
-      checkAllowedOrigins(allowedOrigins);
-    }
     return this.update(secret, {
       metadata: { browser: allowedOrigins === null ? null : { allowedOrigins } },
     });

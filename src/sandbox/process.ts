@@ -10,9 +10,6 @@ import {
 } from "./process-output";
 import {
   assertNoEnvSecretOverlap,
-  assertOnePasswordAlone,
-  checkVaultName,
-  serializeOnePassword,
   serializeSecretReferences,
   WireOnePassword,
   WireSecretReference,
@@ -747,12 +744,10 @@ export class SandboxProcessesApi {
       throw new HyperbrowserError("Starting a process with secrets requires a sandbox handle");
     }
     const secrets = serializeSecretReferences(params.secrets);
-    const vault = params.vault === undefined ? undefined : checkVaultName(params.vault);
-    const onePassword = serializeOnePassword(params.onePassword);
+    const vault = params.vault;
+    const onePassword = params.onePassword;
     // A clash between env and the vault's variables is reported by the API.
     if (secrets !== undefined) assertNoEnvSecretOverlap(params.env, secrets);
-    if (onePassword !== undefined)
-      assertOnePasswordAlone(onePassword, { secrets, env: params.env });
     const timeoutMs = secretProcessTimeoutMs(params);
 
     let response: SecretProcessStartResponse;

@@ -29,7 +29,7 @@ import {
 } from "../types/session";
 import { BaseService } from "./base";
 import { WebMCPService } from "./webmcp";
-import { checkSessionCredentials, CredentialsService } from "./credentials";
+import { CredentialsService } from "./credentials";
 import { HyperbrowserError } from "../client";
 
 const CAPTCHA_EVALUATION_REQUEST_TIMEOUT_MS = 185_000;
@@ -82,7 +82,6 @@ export class SessionsService extends BaseService {
    * @param params Configuration parameters for the new session
    */
   async create(params?: CreateSessionParams): Promise<SessionDetail> {
-    checkSessionCredentials(params?.credentials);
     try {
       return await this.request<SessionDetail>("/session", {
         method: "POST",

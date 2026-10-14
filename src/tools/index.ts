@@ -18,16 +18,7 @@ import {
   OPENAI_CUA_TOOL_ANTHROPIC,
   FILL_CREDENTIAL_TOOL_ANTHROPIC,
 } from "./anthropic";
-import {
-  SCRAPE_TOOL_GEMINI,
-  SCREENSHOT_TOOL_GEMINI,
-  CRAWL_TOOL_GEMINI,
-  EXTRACT_TOOL_GEMINI,
-  BROWSER_USE_TOOL_GEMINI,
-  CLAUDE_COMPUTER_USE_TOOL_GEMINI,
-  OPENAI_CUA_TOOL_GEMINI,
-  FILL_CREDENTIAL_TOOL_GEMINI,
-} from "./gemini";
+import { FILL_CREDENTIAL_TOOL_GEMINI } from "./gemini";
 import { HyperbrowserClient, HyperbrowserError } from "../client";
 import {
   StartScrapeJobParams,
@@ -58,7 +49,6 @@ export interface CredentialFillToolParams {
 export class WebsiteScrapeTool {
   static openaiToolDefinition = SCRAPE_TOOL_OPENAI;
   static anthropicToolDefinition = SCRAPE_TOOL_ANTHROPIC;
-  static geminiToolDefinition = SCRAPE_TOOL_GEMINI;
 
   static async runnable(hb: HyperbrowserClient, params: StartScrapeJobParams): Promise<string> {
     const resp = await hb.scrape.startAndWait(params);
@@ -69,7 +59,6 @@ export class WebsiteScrapeTool {
 export class WebsiteScreenshotTool {
   static openaiToolDefinition = SCREENSHOT_TOOL_OPENAI;
   static anthropicToolDefinition = SCREENSHOT_TOOL_ANTHROPIC;
-  static geminiToolDefinition = SCREENSHOT_TOOL_GEMINI;
 
   static async runnable(hb: HyperbrowserClient, params: StartScrapeJobParams): Promise<string> {
     const resp = await hb.scrape.startAndWait(params);
@@ -80,7 +69,6 @@ export class WebsiteScreenshotTool {
 export class WebsiteCrawlTool {
   static openaiToolDefinition = CRAWL_TOOL_OPENAI;
   static anthropicToolDefinition = CRAWL_TOOL_ANTHROPIC;
-  static geminiToolDefinition = CRAWL_TOOL_GEMINI;
 
   static async runnable(hb: HyperbrowserClient, params: StartCrawlJobParams): Promise<string> {
     const resp = await hb.crawl.startAndWait(params);
@@ -100,7 +88,6 @@ export class WebsiteCrawlTool {
 export class WebsiteExtractTool {
   static openaiToolDefinition = EXTRACT_TOOL_OPENAI;
   static anthropicToolDefinition = EXTRACT_TOOL_ANTHROPIC;
-  static geminiToolDefinition = EXTRACT_TOOL_GEMINI;
 
   static async runnable(hb: HyperbrowserClient, params: StartExtractJobParams): Promise<string> {
     if (params.schema && typeof params.schema === "string") {
@@ -114,7 +101,6 @@ export class WebsiteExtractTool {
 export class BrowserUseTool {
   static openaiToolDefinition = BROWSER_USE_TOOL_OPENAI;
   static anthropicToolDefinition = BROWSER_USE_TOOL_ANTHROPIC;
-  static geminiToolDefinition = BROWSER_USE_TOOL_GEMINI;
 
   static async runnable(
     hb: HyperbrowserClient,
@@ -128,7 +114,6 @@ export class BrowserUseTool {
 export class ClaudeComputerUseTool {
   static openaiToolDefinition = CLAUDE_COMPUTER_USE_TOOL_OPENAI;
   static anthropicToolDefinition = CLAUDE_COMPUTER_USE_TOOL_ANTHROPIC;
-  static geminiToolDefinition = CLAUDE_COMPUTER_USE_TOOL_GEMINI;
 
   static async runnable(
     hb: HyperbrowserClient,
@@ -142,7 +127,6 @@ export class ClaudeComputerUseTool {
 export class OpenAICuaTool {
   static openaiToolDefinition = OPENAI_CUA_TOOL_OPENAI;
   static anthropicToolDefinition = OPENAI_CUA_TOOL_ANTHROPIC;
-  static geminiToolDefinition = OPENAI_CUA_TOOL_GEMINI;
 
   static async runnable(hb: HyperbrowserClient, params: StartCuaTaskParams): Promise<string> {
     const resp = await hb.agents.cua.startAndWait(params);

@@ -438,44 +438,13 @@ describe("typed secrets and allowed origins", () => {
     ).rejects.toThrow(/HOTP .* not supported/);
   });
 
-  test("op_token values are any string, and op_token secrets can't have allowed origins", async () => {
-    const { service, calls, requestSpy } = mockService(created(opToken()));
+  test("op_token values are sealed to the returned context", async () => {
+    const { service, requestSpy } = mockService(created(opToken()));
     await service.create({ name: "op-token", type: "op_token", value: "not-an-ops-token" });
     expect(open(JSON.parse((requestSpy.mock.calls[2][1] as any).body).envelope).header.ctx).toBe(
       OP_CONTEXT
     );
-    requestSpy.mockClear();
-    await expect(
-      service.create({
-        name: "op-token",
-        type: "op_token",
-        value: "ops_x",
-        allowedOrigins: ["https://a.com"],
-      })
-    ).rejects.toMatchObject({ code: "invalid_request" });
-    expect(calls()).toEqual([]);
-  });
 
-  test("bad allowedOrigins fail before any request", async () => {
-    const { service, calls } = mockService(created(secret()));
-    for (const allowedOrigins of [
-      [],
-      [""],
-      ["x".repeat(513)],
-      Array(21).fill("https://a.com"),
-      "https://a.com",
-      ["http://example.com"],
-      ["https://*.com"],
-      ["https://example.com/login"],
-      ["ftp://example.com"],
-      ["https://-a.com"],
-      ["https://example.com:70000"],
-    ]) {
-      await expect(
-        service.create({ name: "k", value: "v", allowedOrigins: allowedOrigins as any })
-      ).rejects.toMatchObject({ code: "invalid_request" });
-    }
-    expect(calls()).toEqual([]);
   });
 
   test("addVersion validates against the resolved secret's type", async () => {
@@ -538,9 +507,6 @@ describe("typed secrets and allowed origins", () => {
       `PATCH /secrets/${ID}`,
     ]);
 
-    await expect(service.setAllowedOrigins("provider-key", [])).rejects.toMatchObject({
-      code: "invalid_request",
-    });
     await expect(service.update("provider-key", {})).rejects.toMatchObject({
       code: "invalid_request",
     });

@@ -156,7 +156,7 @@ try {
 - `credentials` takes up to 20 items: a secret's name (or `{ secret }`),
   `{ vault }` for the secrets a stored vault names when the session is created,
   or `{ onePassword }` for an `op_token` secret (see
-  [Fill from 1Password](#fill-from-1password)); names are checked locally.
+  [Fill from 1Password](#fill-from-1password)); the API validates names and limits.
   `session.credentials` lists the attached secrets as `{ id, name }`. Fill a
   single secret with `{ credential: "github-password", fields: [{ selector }] }`;
   with `vault`, each field names its entry in `field`.
@@ -182,7 +182,7 @@ try {
 - Origins are `scheme://host[:port]`, 1-20 per secret; a leading `*.` matches
   subdomains only (of a domain such as `example.com`, not `*.com` or an IP
   address), and `http:` is accepted only for `localhost`, `127.0.0.1` and
-  `[::1]`. They are checked locally (`invalid_request`).
+  `[::1]`. The API validates and normalizes them.
   `setAllowedOrigins(secret, origins)` replaces them and `null`
   clears them (the secret then can't be filled). `list({ type })` filters by
   type.
@@ -194,7 +194,8 @@ try {
   length is 1, 3 or 6 characters past a multiple of 8 is refused as
   incompletely copied. Seeds under 10 bytes (16 characters) are accepted, but
   check that a short one was copied whole. `addVersion` applies the rules of
-  the secret's type. Other invalid requests fail locally with `invalid_request`.
+  the secret's type. Fill, origin, vault-entry and 1Password policy errors come
+  from the API; inspect the error's status, code (when supplied) and details.
 - Session create needs the API key scope `secrets.use`; fill also needs
   `browser.sessions.update`. Attaching secrets runs the session on Firecracker
   with Chrome's password manager off. Fills are recorded in the session event
@@ -273,11 +274,11 @@ console.log(worker.secrets); // [{ env: "DB_PASS", reference: "op://Engineering/
   characters without `/` or `?`, control or format characters, and not `.` or
   `..`; the field may end with a query such as `?attribute=totp` or
   `?ssh-format=openssh`. The full `op://<vault>/<item>/[<section>/]<field>`
-  reference is at most 512 bytes. These are checked locally
-  (`invalid_request`), as are unknown members.
+  reference is at most 512 bytes. The API validates these rules and rejects
+  unknown members.
 - A 1Password field's variable must come from it alone: `secrets` or `env`
-  setting it too is refused locally, and a `vault` entry setting it is
-  refused by the API (`SECRET_SOURCES_INVALID`). Together with `vault` and
+  setting it too, including a `vault` entry, is refused by the API
+  (`SECRET_SOURCES_INVALID`). Together with `vault` and
   `secrets` it delivers at most 32 variables.
 - Requirements are those of `secrets`: the `secrets.use` scope, and for
   `sandboxes.create` an image launch with a startup command on Firecracker.
@@ -321,9 +322,8 @@ console.log(result.fields);
   secret's. A page on any other origin is refused with
   `CREDENTIAL_ORIGIN_NOT_ALLOWED`, and tab choice treats these as the
   allowed origins.
-- All of this is checked locally (`invalid_request`), including unknown
-  members of `onePassword` and `ref`, along with the usual 1-16 fields and
-  unique selectors.
+- The API validates these rules and rejects unknown members of `onePassword`
+  and `ref`, along with the usual 1-16 fields and unique selectors.
 - The result has no top-level `version`. Each field's `secretId` and
   `version` are the `op_token`'s, and `reference` is the field that was read.
 - A missing item or field fails with `SECRET_ONEPASSWORD_REFERENCE_FAILED`
@@ -489,10 +489,8 @@ for (;;) {
 ```
 
 `FILL_CREDENTIAL_TOOL_OPENAI`, `FILL_CREDENTIAL_TOOL_ANTHROPIC` and
-`FILL_CREDENTIAL_TOOL_GEMINI` are also exported, along with `toGeminiSchema` for
-converting the SDK's JSON Schemas to Gemini's schema form. Every tool class in
-`@hyperbrowser/sdk/tools` (such as `WebsiteScrapeTool`) has a
-`geminiToolDefinition` next to its OpenAI and Anthropic definitions.
+`FILL_CREDENTIAL_TOOL_GEMINI` are also exported. `CredentialFillTool` provides
+`geminiToolDefinition` for the credential-fill tool.
 
 ## Usage
 

@@ -85,32 +85,6 @@ describe("vaults service", () => {
     expect(vault).toEqual(stored());
   });
 
-  test.each<[string, unknown]>([
-    ["a bad vault name", { name: "github login" }],
-    ["a bad env name", { name: "v", entries: { "1BAD": { name: "s" } } }],
-    ["__proto__", { name: "v", entries: JSON.parse('{"__proto__": {"name": "s"}}') }],
-    ["a long env name", { name: "v", entries: { ["A".repeat(257)]: { name: "s" } } }],
-    ["a bad secret name", { name: "v", entries: { A: { name: "-s" } } }],
-    ["version 0", { name: "v", entries: { A: { name: "s", version: 0 } } }],
-    ["a removal on create", { name: "v", entries: { A: null } }],
-    ["a 1Password entry", { name: "v", entries: { A: { item: "i", field: "f" } } }],
-    ["a non-object entry", { name: "v", entries: { A: "s" } }],
-    [
-      "33 entries",
-      {
-        name: "v",
-        entries: Object.fromEntries(Array.from({ length: 33 }, (_, i) => [`E${i}`, { name: "s" }])),
-      },
-    ],
-  ])("create rejects %s before any request", async (_name, params) => {
-    const { service, calls } = mockService(() => stored());
-    await expect(service.create(params as any)).rejects.toMatchObject({
-      code: "invalid_request",
-      retryable: false,
-    });
-    expect(calls()).toEqual([]);
-  });
-
   test("a vault with a stray source still parses", async () => {
     const withSource = { ...stored(), source: { type: "stored" } };
     const { service } = mockService((_method, path) =>
@@ -193,26 +167,10 @@ describe("vaults service", () => {
     expect(bodies()[1]).toEqual({ description });
   });
 
-  test.each([
-    ["nothing", {}],
-    ["only a source", { source: { tokenSecret: "op-token" } }],
-    ["a 1Password entry", { entries: { A: { item: "i", field: "f" } } }],
-    ["a bad entry", { entries: { A: { name: "" } } }],
-    ["a long description", { description: "d".repeat(1025) }],
-  ])("update rejects %s before any request", async (_name, params) => {
-    const { service, calls } = mockService(() => stored());
-    await expect(service.update("github-login", params as any)).rejects.toMatchObject({
-      code: "invalid_request",
-    });
-    expect(calls()).toEqual([]);
-  });
-
-  test("list passes pagination and search, and checks them", async () => {
+  test("list passes pagination and search", async () => {
     const { service, requestSpy } = mockService(() => listOf(stored()));
     await service.list({ page: 2, limit: 10, search: "github" });
     expect(requestSpy.mock.calls[0][2]).toEqual({ search: "github", page: 2, limit: 10 });
-    await expect(service.list({ limit: 101 })).rejects.toMatchObject({ code: "invalid_request" });
-    await expect(service.list({ page: 0 })).rejects.toMatchObject({ code: "invalid_request" });
     expect(requestSpy).toHaveBeenCalledTimes(1);
   });
 

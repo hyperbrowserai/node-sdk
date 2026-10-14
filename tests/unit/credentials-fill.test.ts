@@ -9,19 +9,11 @@ vi.mock("node-fetch", async () => {
 
 import { HyperbrowserClient as Hyperbrowser, HyperbrowserError } from "../../src/client";
 import {
-  BrowserUseTool,
-  ClaudeComputerUseTool,
   CredentialFillTool,
-  OpenAICuaTool,
-  WebsiteCrawlTool,
-  WebsiteExtractTool,
-  WebsiteScrapeTool,
-  WebsiteScreenshotTool,
   FILL_CREDENTIAL_SCHEMA,
   FILL_CREDENTIAL_TOOL_ANTHROPIC,
   FILL_CREDENTIAL_TOOL_GEMINI,
   FILL_CREDENTIAL_TOOL_OPENAI,
-  toGeminiSchema,
 } from "../../src/tools";
 import type {
   CreateSessionParams,
@@ -175,64 +167,6 @@ describe("sessions", () => {
     });
   });
 
-  test.each([
-    ["neither credential nor vault", { fields }],
-    ["both credential and vault", { credential: "a", vault: "b", fields: vaultFields }],
-    ["an empty credential", { credential: "", fields }],
-    ["a credential over 255 characters", { credential: "c".repeat(256), fields }],
-    ["a vault that isn't a vault name", { vault: "github login", fields: vaultFields }],
-    ["no fields", { credential: "github-password", fields: [] }],
-    [
-      "17 fields",
-      {
-        credential: "github-password",
-        fields: Array.from({ length: 17 }, (_, i) => ({ selector: `#f${i}` })),
-      },
-    ],
-    [
-      "a repeated selector",
-      {
-        vault: "github-login",
-        fields: [vaultFields[0], { field: "PASSWORD", selector: "#login_field" }],
-      },
-    ],
-    ["a field with a credential", { credential: "github-password", fields: [vaultFields[1]] }],
-    ["a vault fill without field", { vault: "github-login", fields }],
-    [
-      "a field that isn't an entry name",
-      { vault: "github-login", fields: [{ field: "pass word", selector: "#p" }] },
-    ],
-    ["an empty selector", { credential: "github-password", fields: [{ selector: "" }] }],
-    [
-      "a selector over 1024 bytes",
-      { credential: "github-password", fields: [{ selector: "é".repeat(513) }] },
-    ],
-    ["an empty page ID", { credential: "github-password", fields, pageId: "" }],
-    [
-      "a page ID over 128 bytes",
-      { credential: "github-password", fields, pageId: "p".repeat(129) },
-    ],
-    [
-      "pageId with pageUrl",
-      { credential: "github-password", fields, pageId: "A", pageUrl: "https://a" },
-    ],
-    [
-      "a page URL over 2048 bytes",
-      { credential: "github-password", fields, pageUrl: "u".repeat(2049) },
-    ],
-    ["an empty frame URL", { credential: "github-password", fields, frameUrl: "" }],
-    [
-      "a frame URL over 2048 bytes",
-      { credential: "github-password", fields, frameUrl: "u".repeat(2049) },
-    ],
-  ])("fill rejects %s before any request", async (_name, params) => {
-    await expect(client().sessions.credentials.fill(SESSION, params as any)).rejects.toMatchObject({
-      code: "invalid_request",
-      retryable: false,
-    });
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
   test("fill requires a session ID", async () => {
     await expect(
       client().sessions.credentials.fill("", { credential: "github-password", fields })
@@ -312,22 +246,6 @@ describe("1Password fills", () => {
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
-  test.each([
-    ["21 items", Array.from({ length: 21 }, (_, i) => `s-${i}`)],
-    ["a name with a space", [{ onePassword: "op token" }]],
-    ["an empty name", [""]],
-    ["a non-string name", [{ onePassword: 1 }]],
-    ["two kinds in one item", [{ onePassword: "op-token", secret: "s" }]],
-    ["an unknown kind", [{ token: "op-token" }]],
-    ["an empty object", [{}]],
-    ["not a list", "op-token"],
-  ])("create rejects credentials with %s before any request", async (_name, credentials) => {
-    await expect(
-      client().sessions.create({ credentials: credentials as any })
-    ).rejects.toMatchObject({ code: "invalid_request", retryable: false });
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
   test("fill sends onePassword and each field's ref, and returns references", async () => {
     fetchMock.mockResolvedValue(respond(opResult));
     const result = await client().sessions.credentials.fill(SESSION, {
@@ -382,77 +300,6 @@ describe("1Password fills", () => {
   });
   const ref = (value: Record<string, unknown>) => [{ selector: "#f", ref: value }];
 
-  test.each([
-    ["onePassword with credential", { ...opFill(), credential: "github-password" }],
-    ["onePassword with vault", { ...opFill(), vault: "github-login" }],
-    ["a field without ref", opFill({}, [refFields[0], { selector: "#otp" }])],
-    ["a ref without onePassword", { credential: "github-password", fields: refFields }],
-    [
-      "a ref in a vault fill",
-      { vault: "github-login", fields: [{ ...vaultFields[0], ref: refFields[0].ref }] },
-    ],
-    ["a field with onePassword", opFill({}, [{ ...refFields[0], field: "USERNAME" }])],
-    ["onePassword that isn't an object", { onePassword: "op-token", fields: refFields }],
-    ["a token that isn't a secret name", opFill({ token: "op token" })],
-    ["no token", opFill({ token: undefined })],
-    ["an empty vault", opFill({ vault: "" })],
-    ["a vault with a slash", opFill({ vault: "Dev/Vault" })],
-    ["a vault of '..'", opFill({ vault: ".." })],
-    ["a vault over 256 characters", opFill({ vault: "v".repeat(257) })],
-    ["no allowedOrigins", opFill({ allowedOrigins: undefined })],
-    ["0 allowedOrigins", opFill({ allowedOrigins: [] })],
-    [
-      "21 allowedOrigins",
-      opFill({ allowedOrigins: Array.from({ length: 21 }, (_, i) => `https://a${i}.example.com`) }),
-    ],
-    ["an http origin", opFill({ allowedOrigins: ["http://example.com"] })],
-    ["a wildcard on a single label", opFill({ allowedOrigins: ["https://*.com"] })],
-    ["a wildcard on an IP address", opFill({ allowedOrigins: ["https://*.10.0.0.1"] })],
-    ["an origin with a path", opFill({ allowedOrigins: ["https://example.com/login"] })],
-    ["an origin without a scheme", opFill({ allowedOrigins: ["example.com"] })],
-    ["an origin over 512 characters", opFill({ allowedOrigins: [`https://${"a".repeat(505)}`] })],
-    ["a bad IPv6 origin", opFill({ allowedOrigins: ["https://[nope]"] })],
-    ["an unknown member of onePassword", opFill({ fields: {} })],
-    ["an unknown member of ref", opFill({}, ref({ item: "i", field: "f", vault: "v" }))],
-    ["a ref that isn't an object", opFill({}, [{ selector: "#f", ref: "op://v/i/f" }])],
-    ["a ref without item", opFill({}, ref({ field: "password" }))],
-    ["a ref without field", opFill({}, ref({ item: "i" }))],
-    ["an item with a slash", opFill({}, ref({ item: "a/b", field: "f" }))],
-    ["an item with a question mark", opFill({}, ref({ item: "a?b", field: "f" }))],
-    ["an item with a control character", opFill({}, ref({ item: "a\u0007", field: "f" }))],
-    ["an empty section", opFill({}, ref({ item: "i", section: "", field: "f" }))],
-    ["a section of '.'", opFill({}, ref({ item: "i", section: ".", field: "f" }))],
-    ["a field over 256 characters", opFill({}, ref({ item: "i", field: "f".repeat(257) }))],
-    [
-      "a field query with an uppercase key",
-      opFill({}, ref({ item: "i", field: "otp?Attribute=otp" })),
-    ],
-    ["a field with an empty query", opFill({}, ref({ item: "i", field: "otp?" }))],
-    ["a field of '..'", opFill({}, ref({ item: "i", field: "..?attribute=otp" }))],
-    [
-      "a 513-byte reference",
-      opFill({ vault: "v" }, ref({ item: "i", field: "é".repeat(248) + "x".repeat(8) })),
-    ],
-    [
-      "a repeated selector",
-      opFill({}, [refFields[0], { selector: "#email", ref: refFields[1].ref }]),
-    ],
-    ["no fields", opFill({}, [])],
-    [
-      "17 fields",
-      opFill(
-        {},
-        Array.from({ length: 17 }, (_, i) => ({ selector: `#f${i}`, ref: refFields[0].ref }))
-      ),
-    ],
-  ])("fill rejects %s before any request", async (_name, params) => {
-    await expect(client().sessions.credentials.fill(SESSION, params as any)).rejects.toMatchObject({
-      code: "invalid_request",
-      retryable: false,
-    });
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
   test("a reference failure keeps the selectors and reasons in details", async () => {
     const failure = {
       code: "SECRET_ONEPASSWORD_REFERENCE_FAILED",
@@ -479,12 +326,18 @@ describe("1Password fills", () => {
 
   test("the fill_credential tool has no onePassword and drops one a model sends", async () => {
     expect(JSON.stringify(FILL_CREDENTIAL_SCHEMA)).not.toMatch(/onePassword|one_password|"ref"/);
+    fetchMock.mockResolvedValue(
+      respond({ error: "Invalid body: pass one credential source" }, 400)
+    );
     const output = await CredentialFillTool.runnable(client(), SESSION, {
       onePassword,
       fields: refFields,
     } as any);
-    expect(JSON.parse(output)).toMatchObject({ error: { code: "invalid_request" } });
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(JSON.parse(output)).toMatchObject({
+      error: { message: "Invalid body: pass one credential source", retryable: false },
+    });
+    expect(lastRequest().body).not.toHaveProperty("onePassword");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -604,35 +457,6 @@ describe("fill_credential tool", () => {
     });
   });
 
-  test.each([
-    WebsiteScrapeTool,
-    WebsiteScreenshotTool,
-    WebsiteCrawlTool,
-    WebsiteExtractTool,
-    BrowserUseTool,
-    ClaudeComputerUseTool,
-    OpenAICuaTool,
-    CredentialFillTool,
-  ])("$name has a Gemini declaration matching its OpenAI definition", (tool) => {
-    const declaration = tool.geminiToolDefinition;
-    expect(declaration.name).toBe(tool.openaiToolDefinition.function.name);
-    expect(declaration.description).toBe(tool.openaiToolDefinition.function.description);
-    expect(declaration.parameters?.type).toBe("OBJECT");
-    expect(collectKeys(declaration.parameters).has("additionalProperties")).toBe(false);
-    expect(Object.keys(declaration.parameters?.properties ?? {})).toEqual(
-      Object.keys((tool.openaiToolDefinition.function.parameters as any).properties)
-    );
-  });
-
-  test("the Gemini converter refuses schemas it can't express", () => {
-    expect(() => toGeminiSchema({ type: ["string", "number"] })).toThrow(/Unsupported/);
-    expect(toGeminiSchema({ type: "integer", enum: ["1"], default: 1 })).toEqual({
-      type: "INTEGER",
-      enum: ["1"],
-      default: 1,
-    });
-  });
-
   test("runnable maps a vault call to the API and returns JSON text", async () => {
     fetchMock.mockResolvedValue(respond(filled));
     const output = await CredentialFillTool.runnable(client(), SESSION, {
@@ -737,16 +561,46 @@ describe("fill_credential tool", () => {
   });
 
   test.each([
-    ["an empty selector", { credential: "github-password", fields: [{ selector: "" }] }],
-    ["both names", { credential: "a", vault: "b", fields: vaultFields }],
-    ["a vault without fields' entries", { vault: "github-login", fields }],
-    ["no input at all", undefined],
-  ])("invalid model input (%s) comes back as JSON without a request", async (_name, input) => {
-    const output = await CredentialFillTool.runnable(client(), SESSION, input as any);
-    expect(JSON.parse(output)).toMatchObject({
-      error: { code: "invalid_request", retryable: false, details: null },
+    { fields },
+    { credential: "c", vault: "v", fields },
+    {
+      onePassword: { token: "op", vault: "v", allowedOrigins: ["http://example.com"] },
+      fields: [{ selector: "#p", ref: { item: "i", field: "f" } }],
+    },
+    { credential: "c", fields, typo: true },
+  ])("fill preserves invalid policy input for API validation: %j", async (params) => {
+    const refused = { error: "Invalid body: server validation failed" };
+    fetchMock.mockResolvedValue(respond(refused, 400));
+    await expect(client().sessions.credentials.fill(SESSION, params as any)).rejects.toMatchObject({
+      statusCode: 400,
+      retryable: false,
+      details: refused,
     });
+    expect(lastRequest().body).toEqual(params);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  test("raw frame targeting is rejected rather than discarded", async () => {
+    await expect(
+      client().sessions.credentials.fill(SESSION, {
+        credential: "c",
+        fields,
+        frame: { url: "https://auth.example.com" },
+      } as any)
+    ).rejects.toMatchObject({ code: "invalid_request" });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test("tool returns server validation errors as JSON", async () => {
+    fetchMock.mockResolvedValue(
+      respond({ error: "Invalid body: pass one credential source" }, 400)
+    );
+    const result = JSON.parse(await CredentialFillTool.runnable(client(), SESSION, { fields: [] }));
+    expect(result.error).toMatchObject({
+      message: "Invalid body: pass one credential source",
+      retryable: false,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   test("errors other than HyperbrowserError are thrown", async () => {

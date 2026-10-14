@@ -486,14 +486,11 @@ describe("vaults in sandboxes", () => {
     expect(sandbox.toJSON().startupSecrets).toEqual(vaultBindings);
   });
 
-  test("vault is checked locally like secrets", async () => {
+  test("vault launch restrictions are checked locally", async () => {
     const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
     const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue(wireDetail);
-    await expect(
-      service.create({ snapshotName: "snap", vault: "app-env" } as any)
-    ).rejects.toThrow(/only supported for image launches/);
-    await expect(service.create({ imageName: "node", vault: "app env" })).rejects.toThrow(
-      /vault name/
+    await expect(service.create({ snapshotName: "snap", vault: "app-env" } as any)).rejects.toThrow(
+      /only supported for image launches/
     );
     await expect(
       service.create({ imageName: "node", runtimeClass: "gvisor-cpu", vault: "app-env" })
@@ -529,7 +526,6 @@ describe("vaults in sandboxes", () => {
     });
     expect(handle.secrets).toEqual(vaultBindings);
 
-    await expect(api.start("x", { vault: "" })).rejects.toThrow(/vault name/);
     expect(start.start).toHaveBeenCalledTimes(1);
   });
 });
@@ -651,89 +647,6 @@ describe("1Password in sandboxes", () => {
   const field = (overrides: Record<string, unknown>) => ({
     ...onePassword,
     fields: { A: { item: "Login", field: "password", ...overrides } },
-  });
-
-  test.each<[string, unknown, Record<string, unknown>?]>([
-    ["a bad token name", { ...onePassword, token: "-t" }],
-    ["a missing token", { vault: "v", fields: onePassword.fields }],
-    ["a vault with '/'", { ...onePassword, vault: "a/b" }],
-    ["the vault '.'", { ...onePassword, vault: "." }],
-    ["the item '.'", field({ item: "." })],
-    ["the item '..'", field({ item: ".." })],
-    ["the item 'a?b'", field({ item: "a?b" })],
-    ["an empty section", field({ section: "" })],
-    ["the field '..'", field({ field: ".." })],
-    ["the field '.?attribute=otp'", field({ field: ".?attribute=otp" })],
-    ["a field query with an uppercase key", field({ field: "otp?Attr=x" })],
-    ["a field query without a value", field({ field: "otp?attribute=" })],
-    ["a 257-character item", field({ item: "x".repeat(257) })],
-    ["a 257-character field", field({ field: "x".repeat(257) })],
-    ["U+200B in an item", field({ item: "a\u200bb" })],
-    ["U+2028 in a field", field({ field: "a\u2028b" })],
-    ["a newline in a section", field({ section: "a\nb" })],
-    [
-      "a reference over 512 bytes",
-      {
-        ...onePassword,
-        vault: "v".repeat(256),
-        fields: { A: { item: "é".repeat(128), field: "f" } },
-      },
-    ],
-    ["no fields", { ...onePassword, fields: {} }],
-    [
-      "33 fields",
-      {
-        ...onePassword,
-        fields: Object.fromEntries(
-          Array.from({ length: 33 }, (_, i) => [`E${i}`, { item: "i", field: "f" }])
-        ),
-      },
-    ],
-    ["a bad env name", { ...onePassword, fields: { "1BAD": { item: "i", field: "f" } } }],
-    ["an unknown member", { ...onePassword, account: "my" }],
-    ["an unknown field member", field({ reference: "op://v/i/f" })],
-    ["a field that isn't an object", { ...onePassword, fields: { A: "op://v/i/f" } }],
-    ["null", null],
-    ["a variable also in secrets", onePassword, { secrets: { SC_USER: "provider-key" } }],
-    ["a variable also in env", onePassword, { env: { SC_OTP: "123456" } }],
-    [
-      "more than 32 variables with secrets",
-      {
-        ...onePassword,
-        fields: Object.fromEntries(
-          Array.from({ length: 30 }, (_, i) => [`OP${i}`, { item: "i", field: "f" }])
-        ),
-      },
-      { secrets: { A: "a", B: "b", C: "c" } },
-    ],
-  ])("%s is refused locally before any request", async (_name, op, extra = {}) => {
-    const start = starter();
-    const api = new SandboxProcessesApi(runtime({}).transport, start);
-    await expect(
-      api.start({ command: "x", ...extra, onePassword: op as any })
-    ).rejects.toMatchObject({ code: "invalid_request", retryable: false });
-    await expect(
-      api.exec({ command: "x", ...extra, onePassword: op as any })
-    ).rejects.toMatchObject({ code: "invalid_request", retryable: false });
-    expect(start.start).not.toHaveBeenCalled();
-
-    if (!("env" in extra)) {
-      const { service, requestSpy } = createService();
-      await expect(
-        service.create({ imageName: "node", ...extra, onePassword: op as any })
-      ).rejects.toMatchObject({ code: "invalid_request", retryable: false });
-      expect(requestSpy).not.toHaveBeenCalled();
-    }
-  });
-
-  test("clashes name the variable and both sources", async () => {
-    const api = new SandboxProcessesApi(runtime({}).transport, starter());
-    await expect(api.start({ command: "x", env: { SC_OTP: "1" }, onePassword })).rejects.toThrow(
-      "SC_OTP is set by env and by onePassword; a 1Password field's variable must come from it alone"
-    );
-    await expect(
-      api.start({ command: "x", secrets: { SC_USER: "s" }, onePassword })
-    ).rejects.toThrow(/SC_USER is set by secrets and by onePassword/);
   });
 
   test("a onePassword binding has a reference and token instead of a secret", () => {
