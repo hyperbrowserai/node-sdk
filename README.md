@@ -266,8 +266,8 @@ own `details` holds the specifics (such as `error.details.details.origin`).
 | `SECRET_SOURCES_INVALID` | Bad `vault`/`secrets`/`env` combination, or a vault with no entries. |
 | `VAULT_NOT_FOUND`, `VAULT_ENTRY_NOT_FOUND` | |
 | `VAULT_NAME_TAKEN`, `VAULT_LIMIT_REACHED`, `VAULT_ENTRY_LIMIT_REACHED` | |
-| `VAULT_ENTRY_INVALID` | The message starts with the entry's name. |
-| `VAULT_SOURCE_INVALID` | An entry of the wrong kind for the vault's source, a source change on a stored vault, or a 1Password vault used in a browser session. |
+| `VAULT_ENTRY_INVALID` | A bad entry, including one of the wrong kind for the vault's source; the message starts with the entry's name. |
+| `VAULT_SOURCE_INVALID` | A source change on a stored vault, or a 1Password vault used in a browser session. |
 | `SECRETS_FEATURE_DISABLED` | The team doesn't have secrets enabled. |
 
 ### Use with LLM SDKs
