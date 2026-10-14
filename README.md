@@ -164,11 +164,14 @@ try {
   keep the value, e.g. `maxlength`), plus its `secretId` and `version`, the
   vault `field`, and for TOTP inputs `expiresAt`. Submit only when the inputs
   you need are `filled`. Fill is safe to retry; it is not retried automatically.
-- Without `pageId`, fill uses the only tab (among those whose URL starts with
-  `pageUrl`, when given), else the single tab on the secrets' allowed origins,
-  else the single visible tab; otherwise it fails with
+- Without `pageId`, fill considers the tabs whose URL starts with `pageUrl`
+  (all tabs when it's not given). If one is left, that's the target. If several
+  are left, it prefers the tabs on an origin every secret allows, then the
+  visible one among them; if more than one still qualifies, it fails with
   `CREDENTIAL_PAGE_AMBIGUOUS` and the candidates in
-  `error.details.details.pages` (`{ pageId, url, title }`).
+  `error.details.details.pages` (`{ pageId, url, title }`). The chosen tab's
+  origin is then checked: on any other origin nothing is typed and the fill
+  fails with `CREDENTIAL_ORIGIN_NOT_ALLOWED`.
   Under Playwright every tab reports as visible, so pass `pageUrl` or the
   page's target ID: `(await page.context().newCDPSession(page)).send("Target.getTargetInfo")`
   (in Puppeteer, `page.createCDPSession()`) returns it as `targetInfo.targetId`.
