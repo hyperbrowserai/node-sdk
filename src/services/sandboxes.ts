@@ -502,7 +502,9 @@ export class SandboxHandle {
   }
 
   private hydrate(detail: SandboxDetail) {
-    this.detail = detail;
+    // Only the create response reports what the startup command received.
+    const startupSecrets = detail.startupSecrets ?? this.detail?.startupSecrets;
+    this.detail = startupSecrets === undefined ? detail : { ...detail, startupSecrets };
     this.runtimeSession = SandboxHandle.toRuntimeSession(detail);
   }
 

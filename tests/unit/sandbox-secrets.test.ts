@@ -472,6 +472,16 @@ describe("vaults in sandboxes", () => {
     expect(sandbox.toJSON().startupSecrets).toEqual(vaultBindings);
   });
 
+  test("startupSecrets survive a refresh of the handle", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    vi.spyOn(service as any, "request")
+      .mockResolvedValueOnce({ ...wireDetail, startupSecrets: vaultBindings })
+      .mockResolvedValueOnce({ ...wireDetail, status: "active" });
+    const sandbox = await service.create({ imageName: "node", vault: "app-env" });
+    await sandbox.info();
+    expect(sandbox.toJSON().startupSecrets).toEqual(vaultBindings);
+  });
+
   test("vault is checked locally like secrets", async () => {
     const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
     const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue(wireDetail);

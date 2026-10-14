@@ -172,11 +172,12 @@ export class CredentialFillTool {
     params: CredentialFillToolParams
   ): Promise<string> {
     try {
-      // Model output is checked by fill; only the known keys are passed on,
-      // and nulls (strict mode's "not given") are left out.
+      // Model output is checked by fill; only the known keys are passed on.
+      // Null (strict mode's "not given") and "" (what Gemini tends to send
+      // for unused strings) are left out.
       const input: Partial<CredentialFillToolParams> = isPlainObject(params) ? params : {};
       const given = <T>(value: T | null | undefined): T | undefined =>
-        value === null ? undefined : value;
+        value === null || value === "" ? undefined : value;
       const request: FillCredentialParams = {
         credential: given(input.credential),
         vault: given(input.vault),

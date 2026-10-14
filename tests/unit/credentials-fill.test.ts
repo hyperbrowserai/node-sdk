@@ -447,6 +447,32 @@ describe("fill_credential tool", () => {
     });
   });
 
+  test("empty strings, as Gemini sends for unused options, are left out", async () => {
+    fetchMock.mockResolvedValue(respond(filled));
+    await CredentialFillTool.runnable(client(), SESSION, {
+      credential: "",
+      vault: "github-login",
+      fields: [{ selector: "#login_field", field: "USERNAME" }],
+      page_id: "",
+      page_url: "",
+      frame_url: "",
+    });
+    expect(lastRequest().body).toEqual({
+      vault: "github-login",
+      fields: [{ selector: "#login_field", field: "USERNAME" }],
+    });
+    fetchMock.mockResolvedValue(respond(single));
+    await CredentialFillTool.runnable(client(), SESSION, {
+      credential: "github-password",
+      vault: "",
+      fields: [{ selector: "#password", field: "" }],
+    });
+    expect(lastRequest().body).toEqual({
+      credential: "github-password",
+      fields: [{ selector: "#password" }],
+    });
+  });
+
   test("API errors come back as JSON with the server's own details", async () => {
     fetchMock.mockResolvedValue(respond(ambiguous, 409));
     const output = await CredentialFillTool.runnable(client(), SESSION, {
