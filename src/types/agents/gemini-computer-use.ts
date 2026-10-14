@@ -1,4 +1,8 @@
-import { GeminiComputerUseLlm, GeminiComputerUseTaskStatus } from "../constants";
+import {
+  GeminiComputerUseLlm,
+  GeminiComputerUseReasoningEffort,
+  GeminiComputerUseTaskStatus,
+} from "../constants";
 import { CreateSessionParams } from "../session";
 
 export interface GeminiComputerUseApiKeys {
@@ -8,6 +12,7 @@ export interface GeminiComputerUseApiKeys {
 export interface StartGeminiComputerUseTaskParams {
   task: string;
   llm?: GeminiComputerUseLlm;
+  reasoningEffort?: GeminiComputerUseReasoningEffort;
   sessionId?: string;
   maxFailures?: number;
   maxSteps?: number;

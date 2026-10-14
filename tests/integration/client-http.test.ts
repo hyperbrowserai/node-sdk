@@ -68,6 +68,11 @@ const startServer = async (
       return;
     }
 
+    if (request.method === "POST" && request.url === "/api/task/gemini-computer-use") {
+      sendJson(response, 200, { jobId: "gemini_job_123", liveUrl: null });
+      return;
+    }
+
     if (request.method === "POST" && request.url === "/api/task/meta-computer-use") {
       sendJson(response, 200, { jobId: "meta_job_123", liveUrl: null });
       return;
@@ -388,6 +393,70 @@ describe("client HTTP integration", () => {
         task: "Complete the task",
         llm: "claude-sonnet-5-5",
         reasoningEffort: "max",
+      },
+    ]);
+  });
+
+  test("Gemini Computer Use forwards Gemini 4 Argon and reasoning effort on start", async () => {
+    const server = await startServer();
+    servers.push(server);
+    const client = new HyperbrowserClient({
+      apiKey: "test-api-key",
+      baseUrl: server.baseUrl,
+    });
+
+    const started = await client.agents.geminiComputerUse.start({
+      task: "Complete the task",
+      llm: "gemini-4-argon",
+      reasoningEffort: "high",
+      useCustomApiKeys: true,
+      apiKeys: { google: "google-key" },
+    });
+    await client.agents.geminiComputerUse.start({
+      task: "Complete the task",
+      llm: "gemini-3.6-flash",
+      reasoningEffort: "minimal",
+    });
+    await client.agents.geminiComputerUse.start({
+      task: "Complete the task",
+      llm: "gemini-4-argon",
+    });
+
+    expect(started).toEqual({ jobId: "gemini_job_123", liveUrl: null });
+    expect(server.requests).toEqual([
+      {
+        method: "POST",
+        url: "/api/task/gemini-computer-use",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: {
+          task: "Complete the task",
+          llm: "gemini-4-argon",
+          reasoningEffort: "high",
+          useCustomApiKeys: true,
+          apiKeys: { google: "google-key" },
+        },
+      },
+      {
+        method: "POST",
+        url: "/api/task/gemini-computer-use",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: {
+          task: "Complete the task",
+          llm: "gemini-3.6-flash",
+          reasoningEffort: "minimal",
+        },
+      },
+      {
+        method: "POST",
+        url: "/api/task/gemini-computer-use",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: {
+          task: "Complete the task",
+          llm: "gemini-4-argon",
+        },
       },
     ]);
   });

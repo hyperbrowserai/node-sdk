@@ -307,6 +307,7 @@ export {
   CuaLlm,
   CuaReasoningEffort,
   GeminiComputerUseLlm,
+  GeminiComputerUseReasoningEffort,
   GrokComputerUseLlm,
   GrokReasoningEffort,
   MetaComputerUseLlm,
