@@ -1,7 +1,7 @@
 import { describe, expect, expectTypeOf, test, vi } from "vitest";
 import { HyperbrowserClient as Hyperbrowser, HyperbrowserError } from "../../src/client";
 import { VaultsService } from "../../src/services/vaults";
-import type { Vault, VaultEntry, VaultSource } from "../../src/types";
+import type { Vault, VaultEntry } from "../../src/types";
 
 const ID = "6f1d3c1e-5b8a-4e6f-9a51-0c2b7f3d9e10";
 const UUID_NAME = "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d";
@@ -10,7 +10,6 @@ const stored = (overrides: Record<string, unknown> = {}): Vault => ({
   id: ID,
   name: "github-login",
   description: "",
-  source: { type: "stored" },
   entries: {
     USERNAME: { name: "github-username", secretId: "s1", version: null },
     PASSWORD: { name: "github-password", secretId: "s2", version: 3 },
@@ -19,24 +18,6 @@ const stored = (overrides: Record<string, unknown> = {}): Vault => ({
   updatedAt: "2026-10-01T00:00:00.000Z",
   ...overrides,
 });
-
-const onePassword = (): Vault =>
-  stored({
-    name: "prod-db",
-    source: {
-      type: "1password",
-      tokenSecret: { name: "op-token", secretId: "t1" },
-      vault: "Engineering",
-    },
-    entries: {
-      DB_PASS: {
-        item: "Postgres",
-        section: "prod",
-        field: "password",
-        reference: "op://Engineering/Postgres/prod/password",
-      },
-    },
-  });
 
 const listOf = (...vaults: unknown[]) => ({
   vaults,
@@ -77,7 +58,6 @@ const mockService = (
 describe("vaults service", () => {
   test("the client exposes vaults", () => {
     expect(new Hyperbrowser({ apiKey: "k" }).vaults).toBeInstanceOf(VaultsService);
-    expectTypeOf<Vault["source"]>().toEqualTypeOf<VaultSource>();
     expectTypeOf<Vault["entries"]>().toEqualTypeOf<Record<string, VaultEntry>>();
   });
 
@@ -105,26 +85,6 @@ describe("vaults service", () => {
     expect(vault).toEqual(stored());
   });
 
-  test("create sends a 1Password vault with its source", async () => {
-    const { service, bodies } = mockService(() => onePassword());
-    await service.create({
-      name: "prod-db",
-      source: { type: "1password", tokenSecret: "op-token", vault: "Engineering" },
-      entries: {
-        DB_PASS: { item: "Postgres", section: "prod", field: "password" },
-        OTP: { item: "GitHub", field: "one-time password?attribute=otp" },
-      },
-    });
-    expect(bodies()[0]).toEqual({
-      name: "prod-db",
-      source: { type: "1password", tokenSecret: "op-token", vault: "Engineering" },
-      entries: {
-        DB_PASS: { item: "Postgres", section: "prod", field: "password" },
-        OTP: { item: "GitHub", field: "one-time password?attribute=otp" },
-      },
-    });
-  });
-
   test.each<[string, unknown]>([
     ["a bad vault name", { name: "github login" }],
     ["a bad env name", { name: "v", entries: { "1BAD": { name: "s" } } }],
@@ -133,55 +93,8 @@ describe("vaults service", () => {
     ["a bad secret name", { name: "v", entries: { A: { name: "-s" } } }],
     ["version 0", { name: "v", entries: { A: { name: "s", version: 0 } } }],
     ["a removal on create", { name: "v", entries: { A: null } }],
-    ["a mixed entry", { name: "v", entries: { A: { name: "s", item: "i", field: "f" } } }],
-    [
-      "a 1Password entry in a stored vault",
-      { name: "v", entries: { A: { item: "i", field: "f" } } },
-    ],
-    [
-      "a secret entry in a 1Password vault",
-      {
-        name: "v",
-        source: { type: "1password", tokenSecret: "op-token", vault: "Eng" },
-        entries: { A: { name: "s" } },
-      },
-    ],
-    ["an unknown source", { name: "v", source: { type: "aws" } }],
-    [
-      "a 1Password source without a token",
-      { name: "v", source: { type: "1password", vault: "Eng" } },
-    ],
-    [
-      "a 1Password vault name with '/'",
-      { name: "v", source: { type: "1password", tokenSecret: "t", vault: "a/b" } },
-    ],
-    ...(["a/b", "a?b", ".", "..", "", "x".repeat(257), "a\nb", "a​b"] as const).map(
-      (item) =>
-        [
-          `the item ${JSON.stringify(item.slice(0, 8))}`,
-          {
-            name: "v",
-            source: { type: "1password", tokenSecret: "t", vault: "Eng" },
-            entries: { A: { item, field: "password" } },
-          },
-        ] as [string, unknown]
-    ),
-    [
-      "a field with a bad query",
-      {
-        name: "v",
-        source: { type: "1password", tokenSecret: "t", vault: "Eng" },
-        entries: { A: { item: "i", field: "otp?Attribute=OTP!" } },
-      },
-    ],
-    [
-      "a reference over 512 bytes",
-      {
-        name: "v",
-        source: { type: "1password", tokenSecret: "t", vault: "v".repeat(256) },
-        entries: { A: { item: "i".repeat(256), field: "password" } },
-      },
-    ],
+    ["a 1Password entry", { name: "v", entries: { A: { item: "i", field: "f" } } }],
+    ["a non-object entry", { name: "v", entries: { A: "s" } }],
     [
       "33 entries",
       {
@@ -198,35 +111,14 @@ describe("vaults service", () => {
     expect(calls()).toEqual([]);
   });
 
-  test("1Password names may be IDs, use any other characters, and end fields with a query", async () => {
-    const { service, calls } = mockService(() => onePassword());
-    await service.create({
-      name: "v",
-      source: { type: "1password", tokenSecret: "op-token", vault: "abcdefghijklmnopqrstuvwxyz" },
-      entries: {
-        A: { item: "Café · Login", section: "...x", field: "password" },
-        B: { item: "i", field: "key?ssh-format=openssh&attribute=otp" },
-      },
-    });
-    expect(calls()).toEqual(["POST /vaults"]);
-  });
-
-  test("a vault without a source is read as stored", async () => {
-    const { source: _omitted, ...legacy } = stored();
+  test("a vault with a stray source still parses", async () => {
+    const withSource = { ...stored(), source: { type: "stored" } };
     const { service } = mockService((_method, path) =>
-      path === "/vaults" ? listOf(legacy) : legacy
+      path === "/vaults" ? listOf(withSource) : withSource
     );
-    await expect(service.get(ID)).resolves.toMatchObject({ source: { type: "stored" } });
+    await expect(service.get(ID)).resolves.toMatchObject({ entries: stored().entries });
     await expect(service.list()).resolves.toMatchObject({
-      vaults: [{ source: { type: "stored" } }],
-    });
-  });
-
-  test("unknown source types are passed through", async () => {
-    const future = stored({ source: { type: "aws-secrets-manager", region: "us-east-1" } });
-    const { service } = mockService(() => future);
-    await expect(service.get(ID)).resolves.toMatchObject({
-      source: { type: "aws-secrets-manager", region: "us-east-1" },
+      vaults: [{ name: "github-login", entries: stored().entries }],
     });
   });
 
@@ -271,7 +163,7 @@ describe("vaults service", () => {
       description: "new",
       entries: { OTP: { name: "github-otp" }, PASSWORD: null },
     });
-    await service.update("github-login", { source: { tokenSecret: "op-token-2" } });
+    await service.update("github-login", { entries: { OTP: { name: "github-otp", version: 2 } } });
     await expect(service.delete("github-login")).resolves.toEqual({
       deleted: true,
       id: ID,
@@ -289,15 +181,13 @@ describe("vaults service", () => {
       description: "new",
       entries: { OTP: { name: "github-otp" }, PASSWORD: null },
     });
-    expect(bodies()[3]).toEqual({ source: { tokenSecret: "op-token-2" } });
+    expect(bodies()[3]).toEqual({ entries: { OTP: { name: "github-otp", version: 2 } } });
   });
 
   test.each([
     ["nothing", {}],
-    ["a source type change", { source: { type: "stored" } }],
-    ["an empty source", { source: {} }],
-    ["a bad token name", { source: { tokenSecret: "-t" } }],
-    ["a bad 1Password vault", { source: { vault: "a/b" } }],
+    ["only a source", { source: { tokenSecret: "op-token" } }],
+    ["a 1Password entry", { entries: { A: { item: "i", field: "f" } } }],
     ["a bad entry", { entries: { A: { name: "" } } }],
     ["a long description", { description: "d".repeat(1025) }],
   ])("update rejects %s before any request", async (_name, params) => {

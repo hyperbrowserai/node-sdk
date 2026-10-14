@@ -271,7 +271,7 @@ export interface CreateSessionParams {
   /**
    * Secrets that `sessions.credentials.fill` may type into pages, at most 20:
    * a secret's name (or `{ secret: name }`), or `{ vault: name }` for the
-   * secrets a stored vault's entries name when the session is created.
+   * secrets a vault's entries name when the session is created.
    * Secrets need allowed origins to be filled. They can only be attached at
    * creation; the session runs on Firecracker with Chrome's password manager
    * off.

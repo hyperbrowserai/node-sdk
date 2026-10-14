@@ -10,8 +10,11 @@ import {
 } from "./process-output";
 import {
   assertNoEnvSecretOverlap,
+  assertOnePasswordAlone,
   checkVaultName,
+  serializeOnePassword,
   serializeSecretReferences,
+  WireOnePassword,
   WireSecretReference,
 } from "./secret-references";
 import {
@@ -63,6 +66,8 @@ export interface SecretProcessStartPayload {
   secrets?: Record<string, WireSecretReference>;
   /** A vault name; `secrets` is merged over its entries. */
   vault?: string;
+  /** 1Password fields; their variables can't come from any other source. */
+  onePassword?: WireOnePassword;
 }
 
 export interface SecretProcessStartResponse {
@@ -74,6 +79,7 @@ export interface SecretProcessStartResponse {
 /** Whether a start delivers secrets, so it goes through the control API. */
 const deliversSecrets = (params: SandboxExecParams): boolean =>
   params.vault !== undefined ||
+  params.onePassword !== undefined ||
   (params.secrets !== undefined &&
     params.secrets !== null &&
     Object.keys(params.secrets).length > 0);
@@ -333,7 +339,7 @@ export class SandboxProcessHandle {
   private closeStream: (() => void) | null = null;
   private readonly changed = new ChangeSignal();
 
-  /** What a process started with `secrets` or `vault` received. */
+  /** What a process started with `secrets`, `vault` or `onePassword` received. */
   public readonly secrets?: SandboxResolvedSecret[];
 
   constructor(
@@ -742,8 +748,11 @@ export class SandboxProcessesApi {
     }
     const secrets = serializeSecretReferences(params.secrets);
     const vault = params.vault === undefined ? undefined : checkVaultName(params.vault);
+    const onePassword = serializeOnePassword(params.onePassword);
     // A clash between env and the vault's variables is reported by the API.
     if (secrets !== undefined) assertNoEnvSecretOverlap(params.env, secrets);
+    if (onePassword !== undefined)
+      assertOnePasswordAlone(onePassword, { secrets, env: params.env });
     const timeoutMs = secretProcessTimeoutMs(params);
 
     let response: SecretProcessStartResponse;
@@ -757,6 +766,7 @@ export class SandboxProcessesApi {
           runAs: params.runAs,
           secrets,
           vault,
+          onePassword,
         },
         params.signal
       );

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterEach, describe, expect, expectTypeOf, test, vi } from "vitest";
 import { FetchError, Headers, Response } from "node-fetch";
 
 const fetchMock = vi.fn();
@@ -12,7 +12,11 @@ import type { RuntimeTransport } from "../../src/sandbox/base";
 import { SandboxProcessesApi, SecretProcessStarter } from "../../src/sandbox/process";
 import { BaseService } from "../../src/services/base";
 import { SandboxesService } from "../../src/services/sandboxes";
-import type { SandboxResolvedSecret } from "../../src/types";
+import type {
+  SandboxOnePasswordBinding,
+  SandboxResolvedSecret,
+  SandboxSecretSource,
+} from "../../src/types";
 
 const wireDetail = {
   id: "sbx_123",
@@ -34,7 +38,7 @@ const rawProcess = {
   started_at: 10,
 };
 
-const resolved = [
+const resolved: SandboxResolvedSecret[] = [
   { env: "API_KEY", name: "provider-key", secretId: "s1", version: 2, source: { type: "secrets" } },
 ];
 
@@ -448,7 +452,7 @@ describe("vaults in sandboxes", () => {
       env: "DB_PASS",
       reference: "op://Engineering/Postgres/prod/password",
       tokenSecret: "op-token",
-      source: { type: "vault", name: "app-env" },
+      source: { type: "onePassword" },
     },
   ];
 
@@ -527,6 +531,225 @@ describe("vaults in sandboxes", () => {
 
     await expect(api.start("x", { vault: "" })).rejects.toThrow(/vault name/);
     expect(start.start).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("1Password in sandboxes", () => {
+  const onePassword = {
+    token: "op-token",
+    vault: "Dev Vault for Testing",
+    fields: {
+      SC_USER: { item: "scrapingcourse login", field: "username" },
+      SC_OTP: { item: "scrapingcourse login", section: "Security", field: "otp?attribute=totp" },
+    },
+  };
+
+  const opBinding: SandboxResolvedSecret = {
+    env: "SC_USER",
+    reference: "op://Dev Vault for Testing/scrapingcourse login/username",
+    tokenSecret: "op-token",
+    source: { type: "onePassword" },
+  };
+
+  const createService = () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const requestSpy = vi
+      .spyOn(service as any, "request")
+      .mockResolvedValue({ ...wireDetail, startupSecrets: [opBinding] });
+    return { service, requestSpy };
+  };
+
+  test("image launches send onePassword next to vault and secrets", async () => {
+    const { service, requestSpy } = createService();
+    const sandbox = await service.create({
+      imageName: "node",
+      vault: "app-env",
+      secrets: { API_KEY: "provider-key" },
+      onePassword,
+    });
+    const body = JSON.parse((requestSpy.mock.calls[0][1] as any).body);
+    expect(body).toMatchObject({
+      vault: "app-env",
+      secrets: { API_KEY: { name: "provider-key" } },
+      onePassword,
+    });
+    expect(sandbox.toJSON().startupSecrets).toEqual([opBinding]);
+  });
+
+  test("onePassword is only for Firecracker image launches", async () => {
+    const { service, requestSpy } = createService();
+    await expect(service.create({ snapshotName: "snap", onePassword } as any)).rejects.toThrow(
+      /only supported for image launches/
+    );
+    await expect(
+      service.create({ imageName: "node", runtimeClass: "gvisor-cpu", onePassword })
+    ).rejects.toThrow(/not supported with runtimeClass gvisor-cpu/);
+    expect(requestSpy).not.toHaveBeenCalled();
+  });
+
+  test("a timed-out create with only onePassword is an unknown outcome", async () => {
+    fetchMock.mockRejectedValue(new FetchError("network timeout", "request-timeout"));
+    const error = await new SandboxesService("test-key", "https://api.example.com", 1_000)
+      .create({ imageName: "node", onePassword })
+      .catch((e) => e);
+    expect(error).toMatchObject({ code: "secret_process_outcome_unknown", retryable: false });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    fetchMock.mockReset();
+  });
+
+  test("process start and exec send onePassword through the control API", async () => {
+    const start = starter(async () => ({ process: rawProcess, secrets: [opBinding] }));
+    const { transport, openSSE } = runtime({
+      "/sandbox/processes/proc_1/stdin": [{}],
+      "/sandbox/processes/proc_1/wait": [{ result }],
+    });
+    const api = new SandboxProcessesApi(transport, start);
+
+    const handle = await api.start("node app.js", { env: { NODE_ENV: "test" }, onePassword });
+    expect(handle.secrets).toEqual([opBinding]);
+    await api.exec({ command: "node app.js", onePassword, secrets: {} });
+
+    expect(openSSE).not.toHaveBeenCalled();
+    expect(start.start.mock.calls.map(([payload]) => payload)).toEqual([
+      { command: "node app.js", env: { NODE_ENV: "test" }, onePassword },
+      { command: "node app.js", onePassword },
+    ]);
+  });
+
+  test("sandbox handles send onePassword in the process body", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const requestSpy = vi
+      .spyOn(service as any, "request")
+      .mockResolvedValueOnce(wireDetail)
+      .mockResolvedValueOnce({ process: rawProcess, secrets: [opBinding] });
+    const sandbox = await service.get("sbx_123");
+    await sandbox.processes.start({ command: "node app.js", onePassword });
+    expect(requestSpy.mock.calls[1][0]).toBe("/sandbox/sbx_123/processes");
+    expect(JSON.parse((requestSpy.mock.calls[1][1] as any).body)).toEqual({
+      command: "node app.js",
+      onePassword,
+    });
+  });
+
+  test("names may be IDs, use any other characters, and end fields with a query", async () => {
+    const start = starter();
+    const api = new SandboxProcessesApi(runtime({}).transport, start);
+    await api.start("x", {
+      onePassword: {
+        token: "op-token",
+        vault: "abcdefghijklmnopqrstuvwxyz",
+        fields: {
+          A: { item: "Café · Login", section: "...x", field: "password" },
+          B: { item: "i", field: "key?ssh-format=openssh&attribute=otp" },
+          C: { item: "x".repeat(256), field: "otp?attribute=totp" },
+        },
+      },
+    });
+    expect(start.start).toHaveBeenCalledTimes(1);
+  });
+
+  const field = (overrides: Record<string, unknown>) => ({
+    ...onePassword,
+    fields: { A: { item: "Login", field: "password", ...overrides } },
+  });
+
+  test.each<[string, unknown, Record<string, unknown>?]>([
+    ["a bad token name", { ...onePassword, token: "-t" }],
+    ["a missing token", { vault: "v", fields: onePassword.fields }],
+    ["a vault with '/'", { ...onePassword, vault: "a/b" }],
+    ["the vault '.'", { ...onePassword, vault: "." }],
+    ["the item '.'", field({ item: "." })],
+    ["the item '..'", field({ item: ".." })],
+    ["the item 'a?b'", field({ item: "a?b" })],
+    ["an empty section", field({ section: "" })],
+    ["the field '..'", field({ field: ".." })],
+    ["the field '.?attribute=otp'", field({ field: ".?attribute=otp" })],
+    ["a field query with an uppercase key", field({ field: "otp?Attr=x" })],
+    ["a field query without a value", field({ field: "otp?attribute=" })],
+    ["a 257-character item", field({ item: "x".repeat(257) })],
+    ["a 257-character field", field({ field: "x".repeat(257) })],
+    ["U+200B in an item", field({ item: "a\u200bb" })],
+    ["U+2028 in a field", field({ field: "a\u2028b" })],
+    ["a newline in a section", field({ section: "a\nb" })],
+    [
+      "a reference over 512 bytes",
+      {
+        ...onePassword,
+        vault: "v".repeat(256),
+        fields: { A: { item: "é".repeat(128), field: "f" } },
+      },
+    ],
+    ["no fields", { ...onePassword, fields: {} }],
+    [
+      "33 fields",
+      {
+        ...onePassword,
+        fields: Object.fromEntries(
+          Array.from({ length: 33 }, (_, i) => [`E${i}`, { item: "i", field: "f" }])
+        ),
+      },
+    ],
+    ["a bad env name", { ...onePassword, fields: { "1BAD": { item: "i", field: "f" } } }],
+    ["an unknown member", { ...onePassword, account: "my" }],
+    ["an unknown field member", field({ reference: "op://v/i/f" })],
+    ["a field that isn't an object", { ...onePassword, fields: { A: "op://v/i/f" } }],
+    ["null", null],
+    ["a variable also in secrets", onePassword, { secrets: { SC_USER: "provider-key" } }],
+    ["a variable also in env", onePassword, { env: { SC_OTP: "123456" } }],
+    [
+      "more than 32 variables with secrets",
+      {
+        ...onePassword,
+        fields: Object.fromEntries(
+          Array.from({ length: 30 }, (_, i) => [`OP${i}`, { item: "i", field: "f" }])
+        ),
+      },
+      { secrets: { A: "a", B: "b", C: "c" } },
+    ],
+  ])("%s is refused locally before any request", async (_name, op, extra = {}) => {
+    const start = starter();
+    const api = new SandboxProcessesApi(runtime({}).transport, start);
+    await expect(
+      api.start({ command: "x", ...extra, onePassword: op as any })
+    ).rejects.toMatchObject({ code: "invalid_request", retryable: false });
+    await expect(
+      api.exec({ command: "x", ...extra, onePassword: op as any })
+    ).rejects.toMatchObject({ code: "invalid_request", retryable: false });
+    expect(start.start).not.toHaveBeenCalled();
+
+    if (!("env" in extra)) {
+      const { service, requestSpy } = createService();
+      await expect(
+        service.create({ imageName: "node", ...extra, onePassword: op as any })
+      ).rejects.toMatchObject({ code: "invalid_request", retryable: false });
+      expect(requestSpy).not.toHaveBeenCalled();
+    }
+  });
+
+  test("clashes name the variable and both sources", async () => {
+    const api = new SandboxProcessesApi(runtime({}).transport, starter());
+    await expect(api.start({ command: "x", env: { SC_OTP: "1" }, onePassword })).rejects.toThrow(
+      "SC_OTP is set by env and by onePassword; a 1Password field's variable must come from it alone"
+    );
+    await expect(
+      api.start({ command: "x", secrets: { SC_USER: "s" }, onePassword })
+    ).rejects.toThrow(/SC_USER is set by secrets and by onePassword/);
+  });
+
+  test("a onePassword binding has a reference and token instead of a secret", () => {
+    const bindings: SandboxResolvedSecret[] = [opBinding, ...resolved];
+    const op = bindings.find(({ source }) => source.type === "onePassword");
+    expect(op && "reference" in op && op.reference).toBe(
+      "op://Dev Vault for Testing/scrapingcourse login/username"
+    );
+    expect(op).not.toHaveProperty("name");
+    expect(op).not.toHaveProperty("overrides");
+    expectTypeOf<keyof SandboxOnePasswordBinding>().toEqualTypeOf<
+      "env" | "reference" | "tokenSecret" | "source"
+    >();
+    expectTypeOf<SandboxSecretSource["type"]>().toEqualTypeOf<
+      "vault" | "secrets" | "onePassword"
+    >();
   });
 });
 

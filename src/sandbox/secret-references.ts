@@ -1,4 +1,5 @@
-import { HyperbrowserError } from "../error";
+import { HyperbrowserError, invalidRequest } from "../error";
+import { isPlainObject } from "../secrets-envelope";
 import { SandboxSecrets } from "../types/sandbox";
 
 const ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
@@ -9,6 +10,17 @@ export const SECRET_NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/;
 /** The largest version number the API stores. */
 export const MAX_SECRET_VERSION = 2_147_483_647;
 const MAX_SECRETS = 32;
+const MAX_ONEPASSWORD_PART_LENGTH = 256;
+/** The longest op:// reference the platform resolves. */
+const MAX_ONEPASSWORD_REFERENCE_BYTES = 512;
+
+// A 1Password name or ID as the platform accepts it in an op:// reference: no
+// "/" or "?", no control, format or line-separator characters, and not "."
+// or "..". A field may end with a query such as ?attribute=otp.
+const ONEPASSWORD_NAME = String.raw`(?!\.{1,2}(?:$|\?))[^/?\p{Cc}\p{Cf}\p{Zl}\p{Zp}]+`;
+const ONEPASSWORD_QUERY = String.raw`(?:\?[a-z-]+=[A-Za-z0-9_-]+(?:&[a-z-]+=[A-Za-z0-9_-]+)*)?`;
+const ONEPASSWORD_PART_PATTERN = new RegExp(`^${ONEPASSWORD_NAME}$`, "u");
+const ONEPASSWORD_FIELD_PATTERN = new RegExp(`^${ONEPASSWORD_NAME}${ONEPASSWORD_QUERY}$`, "u");
 
 /** An environment variable name the API accepts for a secret or a vault entry. */
 export const isSecretEnvName = (name: unknown): name is string =>
@@ -91,5 +103,120 @@ export const assertNoEnvSecretOverlap = (
     throw new HyperbrowserError(
       `Environment variables set by both env and secrets: ${overlap.sort().join(", ")}`
     );
+  }
+};
+
+export interface WireOnePasswordField {
+  item: string;
+  section?: string;
+  field: string;
+}
+
+export interface WireOnePassword {
+  token: string;
+  vault: string;
+  fields: Record<string, WireOnePasswordField>;
+}
+
+const checkOnePasswordPart = (value: unknown, what: string, pattern = ONEPASSWORD_PART_PATTERN) => {
+  if (
+    typeof value !== "string" ||
+    value.length > MAX_ONEPASSWORD_PART_LENGTH ||
+    !pattern.test(value)
+  ) {
+    throw invalidRequest(
+      `${what} must be a 1Password name or ID of 1-${MAX_ONEPASSWORD_PART_LENGTH} characters without '/' or '?'${
+        pattern === ONEPASSWORD_FIELD_PATTERN
+          ? ", optionally with a query such as ?attribute=otp"
+          : ""
+      }`
+    );
+  }
+};
+
+/** The API refuses unknown members, so refuse them before sending. */
+const checkMembers = (value: Record<string, unknown>, allowed: string[], what: string): void => {
+  const unknown = Object.keys(value).filter((key) => !allowed.includes(key));
+  if (unknown.length > 0) {
+    throw invalidRequest(`${what} has unknown members: ${unknown.sort().join(", ")}`);
+  }
+};
+
+/**
+ * Check `onePassword` locally and convert it to the API's shape. Returns
+ * undefined when it isn't given.
+ */
+export const serializeOnePassword = (onePassword: unknown): WireOnePassword | undefined => {
+  if (onePassword === undefined) {
+    return undefined;
+  }
+  if (!isPlainObject(onePassword)) {
+    throw invalidRequest("onePassword must be { token, vault, fields }");
+  }
+  checkMembers(onePassword, ["token", "vault", "fields"], "onePassword");
+  const { token, vault, fields } = onePassword;
+  if (typeof token !== "string" || !SECRET_NAME_PATTERN.test(token)) {
+    throw invalidRequest("onePassword.token must be the name of an op_token secret");
+  }
+  checkOnePasswordPart(vault, "onePassword.vault");
+  if (!isPlainObject(fields)) {
+    throw invalidRequest("onePassword.fields must map environment variable names to fields");
+  }
+  const entries = Object.entries(fields);
+  if (entries.length < 1 || entries.length > MAX_SECRETS) {
+    throw invalidRequest(`onePassword.fields must name 1 to ${MAX_SECRETS} fields`);
+  }
+  const wire: Record<string, WireOnePasswordField> = {};
+  for (const [env, entry] of entries) {
+    if (!isSecretEnvName(env)) {
+      throw invalidRequest(
+        `Invalid environment variable name for a 1Password field: ${(env as string).slice(0, 64)}`
+      );
+    }
+    const what = `onePassword.fields.${env}`;
+    if (!isPlainObject(entry)) {
+      throw invalidRequest(`${what} must be { item, section?, field }`);
+    }
+    checkMembers(entry, ["item", "section", "field"], what);
+    const { item, section, field } = entry;
+    checkOnePasswordPart(item, `${what}.item`);
+    if (section !== undefined) checkOnePasswordPart(section, `${what}.section`);
+    checkOnePasswordPart(field, `${what}.field`, ONEPASSWORD_FIELD_PATTERN);
+    const reference = `op://${[vault, item, ...(section === undefined ? [] : [section]), field].join("/")}`;
+    if (Buffer.byteLength(reference, "utf8") > MAX_ONEPASSWORD_REFERENCE_BYTES) {
+      throw invalidRequest(
+        `${what}: the 1Password reference is more than ${MAX_ONEPASSWORD_REFERENCE_BYTES} bytes`
+      );
+    }
+    wire[env] = (
+      section === undefined ? { item, field } : { item, section, field }
+    ) as WireOnePasswordField;
+  }
+  return { token, vault: vault as string, fields: wire };
+};
+
+/**
+ * A 1Password field's variable must come from it alone: not also from
+ * `secrets` or `env`. A clash with a vault is reported by the API.
+ */
+export const assertOnePasswordAlone = (
+  onePassword: WireOnePassword,
+  { secrets, env }: { secrets?: Record<string, unknown>; env?: Record<string, string> }
+): void => {
+  for (const name of Object.keys(onePassword.fields)) {
+    for (const [what, other] of [
+      ["secrets", secrets],
+      ["env", env],
+    ] as const) {
+      if (other && Object.prototype.hasOwnProperty.call(other, name)) {
+        throw invalidRequest(
+          `${name} is set by ${what} and by onePassword; a 1Password field's variable must come from it alone`
+        );
+      }
+    }
+  }
+  const total = Object.keys(onePassword.fields).length + Object.keys(secrets ?? {}).length;
+  if (total > MAX_SECRETS) {
+    throw invalidRequest(`At most ${MAX_SECRETS} secrets can be delivered at once`);
   }
 };

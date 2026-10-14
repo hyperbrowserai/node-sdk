@@ -9,7 +9,12 @@ import {
   SecretProcessStartPayload,
   SecretProcessStartResponse,
 } from "../sandbox/process";
-import { checkVaultName, serializeSecretReferences } from "../sandbox/secret-references";
+import {
+  assertOnePasswordAlone,
+  checkVaultName,
+  serializeOnePassword,
+  serializeSecretReferences,
+} from "../sandbox/secret-references";
 import { SandboxTerminalApi } from "../sandbox/terminal";
 import {
   buildDockerImageFromDockerfile,
@@ -156,9 +161,16 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
   if (typeof params.imageName === "string") {
     const secrets = serializeSecretReferences(params.secrets);
     const vault = params.vault === undefined ? undefined : checkVaultName(params.vault);
+    const onePassword = serializeOnePassword(params.onePassword);
+    if (onePassword !== undefined) assertOnePasswordAlone(onePassword, { secrets });
     // The startup command with secrets runs only in Firecracker sandboxes.
-    if ((secrets !== undefined || vault !== undefined) && params.runtimeClass === "gvisor-cpu")
-      throw new HyperbrowserError("secrets and vault are not supported with runtimeClass gvisor-cpu");
+    if (
+      (secrets !== undefined || vault !== undefined || onePassword !== undefined) &&
+      params.runtimeClass === "gvisor-cpu"
+    )
+      throw new HyperbrowserError(
+        "secrets, vault and onePassword are not supported with runtimeClass gvisor-cpu"
+      );
     return {
       runtimeClass: params.runtimeClass,
       imageName: params.imageName,
@@ -176,6 +188,7 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
       denyOut: params.denyOut,
       secrets,
       vault,
+      onePassword,
     };
   }
 
@@ -185,11 +198,18 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
     diskMiB?: number;
     secrets?: unknown;
     vault?: unknown;
+    onePassword?: unknown;
   };
 
-  if (snapshotParams.secrets !== undefined || snapshotParams.vault !== undefined) {
+  if (
+    snapshotParams.secrets !== undefined ||
+    snapshotParams.vault !== undefined ||
+    snapshotParams.onePassword !== undefined
+  ) {
     // Snapshot launches do not run a startup command.
-    throw new HyperbrowserError("secrets and vault are only supported for image launches");
+    throw new HyperbrowserError(
+      "secrets, vault and onePassword are only supported for image launches"
+    );
   }
 
   if (
@@ -1447,13 +1467,14 @@ export class SandboxesService extends BaseService {
   }
 
   /**
-   * With secrets or a vault, a create whose result is unknown is never
+   * With secrets, a vault or onePassword, a create whose result is unknown is never
    * retried: the sandbox may exist and be running its startup command with
    * the secrets.
    */
   private async createDetail(params: CreateSandboxParams): Promise<SandboxDetail> {
     const body = serializeCreateSandboxParams(params);
-    const withSecrets = body.secrets !== undefined || body.vault !== undefined;
+    const withSecrets =
+      body.secrets !== undefined || body.vault !== undefined || body.onePassword !== undefined;
     try {
       const detail = await this.request<WireSandboxDetail>("/sandbox", {
         method: "POST",

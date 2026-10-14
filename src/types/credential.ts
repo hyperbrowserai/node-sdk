@@ -6,7 +6,7 @@ export interface SessionCredential {
 
 /**
  * What to attach to a browser session at creation: a secret by name (or
- * `{ secret }`), or `{ vault }` for the secrets a stored vault's entries name.
+ * `{ secret }`), or `{ vault }` for the secrets a vault's entries name.
  */
 export type SessionCredentialSource = string | { secret: string } | { vault: string };
 

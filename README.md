@@ -192,15 +192,48 @@ try {
   with Chrome's password manager off. Fills are recorded in the session event
   log as `credential_filled` and `credential_fill_refused`.
 
-### Vaults and 1Password
+### Vaults
 
 Vaults also deliver environment variables to sandboxes (see
-[Sandboxes](#sandboxes)). A 1Password vault reads its entries from a 1Password
-vault when a sandbox process starts, signing in with a service account token
-stored as an `op_token` secret. Tokens start with `ops_`, but the SDK doesn't
-refuse other values. `op_token` secrets are never environment variables and
-are never filled into browsers, so they take no `allowedOrigins`, and
-1Password vaults can't be attached to browser sessions.
+[Sandboxes](#sandboxes)). A vault names stored secrets and holds no values
+itself.
+
+```typescript
+await client.vaults.create({
+  name: "prod-db",
+  entries: {
+    DB_USER: { name: "db-user" },
+    DB_PASS: { name: "db-pass", version: 2 },
+  },
+});
+await client.vaults.update("prod-db", {
+  entries: { DB_OTP: { name: "db-otp" }, DB_USER: null },
+});
+const vault = await client.vaults.get("prod-db"); // entries include each secret's ID
+const { vaults } = await client.vaults.list({ search: "prod" });
+await client.vaults.delete("prod-db");
+```
+
+- Vault methods take a vault's ID or exact name. Entry names are environment
+  variable names (`^[A-Za-z_][A-Za-z0-9_]*$`, at most 256 characters), and
+  entries are `{ name, version? }` (an omitted version, or `"latest"`, follows
+  the latest). `update` takes a description or entries; an entry set to `null`
+  is removed and entries not given are kept. Limits: 100 vaults per team, 32
+  entries per vault. Vaults use the `secrets.read` and `secrets.manage`
+  scopes, like secrets.
+- A secret a vault uses can't be deleted (`SECRET_IN_USE`), nor a version a
+  vault pins (`SECRET_VERSION_IN_USE`).
+
+### 1Password
+
+Sandbox processes, and an image's startup command, can read fields from a
+1Password vault when they start: pass `onePassword` to `processes.start`,
+`processes.exec` or `sandboxes.create`. It signs in with a service account
+token stored as an `op_token` secret. Tokens start with `ops_`, but the SDK
+doesn't refuse other values. `op_token` secrets are never environment
+variables and are never filled into browsers, so they take no
+`allowedOrigins`. Nothing about the fields is stored, and browser sessions
+can't use 1Password.
 
 ```typescript
 await client.secrets.create({
@@ -208,33 +241,38 @@ await client.secrets.create({
   type: "op_token",
   value: process.env.OP_SERVICE_ACCOUNT_TOKEN!,
 });
-await client.vaults.create({
-  name: "prod-db",
-  source: { type: "1password", tokenSecret: "op-token", vault: "Engineering" },
-  entries: {
+
+const onePassword = {
+  token: "op-token",
+  vault: "Engineering",
+  fields: {
     DB_PASS: { item: "Postgres", section: "prod", field: "password" },
-    DB_OTP: { item: "Postgres", field: "one-time password?attribute=otp" },
+    DB_OTP: { item: "Postgres", field: "one-time password?attribute=totp" },
   },
+};
+const sandbox = await client.sandboxes.create({ imageName: "my-image", onePassword });
+const migrate = await sandbox.exec("node migrate.js", {
+  onePassword,
+  secrets: { API_KEY: "provider-key" },
 });
-await client.vaults.update("prod-db", {
-  entries: { DB_USER: { item: "Postgres", field: "username" }, DB_OTP: null },
-});
-const vault = await client.vaults.get("prod-db"); // entries include their op:// reference
-const { vaults } = await client.vaults.list({ search: "prod" });
-await client.vaults.delete("prod-db");
+const worker = await sandbox.processes.start("node worker.js", { onePassword });
+console.log(worker.secrets); // [{ env: "DB_PASS", reference: "op://Engineering/Postgres/prod/password", tokenSecret: "op-token", source: { type: "onePassword" } }, ...]
 ```
 
-- Vault methods take a vault's ID or exact name. Entry names are environment
-  variable names (`^[A-Za-z_][A-Za-z0-9_]*$`, at most 256 characters). Stored
-  entries are `{ name, version? }` (an omitted version, or `"latest"`, follows
-  the latest); 1Password entries are `{ item, section?, field }`, names or IDs
-  without `/` or `?`, and the field may end with a query such as
-  `?attribute=otp`. A vault's `source` is fixed at creation; `update` can
-  change a 1Password vault's `tokenSecret` and `vault`. Limits: 100 vaults per
-  team, 32 entries per vault. Vaults use the `secrets.read` and
-  `secrets.manage` scopes, like secrets.
-- A secret a vault uses can't be deleted (`SECRET_IN_USE`), nor a version a
-  vault pins (`SECRET_VERSION_IN_USE`).
+- `token` names the `op_token` secret (its latest version is used), `vault`
+  is the 1Password vault's name or ID, and `fields` maps 1 to 32 environment
+  variables to `{ item, section?, field }`. Names and IDs are 1-256
+  characters without `/` or `?`, control or format characters, and not `.` or
+  `..`; the field may end with a query such as `?attribute=totp` or
+  `?ssh-format=openssh`. The full `op://<vault>/<item>/[<section>/]<field>`
+  reference is at most 512 bytes. These are checked locally
+  (`invalid_request`), as are unknown members.
+- A 1Password field's variable must come from it alone: `secrets` or `env`
+  setting it too is refused locally, and a `vault` entry setting it is
+  refused by the API (`SECRET_SOURCES_INVALID`). Together with `vault` and
+  `secrets` it delivers at most 32 variables.
+- Requirements are those of `secrets`: the `secrets.use` scope, and for
+  `sandboxes.create` an image launch with a startup command on Firecracker.
 
 ### Errors
 
@@ -255,19 +293,17 @@ own `details` holds the specifics (such as `error.details.details.origin`).
 | `CREDENTIALS_UNSUPPORTED_RUNTIME`, `CREDENTIALS_SNAPSHOT_PASSWORD_MANAGER_ENABLED` | Session create: secrets need Firecracker, and a snapshot taken with the password manager off. |
 | `SESSION_NOT_ACTIVE` | The session has stopped. |
 | `SECRET_NOT_FOUND`, `SECRET_VERSION_NOT_FOUND` | |
-| `SECRET_TYPE_MISMATCH` | A secret used where its type can't be, such as an `op_token` as an environment variable, vault entry or fill, or another type as a 1Password token. |
+| `SECRET_TYPE_MISMATCH` | A secret used where its type can't be, such as an `op_token` in `secrets`, a vault entry or a fill, or another type as a `onePassword` token. |
 | `SECRET_METADATA_INVALID` | A bad allowed origin, or allowed origins on an `op_token`. |
 | `SECRET_VALUE_INVALID` | The stored value is unusable (such as a bad TOTP seed); add a new version. |
-| `SECRET_IN_USE`, `SECRET_VERSION_IN_USE`, `SECRET_VERSION_IS_LATEST` | Delete refused. |
+| `SECRET_IN_USE`, `SECRET_VERSION_IN_USE`, `SECRET_VERSION_IS_LATEST` | Delete refused: a vault uses the secret or pins the version, or the version is the latest. An `op_token` is never in use. |
 | `SECRET_TOTP_UNSUPPORTED`, `SECRET_ONEPASSWORD_UNSUPPORTED` | The sandbox host predates TOTP or 1Password, so nothing started. Retryable on sandbox create (another host), not on a process start. |
-| `SECRET_ONEPASSWORD_REFERENCE_FAILED` | A 1Password entry couldn't be read; `details` names the variables. |
-| `SECRET_ONEPASSWORD_AUTH_FAILED` | 1Password refused the token. |
+| `SECRET_ONEPASSWORD_REFERENCE_FAILED` | A 1Password field couldn't be read; `details` names the variables. |
+| `SECRET_ONEPASSWORD_AUTH_FAILED` | 1Password refused the token, or it signs in to a host other than `*.1password.com`, `.ca` or `.eu`. |
 | `SECRET_ONEPASSWORD_RATE_LIMITED`, `SECRET_ONEPASSWORD_FAILED` | Retryable. |
-| `SECRET_SOURCES_INVALID` | Bad `vault`/`secrets`/`env` combination, or a vault with no entries. |
+| `SECRET_SOURCES_INVALID` | Bad `vault`/`onePassword`/`secrets`/`env` combination, such as a `onePassword` variable also set by the vault, more than 32 variables, or a vault with no entries. |
 | `VAULT_NOT_FOUND`, `VAULT_ENTRY_NOT_FOUND` | |
 | `VAULT_NAME_TAKEN`, `VAULT_LIMIT_REACHED`, `VAULT_ENTRY_LIMIT_REACHED` | |
-| `VAULT_ENTRY_INVALID` | A bad entry, including one of the wrong kind for the vault's source; the message starts with the entry's name. |
-| `VAULT_SOURCE_INVALID` | A source change on a stored vault, or a 1Password vault used in a browser session. |
 | `SECRETS_FEATURE_DISABLED` | The team doesn't have secrets enabled. |
 
 ### Use with LLM SDKs
@@ -763,11 +799,12 @@ await client.secrets.delete("provider-key");
   (it isn't refreshed); `op_token` secrets can't be variables.
 - `secrets` on a process handle (and `startupSecrets` on a created sandbox)
   report what each variable received, never a value: a stored secret's
-  `name`, `secretId` and `version` (with `secretType: "totp"` for TOTP), or a
-  1Password `reference` and `tokenSecret`; plus its `source` (`{ type:
-  "vault", name }` or `{ type: "secrets" }`) and any `overrides` it replaced.
-  `vault` and `secrets` together hold at most 32 variables, and `env` can't set
-  one of them.
+  `name`, `secretId` and `version` (with `secretType: "totp"` for TOTP), its
+  `source` (`{ type: "vault", name }` or `{ type: "secrets" }`) and any
+  `overrides` it replaced; or for [1Password](#1password) the `reference`,
+  `tokenSecret` and `source: { type: "onePassword" }`. `vault`, `onePassword`
+  and `secrets` together hold at most 32 variables, and `env` can't set one
+  of them.
 - A secret is delivered only to the process it is passed to, but anything
   running as the same user (or root) in the sandbox can read that process's
   environment. The sandbox and its later snapshots are marked
@@ -785,7 +822,7 @@ await client.secrets.delete("provider-key");
   the start (`SECRET_PROCESS_OUTCOME_UNKNOWN`), the error code is
   `secret_process_outcome_unknown` and the API's response, if any, is in
   `details`: check the sandbox's processes before starting it again.
-- The same applies to `sandboxes.create` with `secrets` or `vault`: if the create result
+- The same applies to `sandboxes.create` with `secrets`, `vault` or `onePassword`: if the create result
   can't be confirmed, the error code is `secret_process_outcome_unknown`, since
   a sandbox may already be running its startup command with the secrets. List
   sandboxes before creating it again.
