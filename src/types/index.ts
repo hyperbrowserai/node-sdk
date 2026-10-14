@@ -300,6 +300,25 @@ export {
   CredentialFillPage,
 } from "./credential";
 export {
+  Vault,
+  VaultEntry,
+  VaultSecretEntry,
+  VaultOnePasswordEntry,
+  VaultSource,
+  VaultStoredSource,
+  VaultOnePasswordSource,
+  VaultOtherSource,
+  VaultEntryParams,
+  VaultSecretEntryParams,
+  VaultOnePasswordEntryParams,
+  VaultSourceParams,
+  CreateVaultParams,
+  UpdateVaultParams,
+  VaultListParams,
+  VaultListResponse,
+  VaultDeleteResult,
+} from "./vault";
+export {
   CreateProfileParams,
   ForkProfileParams,
   ProfileResponse,

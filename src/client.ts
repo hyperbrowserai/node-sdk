@@ -19,6 +19,7 @@ import { WebService } from "./services/web";
 import { SandboxesService } from "./services/sandboxes";
 import { VolumesService } from "./services/volumes";
 import { SecretsService } from "./services/secrets";
+import { VaultsService } from "./services/vaults";
 
 import { HyperbrowserError } from "./error";
 export { HyperbrowserError } from "./error";
@@ -47,6 +48,7 @@ export class HyperbrowserClient {
   public readonly sandboxes: SandboxesService;
   public readonly volumes: VolumesService;
   public readonly secrets: SecretsService;
+  public readonly vaults: VaultsService;
 
   constructor(config: HyperbrowserConfig = {}) {
     const apiKey = config.apiKey || process.env["HYPERBROWSER_API_KEY"];
@@ -72,6 +74,7 @@ export class HyperbrowserClient {
     this.sandboxes = new SandboxesService(apiKey, baseUrl, timeout, runtimeProxyOverride);
     this.volumes = new VolumesService(apiKey, baseUrl, timeout);
     this.secrets = new SecretsService(apiKey, baseUrl, timeout);
+    this.vaults = new VaultsService(apiKey, baseUrl, timeout);
 
     this.agents = {
       browserUse: new BrowserUseService(apiKey, baseUrl, timeout),
