@@ -80,9 +80,12 @@ export interface CreateSecretParams {
    * encrypted locally and uploaded.
    *
    * - `"secret"`: any string or bytes.
-   * - `"totp"`: a base32 seed (spaces, lowercase and `=` padding are fine) or
-   *   an `otpauth://totp/...?secret=...` URI, optionally with `algorithm`
-   *   (SHA1, SHA256 or SHA512), `digits` (6 or 8) and `period` (1-300).
+   * - `"totp"`: a base32 seed (spaces, hyphens, lowercase and trailing `=`
+   *   padding are fine) or an `otpauth://totp/...?secret=...` URI, optionally
+   *   with `algorithm` (SHA1, SHA256 or SHA512), `digits` (6 or 8) and
+   *   `period` (1-300). A seed whose length can't be whole base32 (1, 3 or 6
+   *   characters past a multiple of 8) is refused as incompletely copied.
+   *   Seeds under 10 bytes (16 characters) are accepted but unusually short.
    * - `"op_token"`: a 1Password service account token. These start with
    *   `ops_`, but other values are not refused.
    */

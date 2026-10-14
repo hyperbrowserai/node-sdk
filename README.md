@@ -180,10 +180,12 @@ try {
   type.
 - Values are checked locally before anything is sent (`invalid_secret_value`):
   1 byte to 32 KiB of UTF-8 without NUL, and for TOTP a base32 seed (spaces,
-  lowercase and `=` padding are fine) or an `otpauth://totp/` URI with
-  `secret` and optionally `algorithm` (SHA1, SHA256, SHA512), `digits` (6 or 8)
-  and `period` (1-300). A seed under 10 bytes is accepted with a process
-  warning (`HYPERBROWSER_TOTP_SEED_SHORT`). `addVersion` applies the rules of
+  hyphens, lowercase and trailing `=` padding are fine) or an `otpauth://totp/`
+  URI with `secret` and optionally `algorithm` (SHA1, SHA256, SHA512), `digits`
+  (6 or 8) and `period` (1-300). HOTP is not supported, and a seed whose
+  length is 1, 3 or 6 characters past a multiple of 8 is refused as
+  incompletely copied. Seeds under 10 bytes (16 characters) are accepted, but
+  check that a short one was copied whole. `addVersion` applies the rules of
   the secret's type. Other invalid requests fail locally with `invalid_request`.
 - Session create needs the API key scope `secrets.use`; fill also needs
   `browser.sessions.update`. Attaching secrets runs the session on Firecracker

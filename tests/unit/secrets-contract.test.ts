@@ -354,7 +354,9 @@ describe("typed secrets and allowed origins", () => {
   test.each([
     ["base32", SEED],
     ["lowercase with spaces and padding", "jbsw y3dp ehpk 3pxp===="],
-    ["a byte-order mark", `﻿${SEED}`],
+    ["a byte-order mark", `\uFEFF${SEED}`],
+    ["hyphens and surrounding whitespace", "  JBSW-Y3DP-EHPK-3PXP\n"],
+    ["a short seed (5 bytes)", "JBSWY3DP"],
     ["an otpauth URI", `otpauth://totp/GitHub:ada?secret=${SEED}&issuer=GitHub`],
     [
       "an otpauth URI with every option",
@@ -372,8 +374,16 @@ describe("typed secrets and allowed origins", () => {
   test.each([
     ["not base32", "not-a-seed!"],
     ["digits outside base32", "JBSWY3DPEH1K3PXP"],
-    ["an impossible length", "JBSWY3DPE"],
+    ["a length of 1 mod 8", "JBSWY3DPE"],
+    ["a length of 3 mod 8", "JBSWY3DPEHP"],
+    ["a length of 6 mod 8 after spaces, hyphens and padding", "jbsw-y3 dpeh pk3p xpjb swy3=="],
+    ["'=' inside the seed", "JBSW=Y3DPEHPK3PXP"],
+    ["another URI scheme", `https://totp/x?secret=${SEED}`],
     ["a HOTP URI", `otpauth://hotp/x?secret=${SEED}`],
+    ["a tab in the URI", `otpauth://totp/x?secret=JBSWY3DP\tEHPK3PXP`],
+    ["a newline in the URI", `otpauth://totp/x?issuer=a\nb&secret=${SEED}`],
+    ["DEL in the URI", `otpauth://totp/x\u007f?secret=${SEED}`],
+    ["a URI secret with an impossible length", "otpauth://totp/x?secret=JBSWY3DPE"],
     ["a URI without a secret", "otpauth://totp/x?issuer=GitHub"],
     ["an unknown algorithm", `otpauth://totp/x?secret=${SEED}&algorithm=MD5`],
     ["7 digits", `otpauth://totp/x?secret=${SEED}&digits=7`],
@@ -389,20 +399,22 @@ describe("typed secrets and allowed origins", () => {
     expect(calls()).toEqual([]);
   });
 
-  test("a short TOTP seed is accepted with a warning", async () => {
-    const warn = vi.spyOn(process, "emitWarning").mockImplementation(() => undefined);
+  test("short seeds are accepted without writing a warning", async () => {
+    const warn = vi.spyOn(process, "emitWarning");
     try {
       const { service } = mockService(created(totp()));
       await service.create({ name: "github-otp", type: "totp", value: "JBSWY3DP" });
-      expect(warn).toHaveBeenCalledWith(expect.stringMatching(/5 bytes/), {
-        code: "HYPERBROWSER_TOTP_SEED_SHORT",
-      });
-      warn.mockClear();
-      await service.create({ name: "github-otp", type: "totp", value: SEED });
       expect(warn).not.toHaveBeenCalled();
     } finally {
       warn.mockRestore();
     }
+  });
+
+  test("HOTP URIs are refused with their own message", async () => {
+    const { service } = mockService(created(totp()));
+    await expect(
+      service.create({ name: "github-otp", type: "totp", value: `otpauth://hotp/x?secret=${SEED}` })
+    ).rejects.toThrow(/HOTP .* not supported/);
   });
 
   test("op_token values are any string, and op_token secrets can't have allowed origins", async () => {
