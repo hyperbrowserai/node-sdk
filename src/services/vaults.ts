@@ -32,10 +32,11 @@ const rethrow = (error: unknown, message: string): never => {
   throw new HyperbrowserError(message, { cause: error });
 };
 
+/** The API trims a description before checking its length. */
 const checkDescription = (description: unknown): void => {
   if (
     description !== undefined &&
-    (typeof description !== "string" || description.length > MAX_DESCRIPTION_LENGTH)
+    (typeof description !== "string" || description.trim().length > MAX_DESCRIPTION_LENGTH)
   ) {
     throw invalidRequest(
       `description must be a string of at most ${MAX_DESCRIPTION_LENGTH} characters`

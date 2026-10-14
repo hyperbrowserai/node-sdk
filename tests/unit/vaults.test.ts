@@ -184,6 +184,15 @@ describe("vaults service", () => {
     expect(bodies()[3]).toEqual({ entries: { OTP: { name: "github-otp", version: 2 } } });
   });
 
+  test("a description is limited after trimming, as the API does", async () => {
+    const { service, bodies } = mockService((_method, path) =>
+      path === "/vaults" ? listOf(stored()) : stored()
+    );
+    const description = `${"d".repeat(1024)}  `;
+    await service.update("github-login", { description });
+    expect(bodies()[1]).toEqual({ description });
+  });
+
   test.each([
     ["nothing", {}],
     ["only a source", { source: { tokenSecret: "op-token" } }],

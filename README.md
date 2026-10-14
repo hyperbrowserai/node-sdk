@@ -168,8 +168,9 @@ try {
   you need are `filled`. Fill is safe to retry; it is not retried automatically.
 - Without `pageId`, fill considers the tabs whose URL starts with `pageUrl`
   (all tabs when it's not given). If one is left, that's the target. If several
-  are left, it prefers the tabs on an origin every secret allows, then the
-  visible one among them; if more than one still qualifies, it fails with
+  are left, it prefers the tabs on an origin every secret allows (not for an
+  iframe fill, whose tab is usually on another origin), then the visible one
+  among them; if more than one still qualifies, it fails with
   `CREDENTIAL_PAGE_AMBIGUOUS` and the candidates in
   `error.details.details.pages` (`{ pageId, url, title }`). The chosen tab's
   origin is then checked: on any other origin nothing is typed and the fill
@@ -363,7 +364,7 @@ own `details` holds the specifics (such as `error.details.details.origin`).
 | `SECRET_IN_USE`, `SECRET_VERSION_IN_USE`, `SECRET_VERSION_IS_LATEST` | Delete refused: a vault uses the secret or pins the version, or the version is the latest. An `op_token` is never in use. |
 | `SECRET_TOTP_UNSUPPORTED`, `SECRET_ONEPASSWORD_UNSUPPORTED` | The sandbox host predates TOTP or 1Password, so nothing started. Retryable on sandbox create (another host), not on a process start. |
 | `SECRET_ONEPASSWORD_REFERENCE_FAILED` | A 1Password field couldn't be read; `details` names the variables (`envs`), or on a fill the inputs (`selectors`), with `reasons` for each. |
-| `SECRET_ONEPASSWORD_AUTH_FAILED` | 1Password refused the token, or it signs in to a host other than `*.1password.com`, `.ca` or `.eu`. |
+| `SECRET_ONEPASSWORD_AUTH_FAILED` | 1Password refused the token, or the token is malformed or signs in somewhere other than `1password.com`, `.ca` or `.eu` (or their subdomains). |
 | `SECRET_ONEPASSWORD_RATE_LIMITED`, `SECRET_ONEPASSWORD_FAILED` | Retryable. |
 | `SECRET_SOURCES_INVALID` | Bad `vault`/`onePassword`/`secrets`/`env` combination, such as a `onePassword` variable also set by the vault, more than 32 variables, or a vault with no entries. |
 | `VAULT_NOT_FOUND`, `VAULT_ENTRY_NOT_FOUND` | |
