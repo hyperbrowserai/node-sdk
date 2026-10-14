@@ -45,11 +45,13 @@ export { FILL_CREDENTIAL_TOOL_OPENAI } from "./openai";
 export { FILL_CREDENTIAL_TOOL_ANTHROPIC } from "./anthropic";
 export * from "./gemini";
 
-/** What the model passes to `fill_credential`. */
+/** What the model passes to `fill_credential`. Unused options are null. */
 export interface CredentialFillToolParams {
-  credential: string;
-  fields: { field: string; selector: string }[];
+  credential?: string | null;
+  vault?: string | null;
+  fields: { selector: string; field?: string | null }[];
   page_id?: string | null;
+  page_url?: string | null;
   frame_url?: string | null;
 }
 
@@ -149,9 +151,9 @@ export class OpenAICuaTool {
 }
 
 /**
- * Lets a model fill a credential attached to a browser session. The
- * application binds the session; the model chooses only the credential name,
- * fields and selectors, and never sees values.
+ * Lets a model fill a secret, or a vault's entries, attached to a browser
+ * session. The application binds the session; the model chooses only names,
+ * selectors and which tab, and never sees values.
  */
 export class CredentialFillTool {
   static openaiToolDefinition = FILL_CREDENTIAL_TOOL_OPENAI;
@@ -170,20 +172,23 @@ export class CredentialFillTool {
     params: CredentialFillToolParams
   ): Promise<string> {
     try {
-      // Model output is checked by fill; only the known keys are passed on.
-      const input: Partial<CredentialFillToolParams> = params ?? {};
+      // Model output is checked by fill; only the known keys are passed on,
+      // and nulls (strict mode's "not given") are left out.
+      const input: Partial<CredentialFillToolParams> = isPlainObject(params) ? params : {};
+      const given = <T>(value: T | null | undefined): T | undefined =>
+        value === null ? undefined : value;
       const request: FillCredentialParams = {
-        credential: input.credential as string,
+        credential: given(input.credential),
+        vault: given(input.vault),
         fields: (Array.isArray(input.fields)
-          ? input.fields.map((entry) => ({ field: entry?.field, selector: entry?.selector }))
+          ? input.fields.map((entry) =>
+              isPlainObject(entry) ? { selector: entry.selector, field: given(entry.field) } : entry
+            )
           : input.fields) as FillCredentialParams["fields"],
+        pageId: given(input.page_id),
+        pageUrl: given(input.page_url),
+        frameUrl: given(input.frame_url),
       };
-      if (input.page_id !== undefined && input.page_id !== null) {
-        request.pageId = input.page_id;
-      }
-      if (input.frame_url !== undefined && input.frame_url !== null) {
-        request.frame = { url: input.frame_url };
-      }
       return JSON.stringify(await hb.sessions.credentials.fill(sessionId, request));
     } catch (error) {
       if (!(error instanceof HyperbrowserError)) {

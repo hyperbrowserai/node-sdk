@@ -293,6 +293,7 @@ export {
 } from "./secret";
 export {
   SessionCredential,
+  SessionCredentialSource,
   CredentialFillField,
   FillCredentialParams,
   CredentialFillOutcome,
