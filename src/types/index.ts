@@ -274,10 +274,8 @@ export {
 export {
   SecretValue,
   SecretType,
-  CredentialValue,
   SecretBrowserMetadata,
   SecretMetadata,
-  CreateCredentialParams,
   UpdateSecretMetadata,
   SecretsPublicKey,
   SecretsPublicKeyJwk,

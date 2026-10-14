@@ -1,22 +1,15 @@
 import { HyperbrowserError, invalidRequest } from "../error";
 import { MAX_SECRET_VERSION, SECRET_NAME_PATTERN } from "../sandbox/secret-references";
+import { secretPlaintext } from "../secret-values";
+import { isPlainObject, secretValueBytes, SecretsSealer } from "../secrets-envelope";
 import {
-  credentialValueBytes,
-  isPlainObject,
-  secretValueBytes,
-  SecretsSealer,
-} from "../secrets-envelope";
-import {
-  CreateCredentialParams,
   CreateSecretParams,
-  CredentialValue,
   Secret,
   SecretDeleteResult,
   SecretDetail,
   SecretListParams,
   SecretListResponse,
   SecretsPublicKey,
-  SecretType,
   SecretValue,
   SecretVersion,
   SecretVersionDeleteResult,
@@ -32,9 +25,9 @@ const NAME_LOOKUP_LIMIT = MAX_LIST_LIMIT;
 
 const secretPath = (id: string): string => `/secrets/${encodeURIComponent(id)}`;
 
-const SECRET_TYPES: readonly SecretType[] = ["secret", "credential"];
-/** The most allowed origins a credential can have. */
+/** The most allowed origins a secret can have, and the longest one. */
 const MAX_ALLOWED_ORIGINS = 20;
+const MAX_ALLOWED_ORIGIN_LENGTH = 512;
 
 const rethrow = (error: unknown, message: string): never => {
   if (error instanceof HyperbrowserError) {
@@ -43,61 +36,21 @@ const rethrow = (error: unknown, message: string): never => {
   throw new HyperbrowserError(message, { cause: error });
 };
 
-const checkType = (type: unknown): void => {
-  if (type !== undefined && !SECRET_TYPES.includes(type as SecretType)) {
-    throw invalidRequest(`Secret type must be one of ${SECRET_TYPES.join(", ")}`);
-  }
-};
-
 /** Light checks only; the API normalizes origins and reports bad entries. */
 const checkAllowedOrigins = (allowedOrigins: unknown): void => {
   if (
     !Array.isArray(allowedOrigins) ||
     allowedOrigins.length < 1 ||
     allowedOrigins.length > MAX_ALLOWED_ORIGINS ||
-    allowedOrigins.some((origin) => typeof origin !== "string" || !origin.trim())
+    allowedOrigins.some(
+      (origin) =>
+        typeof origin !== "string" || !origin.trim() || origin.length > MAX_ALLOWED_ORIGIN_LENGTH
+    )
   ) {
     throw invalidRequest(
       `allowedOrigins must be 1-${MAX_ALLOWED_ORIGINS} origins such as "https://example.com"`
     );
   }
-};
-
-const isBytesOrString = (value: unknown): value is SecretValue =>
-  typeof value === "string" || value instanceof Uint8Array;
-
-const wrongShape = (message: string): HyperbrowserError =>
-  new HyperbrowserError(message, { code: "invalid_secret_value", retryable: false });
-
-/**
- * Check a value against the platform rules for either shape, so a bad value
- * is reported before anything is fetched or created.
- */
-const valueBytes = (value: SecretValue | CredentialValue): Buffer => {
-  if (isBytesOrString(value)) {
-    return secretValueBytes(value);
-  }
-  if (isPlainObject(value)) {
-    return credentialValueBytes(value as CredentialValue);
-  }
-  throw wrongShape(
-    "Secret value must be a string or bytes, or for a credential an object of field names to strings"
-  );
-};
-
-/** The plaintext stored for a secret of `type`: raw bytes, or a credential's UTF-8 JSON. */
-const versionPlaintext = (type: SecretType, value: SecretValue | CredentialValue): Buffer => {
-  if (type === "credential" && isBytesOrString(value)) {
-    throw wrongShape(
-      "A credential's value must be an object of field names to strings, such as { username, password }"
-    );
-  }
-  if (type !== "credential" && !isBytesOrString(value)) {
-    throw wrongShape(
-      'A secret\'s value must be a string or bytes; create a type "credential" secret for an object of fields'
-    );
-  }
-  return valueBytes(value);
 };
 
 /**
@@ -129,7 +82,9 @@ export class SecretsService extends BaseService {
     ) {
       throw new HyperbrowserError(`limit must be an integer from 1 to ${MAX_LIST_LIMIT}`);
     }
-    checkType(params.type);
+    if (params.type !== undefined && (typeof params.type !== "string" || !params.type)) {
+      throw invalidRequest('type must be a secret type such as "secret" or "totp"');
+    }
     try {
       return await this.request<SecretListResponse>("/secrets", undefined, {
         search: params.search,
@@ -144,23 +99,32 @@ export class SecretsService extends BaseService {
 
   /**
    * Create a secret, and store its first version when `value` is given. The
-   * value and the platform key are checked before the secret is created, so a
-   * bad value never leaves an empty secret behind.
+   * value is checked against its type's rules, and the platform key is
+   * checked, before the secret is created, so a bad value never leaves an
+   * empty secret behind.
    */
   async create(params: CreateSecretParams): Promise<Secret> {
-    const { name, description, type, metadata, value } = params ?? ({} as CreateSecretParams);
+    const { name, description, type, allowedOrigins, value } = params ?? ({} as CreateSecretParams);
     if (typeof name !== "string" || !SECRET_NAME_PATTERN.test(name)) {
       throw new HyperbrowserError(
         "Secret name must be 1-128 letters, digits, '_' or '-', starting with a letter or digit"
       );
     }
-    checkType(type);
-    if (metadata !== undefined && !isPlainObject(metadata)) {
-      throw invalidRequest("Secret metadata must be an object");
+    if (type !== undefined && (typeof type !== "string" || !type)) {
+      throw invalidRequest('type must be "secret", "totp" or "op_token"');
     }
-    const plaintext = value === undefined ? undefined : versionPlaintext(type ?? "secret", value);
+    if (allowedOrigins !== undefined) {
+      if (type === "op_token") {
+        throw invalidRequest(
+          "op_token secrets can't have allowedOrigins: they are never filled into browsers"
+        );
+      }
+      checkAllowedOrigins(allowedOrigins);
+    }
+    const plaintext = value === undefined ? undefined : secretPlaintext(type ?? "secret", value);
     const sealer =
       plaintext === undefined ? undefined : SecretsSealer.fromPublicKey(await this.getPublicKey());
+    const metadata = allowedOrigins === undefined ? undefined : { browser: { allowedOrigins } };
 
     let secret: Secret;
     try {
@@ -229,15 +193,16 @@ export class SecretsService extends BaseService {
   }
 
   /**
-   * Encrypt `value` locally and store it as the secret's next version: a
-   * `CredentialValue` object for credentials, a string or bytes otherwise.
+   * Encrypt `value` locally and store it as the secret's next version. The
+   * value is checked against the rules of the secret's type, such as a TOTP
+   * seed's format, before it is sealed.
    */
-  async addVersion(secret: string, value: SecretValue | CredentialValue): Promise<SecretVersion> {
-    valueBytes(value);
+  async addVersion(secret: string, value: SecretValue): Promise<SecretVersion> {
+    secretValueBytes(value);
     const sealer = SecretsSealer.fromPublicKey(await this.getPublicKey());
     try {
       const resolved = await this.resolve(secret);
-      const plaintext = versionPlaintext(resolved.type ?? "secret", value);
+      const plaintext = secretPlaintext(resolved.type ?? "secret", value);
       return await this.uploadVersion(resolved, sealer, plaintext);
     } catch (error) {
       return rethrow(error, `Failed to add a version to secret ${secret}`);
@@ -245,28 +210,9 @@ export class SecretsService extends BaseService {
   }
 
   /**
-   * Create a website login credential that browser sessions can fill into
-   * pages on `allowedOrigins`, and store its first value. The value is checked
-   * and encrypted locally; it is never returned.
-   */
-  async createCredential(params: CreateCredentialParams): Promise<Secret> {
-    const { name, value, allowedOrigins, description } = params ?? ({} as CreateCredentialParams);
-    if (value === undefined || value === null) {
-      throw wrongShape("A credential needs a value, such as { username, password }");
-    }
-    checkAllowedOrigins(allowedOrigins);
-    return this.create({
-      name,
-      description,
-      type: "credential",
-      metadata: { browser: { allowedOrigins } },
-      value,
-    });
-  }
-
-  /**
-   * Replace the origins a credential may be filled into, or clear them with
-   * `null` (the credential then can't be filled until origins are set again).
+   * Replace the origins a secret may be filled into in browser sessions, or
+   * clear them with `null` (it then can't be filled until origins are set
+   * again). Not for `op_token` secrets.
    */
   async setAllowedOrigins(secret: string, allowedOrigins: string[] | null): Promise<Secret> {
     if (allowedOrigins !== null) {

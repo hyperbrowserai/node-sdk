@@ -2,26 +2,25 @@
 export type SecretValue = string | Uint8Array;
 
 /**
- * `"secret"` values are delivered to sandboxes; `"credential"` values are
- * website logins filled into browser sessions. Fixed at creation.
+ * What a secret's value is, fixed at creation:
+ * - `"secret"`: an opaque value. It can be a sandbox environment variable,
+ *   and once it has allowed origins it can be filled into browser pages.
+ * - `"totp"`: a TOTP seed, as base32 or an `otpauth://totp/` URI. Sandboxes
+ *   and browser fills get its current one-time code, never the seed.
+ * - `"op_token"`: a 1Password service account token, used only by 1Password
+ *   vaults. It is never an environment variable or filled into a page.
  */
-export type SecretType = "secret" | "credential";
-
-/**
- * A credential's value: field names (such as `username` and `password`) to
- * non-empty strings. Keys match `^[a-zA-Z0-9_.-]{1,64}$`.
- */
-export type CredentialValue = Record<string, string>;
+export type SecretType = "secret" | "totp" | "op_token";
 
 export interface SecretBrowserMetadata {
   /**
-   * Origins a credential may be filled into, as `scheme://host[:port]`. A
+   * Origins the secret may be filled into, as `scheme://host[:port]`. A
    * leading `*.` matches any subdomain (not the domain itself).
    */
   allowedOrigins: string[];
 }
 
-/** Plain secrets always have `{}`. */
+/** `{}` until allowed origins are set. */
 export interface SecretMetadata {
   browser?: SecretBrowserMetadata;
   [member: string]: unknown;
@@ -45,7 +44,11 @@ export interface Secret {
   id: string;
   name: string;
   description: string;
-  type: SecretType;
+  /**
+   * A `SecretType`. Typed as a string so secrets of types added later are
+   * still read.
+   */
+  type: string;
   metadata: SecretMetadata;
   /** Bound into every envelope for this secret; the SDK uses it when encrypting. */
   encryptionContext: string;
@@ -71,24 +74,24 @@ export interface CreateSecretParams {
   description?: string;
   /** Defaults to `"secret"`. */
   type?: SecretType;
-  /** For credentials, `{ browser: { allowedOrigins } }`. */
-  metadata?: SecretMetadata;
   /**
-   * The first version's value: a `CredentialValue` object for credentials, a
-   * string or bytes otherwise. It is validated and the platform key is checked
-   * before the secret is created, then encrypted locally and uploaded.
+   * The first version's value. It is checked against the type's rules and
+   * the platform key is checked before the secret is created; then it is
+   * encrypted locally and uploaded.
+   *
+   * - `"secret"`: any string or bytes.
+   * - `"totp"`: a base32 seed (spaces, lowercase and `=` padding are fine) or
+   *   an `otpauth://totp/...?secret=...` URI, optionally with `algorithm`
+   *   (SHA1, SHA256 or SHA512), `digits` (6 or 8) and `period` (1-300).
+   * - `"op_token"`: a 1Password service account token. These start with
+   *   `ops_`, but other values are not refused.
    */
-  value?: SecretValue | CredentialValue;
-}
-
-export interface CreateCredentialParams {
-  /** 1-128 letters, digits, '_' or '-', starting with a letter or digit. */
-  name: string;
-  /** Field names to values, such as `{ username, password }`. */
-  value: CredentialValue;
-  /** Origins the credential may be filled into, such as `["https://github.com"]`. */
-  allowedOrigins: string[];
-  description?: string;
+  value?: SecretValue;
+  /**
+   * Origins the secret may be filled into in browser sessions, such as
+   * `["https://github.com"]`; 1-20 entries. Not for `"op_token"` secrets.
+   */
+  allowedOrigins?: string[];
 }
 
 /**
