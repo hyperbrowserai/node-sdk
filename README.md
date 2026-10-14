@@ -174,7 +174,7 @@ call `sessions.credentials.fill` the same way, then `page.click(...)` or
   non-empty strings whose keys match `^[a-zA-Z0-9_.-]{1,64}$`, at most 32 KiB as
   JSON; they are checked locally (`invalid_secret_value`) before anything is sent.
 - Session create needs the API key scope `secrets.use`; fill also needs
-  `browser-sessions.update`. Attaching credentials runs the session on
+  `browser.sessions.update`. Attaching credentials runs the session on
   Firecracker with Chrome's password manager off. Fills are recorded in the
   session event log as `credential_filled` and `credential_fill_refused`.
 - Fill errors are `HyperbrowserError`s with `code` and `retryable`; `details`
