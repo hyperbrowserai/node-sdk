@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterEach, describe, expect, expectTypeOf, test, vi } from "vitest";
 import { FetchError, Headers, Response } from "node-fetch";
 
 const fetchMock = vi.fn();
@@ -12,6 +12,11 @@ import type { RuntimeTransport } from "../../src/sandbox/base";
 import { SandboxProcessesApi, SecretProcessStarter } from "../../src/sandbox/process";
 import { BaseService } from "../../src/services/base";
 import { SandboxesService } from "../../src/services/sandboxes";
+import type {
+  SandboxOnePasswordBinding,
+  SandboxResolvedSecret,
+  SandboxSecretSource,
+} from "../../src/types";
 
 const wireDetail = {
   id: "sbx_123",
@@ -33,7 +38,9 @@ const rawProcess = {
   started_at: 10,
 };
 
-const resolved = [{ env: "API_KEY", name: "provider-key", secretId: "s1", version: 2 }];
+const resolved: SandboxResolvedSecret[] = [
+  { env: "API_KEY", name: "provider-key", secretId: "s1", version: 2, source: { type: "secrets" } },
+];
 
 const result = {
   id: "proc_1",
@@ -418,6 +425,244 @@ describe("processes with secrets", () => {
       command: "node app.js",
       secrets: { API_KEY: { name: "provider-key" } },
     });
+  });
+});
+
+describe("vaults in sandboxes", () => {
+  afterEach(() => fetchMock.mockReset());
+
+  const vaultBindings: SandboxResolvedSecret[] = [
+    {
+      env: "API_KEY",
+      name: "provider-key",
+      secretId: "s1",
+      version: 2,
+      source: { type: "secrets" },
+      overrides: [{ type: "vault", name: "app-env" }],
+    },
+    {
+      env: "OTP",
+      name: "github-otp",
+      secretId: "s2",
+      version: 1,
+      secretType: "totp",
+      source: { type: "vault", name: "app-env" },
+    },
+    {
+      env: "DB_PASS",
+      reference: "op://Engineering/Postgres/prod/password",
+      tokenSecret: "op-token",
+      source: { type: "onePassword" },
+    },
+  ];
+
+  test("image launches send the vault and report the startup bindings", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const requestSpy = vi
+      .spyOn(service as any, "request")
+      .mockResolvedValue({ ...wireDetail, startupSecrets: vaultBindings });
+
+    const sandbox = await service.create({
+      imageName: "node",
+      vault: "app-env",
+      secrets: { API_KEY: "provider-key" },
+    });
+
+    const body = JSON.parse((requestSpy.mock.calls[0][1] as any).body);
+    expect(body).toMatchObject({
+      vault: "app-env",
+      secrets: { API_KEY: { name: "provider-key" } },
+    });
+    expect(sandbox.toJSON().startupSecrets).toEqual(vaultBindings);
+  });
+
+  test("startupSecrets survive a refresh of the handle", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    vi.spyOn(service as any, "request")
+      .mockResolvedValueOnce({ ...wireDetail, startupSecrets: vaultBindings })
+      .mockResolvedValueOnce({ ...wireDetail, status: "active" });
+    const sandbox = await service.create({ imageName: "node", vault: "app-env" });
+    await sandbox.info();
+    expect(sandbox.toJSON().startupSecrets).toEqual(vaultBindings);
+  });
+
+  test("vault launch restrictions are checked locally", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue(wireDetail);
+    await expect(service.create({ snapshotName: "snap", vault: "app-env" } as any)).rejects.toThrow(
+      /only supported for image launches/
+    );
+    await expect(
+      service.create({ imageName: "node", runtimeClass: "gvisor-cpu", vault: "app-env" })
+    ).rejects.toThrow(/not supported with runtimeClass gvisor-cpu/);
+    expect(requestSpy).not.toHaveBeenCalled();
+  });
+
+  test("a timed-out create with only a vault is an unknown outcome", async () => {
+    fetchMock.mockRejectedValue(new FetchError("network timeout", "request-timeout"));
+    const error = await new SandboxesService("test-key", "https://api.example.com", 1_000)
+      .create({ imageName: "node", vault: "app-env" })
+      .catch((e) => e);
+    expect(error).toMatchObject({ code: "secret_process_outcome_unknown", retryable: false });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  test("a process with only a vault starts through the control API", async () => {
+    const start = starter(async () => ({ process: rawProcess, secrets: vaultBindings }));
+    const { transport, openSSE } = runtime({});
+    const api = new SandboxProcessesApi(transport, start);
+
+    const handle = await api.start("node app.js", {
+      env: { NODE_ENV: "production" },
+      vault: "app-env",
+      secrets: {},
+    });
+
+    expect(openSSE).not.toHaveBeenCalled();
+    expect(start.start.mock.calls[0][0]).toEqual({
+      command: "node app.js",
+      env: { NODE_ENV: "production" },
+      vault: "app-env",
+    });
+    expect(handle.secrets).toEqual(vaultBindings);
+
+    expect(start.start).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("1Password in sandboxes", () => {
+  const onePassword = {
+    token: "op-token",
+    vault: "Dev Vault for Testing",
+    fields: {
+      SC_USER: { item: "scrapingcourse login", field: "username" },
+      SC_OTP: { item: "scrapingcourse login", section: "Security", field: "otp?attribute=totp" },
+    },
+  };
+
+  const opBinding: SandboxResolvedSecret = {
+    env: "SC_USER",
+    reference: "op://Dev Vault for Testing/scrapingcourse login/username",
+    tokenSecret: "op-token",
+    source: { type: "onePassword" },
+  };
+
+  const createService = () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const requestSpy = vi
+      .spyOn(service as any, "request")
+      .mockResolvedValue({ ...wireDetail, startupSecrets: [opBinding] });
+    return { service, requestSpy };
+  };
+
+  test("image launches send onePassword next to vault and secrets", async () => {
+    const { service, requestSpy } = createService();
+    const sandbox = await service.create({
+      imageName: "node",
+      vault: "app-env",
+      secrets: { API_KEY: "provider-key" },
+      onePassword,
+    });
+    const body = JSON.parse((requestSpy.mock.calls[0][1] as any).body);
+    expect(body).toMatchObject({
+      vault: "app-env",
+      secrets: { API_KEY: { name: "provider-key" } },
+      onePassword,
+    });
+    expect(sandbox.toJSON().startupSecrets).toEqual([opBinding]);
+  });
+
+  test("onePassword is only for Firecracker image launches", async () => {
+    const { service, requestSpy } = createService();
+    await expect(service.create({ snapshotName: "snap", onePassword } as any)).rejects.toThrow(
+      /only supported for image launches/
+    );
+    await expect(
+      service.create({ imageName: "node", runtimeClass: "gvisor-cpu", onePassword })
+    ).rejects.toThrow(/not supported with runtimeClass gvisor-cpu/);
+    expect(requestSpy).not.toHaveBeenCalled();
+  });
+
+  test("a timed-out create with only onePassword is an unknown outcome", async () => {
+    fetchMock.mockRejectedValue(new FetchError("network timeout", "request-timeout"));
+    const error = await new SandboxesService("test-key", "https://api.example.com", 1_000)
+      .create({ imageName: "node", onePassword })
+      .catch((e) => e);
+    expect(error).toMatchObject({ code: "secret_process_outcome_unknown", retryable: false });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    fetchMock.mockReset();
+  });
+
+  test("process start and exec send onePassword through the control API", async () => {
+    const start = starter(async () => ({ process: rawProcess, secrets: [opBinding] }));
+    const { transport, openSSE } = runtime({
+      "/sandbox/processes/proc_1/stdin": [{}],
+      "/sandbox/processes/proc_1/wait": [{ result }],
+    });
+    const api = new SandboxProcessesApi(transport, start);
+
+    const handle = await api.start("node app.js", { env: { NODE_ENV: "test" }, onePassword });
+    expect(handle.secrets).toEqual([opBinding]);
+    await api.exec({ command: "node app.js", onePassword, secrets: {} });
+
+    expect(openSSE).not.toHaveBeenCalled();
+    expect(start.start.mock.calls.map(([payload]) => payload)).toEqual([
+      { command: "node app.js", env: { NODE_ENV: "test" }, onePassword },
+      { command: "node app.js", onePassword },
+    ]);
+  });
+
+  test("sandbox handles send onePassword in the process body", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const requestSpy = vi
+      .spyOn(service as any, "request")
+      .mockResolvedValueOnce(wireDetail)
+      .mockResolvedValueOnce({ process: rawProcess, secrets: [opBinding] });
+    const sandbox = await service.get("sbx_123");
+    await sandbox.processes.start({ command: "node app.js", onePassword });
+    expect(requestSpy.mock.calls[1][0]).toBe("/sandbox/sbx_123/processes");
+    expect(JSON.parse((requestSpy.mock.calls[1][1] as any).body)).toEqual({
+      command: "node app.js",
+      onePassword,
+    });
+  });
+
+  test("names may be IDs, use any other characters, and end fields with a query", async () => {
+    const start = starter();
+    const api = new SandboxProcessesApi(runtime({}).transport, start);
+    await api.start("x", {
+      onePassword: {
+        token: "op-token",
+        vault: "abcdefghijklmnopqrstuvwxyz",
+        fields: {
+          A: { item: "Café · Login", section: "...x", field: "password" },
+          B: { item: "i", field: "key?ssh-format=openssh&attribute=otp" },
+          C: { item: "x".repeat(256), field: "otp?attribute=totp" },
+        },
+      },
+    });
+    expect(start.start).toHaveBeenCalledTimes(1);
+  });
+
+  const field = (overrides: Record<string, unknown>) => ({
+    ...onePassword,
+    fields: { A: { item: "Login", field: "password", ...overrides } },
+  });
+
+  test("a onePassword binding has a reference and token instead of a secret", () => {
+    const bindings: SandboxResolvedSecret[] = [opBinding, ...resolved];
+    const op = bindings.find(({ source }) => source.type === "onePassword");
+    expect(op && "reference" in op && op.reference).toBe(
+      "op://Dev Vault for Testing/scrapingcourse login/username"
+    );
+    expect(op).not.toHaveProperty("name");
+    expect(op).not.toHaveProperty("overrides");
+    expectTypeOf<keyof SandboxOnePasswordBinding>().toEqualTypeOf<
+      "env" | "reference" | "tokenSecret" | "source"
+    >();
+    expectTypeOf<SandboxSecretSource["type"]>().toEqualTypeOf<
+      "vault" | "secrets" | "onePassword"
+    >();
   });
 });
 

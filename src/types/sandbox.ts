@@ -75,6 +75,8 @@ export interface Sandbox {
 export interface SandboxDetail extends Sandbox {
   token: string | null;
   tokenExpiresAt: string | null;
+  /** On create with `secrets`, `vault` or `onePassword`: what the startup command received. */
+  startupSecrets?: SandboxResolvedSecret[];
 }
 
 export type SandboxVolumeMountType = "rw" | "ro";
@@ -93,13 +95,69 @@ export type SandboxSecretReference =
 /** Environment variable name to secret, at most 32 per process or sandbox. */
 export type SandboxSecrets = Record<string, SandboxSecretReference>;
 
-/** The secret version an environment variable received. */
-export interface SandboxResolvedSecret {
+/**
+ * Fields of one 1Password vault to deliver as environment variables, read
+ * with a service account token kept as an `op_token` secret when the process
+ * starts. Nothing about it is stored.
+ */
+export interface SandboxOnePassword {
+  /** The name of the `op_token` secret; its latest version is used. */
+  token: string;
+  /** The 1Password vault's name or ID. */
+  vault: string;
+  /**
+   * Environment variable name to field, 1-32. A variable set here can't also
+   * be set by `vault`, `secrets` or `env`.
+   */
+  fields: Record<string, SandboxOnePasswordField>;
+}
+
+/**
+ * A field of an item in the 1Password vault. Names and IDs are 1-256
+ * characters without '/' or '?', and not "." or "..". The field may end
+ * with a query such as `?attribute=totp`.
+ */
+export interface SandboxOnePasswordField {
+  /** The item's name or ID. */
+  item: string;
+  /** The section's name or ID, when the field is in one. */
+  section?: string;
+  /** The field's name or ID, optionally with a query such as `?attribute=otp`. */
+  field: string;
+}
+
+/** Where a delivered variable came from: a vault, `onePassword` or the request's `secrets`. */
+export type SandboxSecretSource =
+  | { type: "vault"; name: string }
+  | { type: "secrets" }
+  | { type: "onePassword" };
+
+/** What a variable from a vault or `secrets` received: a stored secret's version. */
+export interface SandboxStoredSecretBinding {
   env: string;
+  /** The stored secret's name. */
   name: string;
   secretId: string;
   version: number;
+  /** `"totp"` when the variable holds a TOTP secret's code from process start. */
+  secretType?: string;
+  source: { type: "vault"; name: string } | { type: "secrets" };
+  /** Earlier sources that set the same variable and were overridden, oldest first. */
+  overrides?: SandboxSecretSource[];
 }
+
+/** What a variable from `onePassword` received: the `op://` reference that was read. */
+export interface SandboxOnePasswordBinding {
+  env: string;
+  /** The 1Password reference, such as `op://Engineering/Postgres/password`. */
+  reference: string;
+  /** The name of the `op_token` secret that signed in to 1Password. */
+  tokenSecret: string;
+  source: { type: "onePassword" };
+}
+
+/** What an environment variable received. Never a value. */
+export type SandboxResolvedSecret = SandboxStoredSecretBinding | SandboxOnePasswordBinding;
 
 export interface SandboxVolumeMount {
   id: string;
@@ -129,6 +187,8 @@ export type CreateSandboxParams =
       memoryMiB?: never;
       diskMiB?: never;
       secrets?: never;
+      vault?: never;
+      onePassword?: never;
     })
   | (SandboxCreateCommonParams & {
       snapshotName?: never;
@@ -144,6 +204,14 @@ export type CreateSandboxParams =
        * "gvisor-cpu"`. The sandbox is marked as containing secrets.
        */
       secrets?: SandboxSecrets;
+      /**
+       * A vault, by name, whose entries become the startup command's
+       * environment variables; `secrets` is merged over it and wins on a
+       * clash. Same requirements as `secrets`.
+       */
+      vault?: string;
+      /** 1Password fields for the startup command. Same requirements as `secrets`. */
+      onePassword?: SandboxOnePassword;
     });
 
 export interface SandboxListParams {
@@ -532,6 +600,19 @@ export interface SandboxExecParams {
    * start stream, so `maxOutputBytes` does not apply.
    */
   secrets?: SandboxSecrets;
+  /**
+   * A vault, by name, whose entries become environment variables of this
+   * process, delivered like `secrets`. `secrets` is merged over it and wins
+   * on a clash; `env` can't set a variable either of them sets. Together
+   * they hold at most 32 variables.
+   */
+  vault?: string;
+  /**
+   * Fields of a 1Password vault, read with an `op_token` secret when the
+   * process starts and delivered like `secrets`. A variable set here can't
+   * also be set by `vault`, `secrets` or `env`.
+   */
+  onePassword?: SandboxOnePassword;
   /** @deprecated Ignored for process APIs. */
   useShell?: boolean;
 }

@@ -181,6 +181,11 @@ export {
   SandboxSecretReference,
   SandboxSecrets,
   SandboxResolvedSecret,
+  SandboxStoredSecretBinding,
+  SandboxOnePasswordBinding,
+  SandboxSecretSource,
+  SandboxOnePassword,
+  SandboxOnePasswordField,
   SandboxListParams,
   SandboxListResponse,
   SandboxImageSource,
@@ -273,6 +278,10 @@ export {
 } from "./volume";
 export {
   SecretValue,
+  SecretType,
+  SecretBrowserMetadata,
+  SecretMetadata,
+  UpdateSecretMetadata,
   SecretsPublicKey,
   SecretsPublicKeyJwk,
   Secret,
@@ -285,6 +294,28 @@ export {
   SecretDeleteResult,
   SecretVersionDeleteResult,
 } from "./secret";
+export {
+  SessionCredential,
+  SessionCredentialSource,
+  CredentialFillField,
+  CredentialFillRef,
+  CredentialFillOnePassword,
+  FillCredentialParams,
+  CredentialFillOutcome,
+  CredentialFillFieldResult,
+  CredentialFillResult,
+  CredentialFillPage,
+} from "./credential";
+export {
+  Vault,
+  VaultEntry,
+  VaultEntryParams,
+  CreateVaultParams,
+  UpdateVaultParams,
+  VaultListParams,
+  VaultListResponse,
+  VaultDeleteResult,
+} from "./vault";
 export {
   CreateProfileParams,
   ForkProfileParams,

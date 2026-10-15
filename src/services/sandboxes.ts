@@ -155,9 +155,16 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
     throw new HyperbrowserError("Unsupported sandbox runtimeClass");
   if (typeof params.imageName === "string") {
     const secrets = serializeSecretReferences(params.secrets);
+    const vault = params.vault;
+    const onePassword = params.onePassword;
     // The startup command with secrets runs only in Firecracker sandboxes.
-    if (secrets !== undefined && params.runtimeClass === "gvisor-cpu")
-      throw new HyperbrowserError("secrets are not supported with runtimeClass gvisor-cpu");
+    if (
+      (secrets !== undefined || vault !== undefined || onePassword !== undefined) &&
+      params.runtimeClass === "gvisor-cpu"
+    )
+      throw new HyperbrowserError(
+        "secrets, vault and onePassword are not supported with runtimeClass gvisor-cpu"
+      );
     return {
       runtimeClass: params.runtimeClass,
       imageName: params.imageName,
@@ -174,6 +181,8 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
       allowOut: params.allowOut,
       denyOut: params.denyOut,
       secrets,
+      vault,
+      onePassword,
     };
   }
 
@@ -182,11 +191,19 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
     memoryMiB?: number;
     diskMiB?: number;
     secrets?: unknown;
+    vault?: unknown;
+    onePassword?: unknown;
   };
 
-  if (snapshotParams.secrets !== undefined) {
+  if (
+    snapshotParams.secrets !== undefined ||
+    snapshotParams.vault !== undefined ||
+    snapshotParams.onePassword !== undefined
+  ) {
     // Snapshot launches do not run a startup command.
-    throw new HyperbrowserError("secrets are only supported for image launches");
+    throw new HyperbrowserError(
+      "secrets, vault and onePassword are only supported for image launches"
+    );
   }
 
   if (
@@ -499,7 +516,9 @@ export class SandboxHandle {
   }
 
   private hydrate(detail: SandboxDetail) {
-    this.detail = detail;
+    // Only the create response reports what the startup command received.
+    const startupSecrets = detail.startupSecrets ?? this.detail?.startupSecrets;
+    this.detail = startupSecrets === undefined ? detail : { ...detail, startupSecrets };
     this.runtimeSession = SandboxHandle.toRuntimeSession(detail);
   }
 
@@ -1442,25 +1461,25 @@ export class SandboxesService extends BaseService {
   }
 
   /**
-   * With secrets, a create whose result is unknown is never retried: the
-   * sandbox may exist and be running its startup command with the secrets.
+   * With secrets, a vault or onePassword, a create whose result is unknown is never
+   * retried: the sandbox may exist and be running its startup command with
+   * the secrets.
    */
   private async createDetail(params: CreateSandboxParams): Promise<SandboxDetail> {
     const body = serializeCreateSandboxParams(params);
+    const withSecrets =
+      body.secrets !== undefined || body.vault !== undefined || body.onePassword !== undefined;
     try {
       const detail = await this.request<WireSandboxDetail>("/sandbox", {
         method: "POST",
         body: JSON.stringify(body),
       });
-      if (
-        body.secrets !== undefined &&
-        (typeof detail?.id !== "string" || !detail.id.trim())
-      ) {
+      if (withSecrets && (typeof detail?.id !== "string" || !detail.id.trim())) {
         throw new Error("The API accepted the create but returned no sandbox ID");
       }
       return normalizeSandboxDetail(detail);
     } catch (error) {
-      if (body.secrets !== undefined && requestMayHaveArrived(error)) {
+      if (withSecrets && requestMayHaveArrived(error)) {
         throw new HyperbrowserError(
           `could not confirm the create result: ${
             error instanceof Error

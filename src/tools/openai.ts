@@ -4,6 +4,8 @@ import {
   CLAUDE_COMPUTER_USE_SCHEMA,
   CRAWL_SCHEMA,
   EXTRACT_SCHEMA,
+  FILL_CREDENTIAL_DESCRIPTION,
+  FILL_CREDENTIAL_SCHEMA,
   OPENAI_CUA_DESCRIPTION,
   OPENAI_CUA_SCHEMA,
   SCRAPE_SCHEMA,
@@ -123,6 +125,16 @@ export const OPENAI_CUA_TOOL_OPENAI: ChatCompletionTool = {
     name: "openai_cua",
     description: OPENAI_CUA_DESCRIPTION,
     parameters: OPENAI_CUA_SCHEMA,
+    strict: true,
+  },
+};
+
+export const FILL_CREDENTIAL_TOOL_OPENAI: ChatCompletionTool = {
+  type: "function",
+  function: {
+    name: "fill_credential",
+    description: FILL_CREDENTIAL_DESCRIPTION,
+    parameters: FILL_CREDENTIAL_SCHEMA,
     strict: true,
   },
 };

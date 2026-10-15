@@ -8,7 +8,8 @@ export const MAX_SECRET_VALUE_BYTES = 32 * 1024;
 const MIN_SECRETS_KEY_BITS = 3072;
 const SECRETS_KEY_EXPONENT = 65537;
 
-const invalid = (message: string): HyperbrowserError =>
+/** @internal A value the platform would refuse. Messages never include the value. */
+export const invalidSecretValue = (message: string): HyperbrowserError =>
   new HyperbrowserError(message, { code: "invalid_secret_value", retryable: false });
 
 const base64Url = (data: Buffer | Uint8Array): string => Buffer.from(data).toString("base64url");
@@ -19,24 +20,31 @@ const base64Url = (data: Buffer | Uint8Array): string => Buffer.from(data).toStr
  */
 export const secretValueBytes = (value: SecretValue): Buffer => {
   if (typeof value !== "string" && !(value instanceof Uint8Array)) {
-    throw invalid("Secret value must be a string or bytes");
+    throw invalidSecretValue("Secret value must be a string or bytes");
   }
   const bytes = Buffer.from(value);
   if (bytes.length === 0) {
-    throw invalid("Secret value is empty");
+    throw invalidSecretValue("Secret value is empty");
   }
   if (bytes.length > MAX_SECRET_VALUE_BYTES) {
-    throw invalid(`Secret value is more than ${MAX_SECRET_VALUE_BYTES} bytes`);
+    throw invalidSecretValue(`Secret value is more than ${MAX_SECRET_VALUE_BYTES} bytes`);
   }
   if (bytes.includes(0)) {
-    throw invalid("Secret value must not contain NUL bytes");
+    throw invalidSecretValue("Secret value must not contain NUL bytes");
   }
   try {
     new TextDecoder("utf-8", { fatal: true }).decode(bytes);
   } catch {
-    throw invalid("Secret value must be valid UTF-8");
+    throw invalidSecretValue("Secret value must be valid UTF-8");
   }
   return bytes;
+};
+
+/** A plain object, as opposed to an array, bytes or a class instance. */
+export const isPlainObject = (value: unknown): value is Record<string, unknown> => {
+  if (value === null || typeof value !== "object") return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 };
 
 const minimalBytes = (value: Buffer): Buffer => {

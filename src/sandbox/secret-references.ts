@@ -2,10 +2,19 @@ import { HyperbrowserError } from "../error";
 import { SandboxSecrets } from "../types/sandbox";
 
 const ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+/** The longest environment variable name the API stores. */
+const MAX_ENV_NAME_LENGTH = 256;
+/** Names of secrets and vaults. */
 export const SECRET_NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/;
 /** The largest version number the API stores. */
 export const MAX_SECRET_VERSION = 2_147_483_647;
 const MAX_SECRETS = 32;
+/** An environment variable name the API accepts for a secret or a vault entry. */
+export const isSecretEnvName = (name: unknown): name is string =>
+  typeof name === "string" &&
+  name.length <= MAX_ENV_NAME_LENGTH &&
+  ENV_NAME_PATTERN.test(name) &&
+  name !== "__proto__";
 
 export interface WireSecretReference {
   name: string;
@@ -34,7 +43,7 @@ export const serializeSecretReferences = (
   }
   const wire: Record<string, WireSecretReference> = {};
   for (const [env, reference] of entries) {
-    if (!ENV_NAME_PATTERN.test(env) || env === "__proto__") {
+    if (!isSecretEnvName(env)) {
       throw new HyperbrowserError(`Invalid environment variable name for a secret: ${env}`);
     }
     const { name, version } =
@@ -72,3 +81,5 @@ export const assertNoEnvSecretOverlap = (
     );
   }
 };
+
+export type { SandboxOnePassword as WireOnePassword } from "../types/sandbox";
