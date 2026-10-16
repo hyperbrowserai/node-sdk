@@ -147,6 +147,17 @@ describe("sandbox process output collection", () => {
     expect(transport.calls).toHaveLength(1);
   });
 
+  test("output limit error reports the limit and bytes received", async () => {
+    const transport = new FakeTransport([output(1, Buffer.from("too much")), done(1)] as RuntimeSSEEvent[]);
+    const error = await new SandboxProcessesApi(transport.asTransport())
+      .exec("test", { maxOutputBytes: 4 })
+      .then(() => null, (e: unknown) => e);
+    const failure = error as HyperbrowserError;
+    expect(failure.code).toBe("output_limit_exceeded");
+    expect(failure.details).toMatchObject({ max_output_bytes: 4, received_bytes: 8 });
+    expect(failure.message).toContain("8 bytes received, limit 4");
+  });
+
   test("wait timeout keeps the collector alive", async () => {
     const transport = new FakeTransport([output(1, Buffer.from("later")), done(1)]);
     transport.gate = new Gate();
