@@ -46,12 +46,17 @@ export type BrowserUseLlm =
   | "gpt-5"
   | "gpt-5-mini"
   | "claude-sonnet-5"
-  | "claude-sonnet-4-5"
   | "claude-sonnet-4-6"
   | "claude-haiku-5-5"
+  /** @deprecated Retires November 30, 2026; use "claude-sonnet-5". */
+  | "claude-sonnet-4-5"
+  /** @deprecated Retired; the API maps this to "claude-sonnet-5". */
   | "claude-sonnet-4-20250514"
+  /** @deprecated Retired; the API maps this to "claude-sonnet-5". */
   | "claude-3-7-sonnet-20250219"
+  /** @deprecated Retired; the API maps this to "claude-sonnet-5". */
   | "claude-3-5-sonnet-20241022"
+  /** @deprecated Retired; the API maps this to "claude-sonnet-5". */
   | "claude-3-5-haiku-20241022"
   | "gemini-2.0-flash"
   | "gemini-2.5-flash"
@@ -61,18 +66,25 @@ export type ClaudeComputerUseLlm =
   | "claude-opus-5-5"
   | "claude-fable-5-1"
   | "claude-opus-5"
-  | "claude-opus-4-5"
-  | "claude-opus-4-6"
-  | "claude-opus-4-7"
   | "claude-opus-4-8"
-  | "claude-haiku-5-5"
-  | "claude-haiku-4-5-20251001"
+  | "claude-opus-4-7"
+  | "claude-opus-4-6"
+  | "claude-opus-4-5"
   | "claude-sonnet-5-5"
   | "claude-sonnet-5"
-  | "claude-sonnet-4-5"
   | "claude-sonnet-4-6"
+  | "claude-haiku-5-5"
+  | "claude-haiku-4-5-20251001"
+  /** @deprecated Retires November 30, 2026; use "claude-sonnet-5-5". */
+  | "claude-sonnet-4-5"
+  /** @deprecated Retired; the API maps this to "claude-sonnet-4-6". */
   | "claude-sonnet-4-20250514"
-  | "claude-3-7-sonnet-20250219";
+  /** @deprecated Retired; the API maps this to "claude-sonnet-4-6". */
+  | "claude-3-7-sonnet-20250219"
+  /** @deprecated Retired; the API maps this to "claude-opus-4-8". */
+  | "claude-opus-4-20250514"
+  /** @deprecated Retired legacy ID; the API maps this to "claude-opus-4-8". */
+  | "claude-4-opus-20250514";
 
 export type ClaudeComputerUseReasoningEffort = "low" | "medium" | "high" | "xhigh" | "max";
 
@@ -106,9 +118,10 @@ export type HyperAgentLlm =
   | "gpt-4.1-mini"
   | "gpt-4.1-nano"
   | "claude-sonnet-5"
-  | "claude-sonnet-4-5"
   | "claude-sonnet-4-6"
   | "claude-haiku-5-5"
+  /** @deprecated Retires November 30, 2026; use "claude-sonnet-5". */
+  | "claude-sonnet-4-5"
   | "gemini-2.5-flash"
   | "gemini-3.8-flash"
   | "gemini-3.7-flash"
