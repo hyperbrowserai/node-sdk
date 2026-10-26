@@ -38,6 +38,7 @@ import {
   StartSandboxFromSnapshotParams,
   SandboxRuntimeSession,
   SandboxRuntimeTarget,
+  SandboxWaitOptions,
   GetOrBuildSandboxImageOptions,
   ReuseSandboxDockerImageParams,
   SandboxDockerImageReuseResult,
@@ -70,6 +71,7 @@ import {
   SandboxSnapshotSummary,
   SandboxUnexposeResult,
 } from "../types/sandbox";
+import { ComputerActionParams, ComputerActionResponse } from "../types/computer-action";
 import { retryDelay } from "../retry";
 import { optionalInteger, optionalNumber } from "./normalize";
 import { BaseService } from "./base";
@@ -110,7 +112,13 @@ const normalizeSandbox = (sandbox: WireSandbox): Sandbox => {
     creditsUsed: optionalNumber(rest.creditsUsed) ?? null,
     exposedPorts: rest.exposedPorts ?? [],
     containsSecrets: rest.containsSecrets ?? false,
-    network: rest.network ? { ...rest.network, allowOut: rest.network.allowOut ?? [], denyOut: rest.network.denyOut ?? [] } : rest.network,
+    network: rest.network
+      ? {
+          ...rest.network,
+          allowOut: rest.network.allowOut ?? [],
+          denyOut: rest.network.denyOut ?? [],
+        }
+      : rest.network,
   };
 };
 
@@ -153,6 +161,46 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
     params.runtimeClass !== "gvisor-cpu"
   )
     throw new HyperbrowserError("Unsupported sandbox runtimeClass");
+  if (params.gpu === undefined) {
+    if (params.gpuCount !== undefined || params.preempt !== undefined)
+      throw new HyperbrowserError("gpuCount and preempt require gpu");
+    if (params.runtimeClass === "gvisor-cpu")
+      throw new HyperbrowserError("runtimeClass gvisor-cpu requires gpu");
+  } else {
+    if (
+      ![
+        "L4",
+        "A10G",
+        "L40S",
+        "L40",
+        "H100",
+        "H200",
+        "B200",
+        "B300",
+        "A100-40GB",
+        "A100-80GB",
+        "RTX-PRO-6000",
+      ].includes(params.gpu)
+    )
+      throw new HyperbrowserError("Unsupported GPU type");
+    if (params.runtimeClass === "firecracker")
+      throw new HyperbrowserError("GPU sandboxes require runtimeClass gvisor-cpu");
+    if (params.region !== undefined && params.region !== "us")
+      throw new HyperbrowserError("GPU sandboxes require region us");
+    if (!params.imageName || params.snapshotName || Object.keys(params.mounts ?? {}).length)
+      throw new HyperbrowserError(
+        "GPU sandboxes require an image and do not support snapshots or volumes"
+      );
+    if (
+      params.gpuCount !== undefined &&
+      (!Number.isInteger(params.gpuCount) || params.gpuCount < 1 || params.gpuCount > 8)
+    )
+      throw new HyperbrowserError("gpuCount must be an integer between 1 and 8");
+    if (params.preempt !== undefined && typeof params.preempt !== "boolean")
+      throw new HyperbrowserError("preempt must be a boolean");
+    if (params.diskMiB !== undefined && (params.diskMiB < 12288 || params.diskMiB > 524288))
+      throw new HyperbrowserError("GPU diskMiB must be between 12288 and 524288 MiB");
+  }
   if (typeof params.imageName === "string") {
     const secrets = serializeSecretReferences(params.secrets);
     const vault = params.vault;
@@ -160,12 +208,15 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
     // The startup command with secrets runs only in Firecracker sandboxes.
     if (
       (secrets !== undefined || vault !== undefined || onePassword !== undefined) &&
-      params.runtimeClass === "gvisor-cpu"
+      (params.runtimeClass === "gvisor-cpu" || params.gpu !== undefined)
     )
       throw new HyperbrowserError(
         "secrets, vault and onePassword are not supported with runtimeClass gvisor-cpu"
       );
     return {
+      gpu: params.gpu,
+      gpuCount: params.gpuCount,
+      preempt: params.preempt,
       runtimeClass: params.runtimeClass,
       imageName: params.imageName,
       imageId: params.imageId,
@@ -249,38 +300,56 @@ const validatePagination = (params: { page?: number; limit?: number }, maxLimit?
     throw new HyperbrowserError(`limit must be at most ${maxLimit}`);
 };
 
-const validateImageBuildFormat = (params: { inputFormat?: string; sourcePlatform?: string }): void => {
+const validateImageBuildFormat = (params: {
+  inputFormat?: string;
+  sourcePlatform?: string;
+}): void => {
   if (params.sourcePlatform !== undefined && params.sourcePlatform !== "linux/amd64")
     throw new HyperbrowserError("sourcePlatform must be linux/amd64");
-  if (params.inputFormat !== undefined && ![
-    "rootfs_export_tar_gz", "dockerfile_context_tar_gz",
-    "dockerfile_context_manifest_v1", "docker_image_manifest_v1",
-  ].includes(params.inputFormat)) throw new HyperbrowserError("Unsupported image build inputFormat");
+  if (
+    params.inputFormat !== undefined &&
+    ![
+      "rootfs_export_tar_gz",
+      "dockerfile_context_tar_gz",
+      "dockerfile_context_manifest_v1",
+      "docker_image_manifest_v1",
+    ].includes(params.inputFormat)
+  )
+    throw new HyperbrowserError("Unsupported image build inputFormat");
 };
 
 const serializeCreateImageBuildParams = (
   params: CreateSandboxImageBuildParams
 ): Record<string, unknown> => {
   validateImageBuildFormat(params);
+  if (
+    params.enableGPUBuilds &&
+    !["dockerfile_context_tar_gz", "dockerfile_context_manifest_v1"].includes(
+      params.inputFormat ?? ""
+    )
+  )
+    throw new HyperbrowserError("GPU image builds require a remote Dockerfile context");
   for (const key of ["builderCpus", "builderMemoryMiB", "builderScratchMiB"] as const) {
     const value = params[key];
-    if (value !== undefined && (!Number.isSafeInteger(value) || value < 1)) throw new HyperbrowserError(`${key} must be a positive integer`);
+    if (value !== undefined && (!Number.isSafeInteger(value) || value < 1))
+      throw new HyperbrowserError(`${key} must be a positive integer`);
   }
-  return ({
-  imageName: params.imageName,
-  inputSha256: params.inputSha256,
-  inputSizeBytes: params.inputSizeBytes,
-  vcpus: params.builderCpus,
-  memMiB: params.builderMemoryMiB,
-  scratchMiB: params.builderScratchMiB,
-  inputFormat: params.inputFormat,
-  sourcePlatform: params.sourcePlatform,
-  imageConfigUser: params.imageConfigUser,
-  imageInit: params.imageInit,
-  dockerfilePath: params.dockerfilePath,
-  contextManifest: params.contextManifest,
-  dockerImageManifest: params.dockerImageManifest,
-});
+  return {
+    imageName: params.imageName,
+    enableGPUBuilds: params.enableGPUBuilds,
+    inputSha256: params.inputSha256,
+    inputSizeBytes: params.inputSizeBytes,
+    vcpus: params.builderCpus,
+    memMiB: params.builderMemoryMiB,
+    scratchMiB: params.builderScratchMiB,
+    inputFormat: params.inputFormat,
+    sourcePlatform: params.sourcePlatform,
+    imageConfigUser: params.imageConfigUser,
+    imageInit: params.imageInit,
+    dockerfilePath: params.dockerfilePath,
+    contextManifest: params.contextManifest,
+    dockerImageManifest: params.dockerImageManifest,
+  };
 };
 
 const normalizeImageBuildPlatform = (platform: string | undefined): string => {
@@ -293,10 +362,7 @@ const normalizeImageBuildPlatform = (platform: string | undefined): string => {
 
 type SandboxRuntimeState = SandboxRuntimeSession;
 
-const resolveSandboxRuntimeSessionHost = (
-  runtime: SandboxDetail["runtime"],
-  baseUrl: URL
-): string => {
+const resolveSandboxRuntimeSessionHost = (runtime: SandboxRuntimeTarget, baseUrl: URL): string => {
   const sessionIdFromBasePath = runtimeSessionIdFromPath(baseUrl.pathname);
   if (sessionIdFromBasePath && baseUrl.hostname) {
     return `${sessionIdFromBasePath}.${baseUrl.hostname}`;
@@ -322,6 +388,12 @@ const resolveSandboxRuntimeSessionHost = (
 };
 
 const buildSandboxExposedUrl = (runtime: SandboxDetail["runtime"], port: number): string => {
+  if (!runtime)
+    throw new HyperbrowserError("Sandbox runtime is not ready; call waitUntilReady() first", {
+      code: "sandbox_not_ready",
+      statusCode: 409,
+      service: "runtime",
+    });
   const baseUrl = new URL(runtime.baseUrl);
   const sessionHost = resolveSandboxRuntimeSessionHost(runtime, baseUrl);
   const authority = baseUrl.port
@@ -419,6 +491,34 @@ export class SandboxHandle {
     return this.detail.timeoutMinutes;
   }
 
+  get gpuType(): SandboxDetail["gpuType"] {
+    return this.detail.gpuType;
+  }
+
+  get gpuCount(): SandboxDetail["gpuCount"] {
+    return this.detail.gpuCount;
+  }
+
+  get preempt(): SandboxDetail["preempt"] {
+    return this.detail.preempt;
+  }
+
+  get capabilities(): SandboxDetail["capabilities"] {
+    return this.detail.capabilities;
+  }
+
+  get runtimeClass(): SandboxDetail["runtimeClass"] {
+    return this.detail.runtimeClass;
+  }
+
+  get recordingEnabled(): SandboxDetail["recordingEnabled"] {
+    return this.detail.recordingEnabled;
+  }
+
+  get closeReason(): SandboxDetail["closeReason"] {
+    return this.detail.closeReason;
+  }
+
   get exposedPorts(): SandboxExposeResult[] {
     return (this.detail.exposedPorts ?? []).map((entry) => ({ ...entry }));
   }
@@ -436,6 +536,98 @@ export class SandboxHandle {
   async refresh(): Promise<SandboxHandle> {
     await this.info();
     return this;
+  }
+
+  /** Execute a desktop action with this sandbox's runtime token. The image owns display startup. */
+  async computerAction(params: ComputerActionParams): Promise<ComputerActionResponse> {
+    return this.transport.requestJSON<ComputerActionResponse>("/computer-action", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  }
+
+  /** Wait for a runtime. Canceling/timing out only stops this caller's wait. */
+  async waitUntilReady(options: SandboxWaitOptions = {}): Promise<SandboxHandle> {
+    let delay = options.pollInterval ?? 3;
+    const timeout = options.timeout === undefined ? 20 * 60 : options.timeout;
+    if (
+      !Number.isFinite(delay) ||
+      delay < 0 ||
+      (timeout !== null && (!Number.isFinite(timeout) || timeout < 0))
+    )
+      throw new HyperbrowserError("timeout and pollInterval must be nonnegative finite seconds");
+    if (!this.id?.trim())
+      throw new HyperbrowserError("Sandbox response is missing its ID", { service: "control" });
+    delay = Math.min(delay, 15);
+    const controller = new AbortController();
+    let timedOut = timeout === 0;
+    const timer =
+      timeout === null
+        ? undefined
+        : setTimeout(() => {
+            timedOut = true;
+            controller.abort();
+          }, timeout * 1000);
+    const cancel = () => controller.abort();
+    options.signal?.addEventListener("abort", cancel, { once: true });
+    if (options.signal?.aborted) cancel();
+    try {
+      for (;;) {
+        if (options.signal?.aborted)
+          throw new HyperbrowserError(
+            `Stopped waiting for sandbox ${this.id}; the sandbox was not stopped`,
+            {
+              code: "wait_cancelled",
+              service: "control",
+              details: { sandboxId: this.id },
+            }
+          );
+        if (["closed", "error", "close-error"].includes(this.status))
+          throw new HyperbrowserError(
+            `Sandbox ${this.id} ended before becoming ready: ${this.detail.closeReason || this.status}`,
+            {
+              code: "sandbox_not_running",
+              service: "control",
+              details: {
+                sandboxId: this.id,
+                status: this.status,
+                closeReason: this.detail.closeReason,
+              },
+            }
+          );
+        if (this.status === "active" && this.runtime && this.detail.token) return this;
+        if (timedOut)
+          throw new HyperbrowserError(
+            `Timed out waiting for sandbox ${this.id}; the sandbox was not stopped`,
+            {
+              code: "wait_timeout",
+              service: "control",
+              details: { sandboxId: this.id },
+            }
+          );
+        try {
+          const detail = await this.service.getDetail(this.id, { signal: controller.signal });
+          if (detail.id !== this.id)
+            throw new HyperbrowserError("Sandbox response returned a different ID");
+          this.hydrate(detail);
+          if (
+            this.status !== "provisioning" &&
+            (this.status !== "active" || (this.runtime && this.detail.token))
+          )
+            continue;
+        } catch (error) {
+          if (controller.signal.aborted) continue;
+          if (!(error instanceof HyperbrowserError) || !error.retryable) throw error;
+        }
+        await retryDelay(delay * 1000, controller.signal).catch((error) => {
+          if (!controller.signal.aborted) throw error;
+        });
+        delay = Math.min(delay * 2, 15);
+      }
+    } finally {
+      clearTimeout(timer);
+      options.signal?.removeEventListener("abort", cancel);
+    }
   }
 
   async connect(): Promise<SandboxHandle> {
@@ -611,6 +803,16 @@ export class SandboxHandle {
   }
 
   private assertRuntimeAvailable() {
+    if (this.detail.status === "provisioning") {
+      throw new HyperbrowserError(
+        `Sandbox ${this.id} is provisioning; call waitUntilReady() first`,
+        {
+          statusCode: 409,
+          code: "sandbox_not_ready",
+          service: "runtime",
+        }
+      );
+    }
     if (
       this.detail.status === "closed" ||
       this.detail.status === "close-error" ||
@@ -626,7 +828,7 @@ export class SandboxHandle {
   }
 
   private static toRuntimeSession(detail: SandboxDetail): SandboxRuntimeState | null {
-    if (!detail.token) {
+    if (detail.status !== "active" || !detail.token || !detail.runtime) {
       return null;
     }
 
@@ -663,7 +865,7 @@ export class SandboxesService extends BaseService {
 
   async getRuntimeSession(id: string): Promise<SandboxRuntimeSession> {
     const detail = await this.getDetail(id);
-    if (!detail.token || ["closed", "close-error", "error"].includes(detail.status)) {
+    if (!detail.token || !detail.runtime || detail.status !== "active") {
       throw new HyperbrowserError(`Sandbox ${id} is not running`, {
         statusCode: 409,
         code: "sandbox_not_running",
@@ -774,9 +976,12 @@ export class SandboxesService extends BaseService {
     }
   }
 
-  async getDetail(id: string): Promise<SandboxDetail> {
+  async getDetail(id: string, options: { signal?: AbortSignal } = {}): Promise<SandboxDetail> {
     try {
-      const detail = await this.request<WireSandboxDetail>(`/sandbox/${id}`);
+      const detail = await this.request<WireSandboxDetail>(
+        `/sandbox/${id}`,
+        options.signal ? { signal: options.signal } : undefined
+      );
       return normalizeSandboxDetail(detail);
     } catch (error) {
       if (error instanceof HyperbrowserError) {
@@ -810,7 +1015,7 @@ export class SandboxesService extends BaseService {
   async expose(
     id: string,
     params: SandboxExposeParams,
-    runtime?: SandboxRuntimeTarget
+    runtime?: SandboxRuntimeTarget | null
   ): Promise<SandboxExposeResult> {
     try {
       const exposure = await this.request<SandboxExposeResult>(`/sandbox/${id}/expose`, {
@@ -964,7 +1169,20 @@ export class SandboxesService extends BaseService {
   }
 
   /** Find an exact ready team image, including revisions awaiting backup. */
-  async findReadyImage(imageName: string): Promise<SandboxImageSummary | null> {
+  async findReadyImage(
+    imageName: string,
+    options: { enableGPUBuilds?: boolean } = {}
+  ): Promise<SandboxImageSummary | null> {
+    let gpuIds: Set<string | null | undefined> | undefined;
+    if (options.enableGPUBuilds) {
+      const { builds } = await this.listImageBuilds({ status: "completed", limit: 100 });
+      gpuIds = new Set(
+        builds
+          .filter((build) => build.imageName === imageName && build.gpuImageReady)
+          .map((build) => build.imageId)
+      );
+      if (gpuIds.size === 0) return null;
+    }
     let page = 1;
     for (;;) {
       const response = await this.listImages({
@@ -974,7 +1192,11 @@ export class SandboxesService extends BaseService {
         limit: READY_IMAGE_PAGE_SIZE,
       });
       for (const image of response.images) {
-        if (image.imageName === imageName && (image.uploaded || image.ready === true)) {
+        if (
+          image.imageName === imageName &&
+          (!gpuIds || gpuIds.has(image.id)) &&
+          (image.uploaded || image.ready === true)
+        ) {
           return image;
         }
       }
@@ -1031,8 +1253,17 @@ export class SandboxesService extends BaseService {
     };
     try {
       for (;;) {
-        const build = await this.getImageBuild(buildId, { signal: controller.signal }).catch(waitFailure);
-        if (build.status === "completed") return build;
+        const build = await this.getImageBuild(buildId, { signal: controller.signal }).catch(
+          waitFailure
+        );
+        const needsGPU = options.enableGPUBuilds || build.enableGPUBuilds;
+        if (needsGPU && build.metadata?.ociPublicationError)
+          throw new HyperbrowserError("GPU image publication failed. Please rebuild the image.", {
+            code: "gpu_image_publication_failed",
+            service: "control",
+            details: { buildId },
+          });
+        if (build.status === "completed" && (!needsGPU || build.gpuImageReady)) return build;
         if (build.status === "failed" || build.status === "canceled") {
           throw new HyperbrowserError(
             build.errorMessage || `Image build ${buildId} ${build.status}`,
@@ -1052,6 +1283,8 @@ export class SandboxesService extends BaseService {
     options: BuildSandboxImageFromDockerImageOptions
   ): Promise<SandboxImageBuild> {
     const platform = normalizeImageBuildPlatform(options.platform);
+    if (options.enableGPUBuilds)
+      throw new HyperbrowserError("GPU image builds require a remote Dockerfile context");
     const source = await prepareDockerImageManifestSource(options.dockerImage, { platform });
     try {
       if (
@@ -1132,6 +1365,8 @@ export class SandboxesService extends BaseService {
   ): Promise<SandboxImageBuild> {
     options = { ...options, platform: normalizeImageBuildPlatform(options.platform) };
     const remote = options.remote ?? true;
+    if (options.enableGPUBuilds && !remote)
+      throw new HyperbrowserError("GPU image builds require remote: true");
     if (remote) {
       if (
         options.dockerTag !== undefined ||
@@ -1196,6 +1431,8 @@ export class SandboxesService extends BaseService {
     const dockerfile = options.dockerfile ?? "Dockerfile";
     const remoteFullContext = options.remoteFullContext ?? false;
     const { contextPath, dockerImage } = options;
+    if (options.enableGPUBuilds && dockerImage !== undefined)
+      throw new HyperbrowserError("GPU image builds require a remote Dockerfile context");
     if ((contextPath === undefined) === (dockerImage === undefined)) {
       throw new HyperbrowserError("Supply exactly one of contextPath or dockerImage");
     }
@@ -1235,9 +1472,12 @@ export class SandboxesService extends BaseService {
       platform,
       imageInit: options.imageInit,
       imageConfigUser: options.imageConfigUser,
+      enableGPUBuilds: options.enableGPUBuilds,
     });
     if (!options.forceBuild) {
-      const image = await this.findReadyImage(imageName);
+      const image = await this.findReadyImage(imageName, {
+        enableGPUBuilds: options.enableGPUBuilds,
+      });
       if (image !== null) {
         return { outcome: "reused", imageName, imageId: image.id };
       }
@@ -1247,6 +1487,7 @@ export class SandboxesService extends BaseService {
       platform,
       imageInit: options.imageInit,
       imageConfigUser: options.imageConfigUser,
+      enableGPUBuilds: options.enableGPUBuilds,
       builderCpus: options.builderCpus,
       builderMemoryMiB: options.builderMemoryMiB,
       builderScratchMiB: options.builderScratchMiB,
@@ -1276,7 +1517,7 @@ export class SandboxesService extends BaseService {
       if (!(error instanceof HyperbrowserError)) {
         throw error;
       }
-      const existing = matchingImageBuild(error, imageName, inputFormat);
+      const existing = matchingImageBuild(error, imageName, inputFormat, options.enableGPUBuilds);
       if (existing === null) {
         throw error;
       }
@@ -1284,14 +1525,19 @@ export class SandboxesService extends BaseService {
       outcome = "joined";
     }
     const wait = options.wait ?? true;
-    if (wait && build.status !== "completed") {
+    if (
+      wait &&
+      (build.status !== "completed" ||
+        ((options.enableGPUBuilds || build.enableGPUBuilds) && !build.gpuImageReady))
+    ) {
       build = await this.waitForImageBuild(build.id, {
+        enableGPUBuilds: options.enableGPUBuilds,
         pollInterval: options.pollInterval,
         timeout: options.waitTimeout,
         signal: options.signal,
       });
     }
-    return { outcome, imageName, imageId: completedImageId(build), build };
+    return { outcome, imageName, imageId: completedImageId(build, options.enableGPUBuilds), build };
   }
 
   private async buildImageFromRemoteDockerfile(
@@ -1307,6 +1553,7 @@ export class SandboxesService extends BaseService {
       return await this.submitImageBuild(
         {
           imageName: options.imageName,
+          enableGPUBuilds: options.enableGPUBuilds,
           inputSha256: packaged.artifact.sha256Hex,
           inputSizeBytes: packaged.artifact.sizeBytes,
           inputFormat: packaged.artifact.inputFormat,
@@ -1336,6 +1583,7 @@ export class SandboxesService extends BaseService {
     artifacts: Record<string, DockerImageBuildArtifact>,
     label: string,
     options: {
+      enableGPUBuilds?: boolean;
       wait?: boolean;
       pollInterval?: number;
       waitTimeout?: number | null;
@@ -1356,6 +1604,7 @@ export class SandboxesService extends BaseService {
       buildStarted = true;
       if (options.wait ?? true) {
         return await this.waitForImageBuild(build.id, {
+          enableGPUBuilds: options.enableGPUBuilds,
           pollInterval: options.pollInterval,
           timeout: options.waitTimeout,
           signal: options.signal,

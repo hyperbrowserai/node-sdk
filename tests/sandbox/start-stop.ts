@@ -20,7 +20,7 @@ function summarizeSandbox(detail: SandboxDetail) {
     id: detail.id,
     status: detail.status,
     region: detail.region,
-    runtimeBaseUrl: detail.runtime.baseUrl,
+    runtimeBaseUrl: detail.runtime?.baseUrl,
     tokenExpiresAt: detail.tokenExpiresAt,
     sessionUrl: detail.sessionUrl,
   };

@@ -117,21 +117,22 @@ describe("sandbox control and runtime contract", () => {
     expect(sandbox.getExposedUrl(3000)).toBe("https://3000-sbx_123.runtime.example.com/");
   });
 
-  test("create forwards the explicit CPU runtime and retains its capabilities", async () => {
+  test("create forwards the explicit GPU runtime and retains its capabilities", async () => {
     const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
     const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue({
       ...wireSandboxDetail(),
       runtimeClass: "gvisor-cpu",
-      capabilities: { pty: true, gpu: false },
+      capabilities: { pty: true, gpu: true },
     });
-    const sandbox = await service.create({ imageName: "cpu", runtimeClass: "gvisor-cpu" });
+    const sandbox = await service.create({ imageName: "gpu", runtimeClass: "gvisor-cpu", gpu: "L4" });
     expect(parseJsonRequestBody(requestSpy.mock.calls[0][1])).toEqual({
-      imageName: "cpu",
+      imageName: "gpu",
+      gpu: "L4",
       runtimeClass: "gvisor-cpu",
     });
     expect(sandbox.toJSON()).toMatchObject({
       runtimeClass: "gvisor-cpu",
-      capabilities: { pty: true, gpu: false },
+      capabilities: { pty: true, gpu: true },
     });
   });
 

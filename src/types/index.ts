@@ -170,6 +170,8 @@ export {
 } from "./session";
 export {
   SandboxStatus,
+  SandboxGpuType,
+  SandboxWaitOptions,
   SandboxRuntimeTarget,
   SandboxNetworkPolicy,
   SandboxNetworkPolicyPatch,
