@@ -66,12 +66,16 @@ export class ProcessOutput {
     readonly maxBytes: number
   ) {}
 
-  failure(message: string, code = "incomplete_output"): HyperbrowserError {
+  failure(
+    message: string,
+    code = "incomplete_output",
+    details: Record<string, number> = {}
+  ): HyperbrowserError {
     return new HyperbrowserError(message, {
       code,
       service: "runtime",
       retryable: false,
-      details: { process_id: this.processId, last_seq: this.seq },
+      details: { process_id: this.processId, last_seq: this.seq, ...details },
     });
   }
 
@@ -120,8 +124,9 @@ export class ProcessOutput {
     this.size += raw.length;
     if (this.size > this.maxBytes) {
       throw this.failure(
-        "Command output exceeds maxOutputBytes; increase the collection limit or disconnect a detached process",
-        "output_limit_exceeded"
+        `Command output exceeds maxOutputBytes (${this.size} bytes received, limit ${this.maxBytes}); increase the collection limit or disconnect a detached process`,
+        "output_limit_exceeded",
+        { max_output_bytes: this.maxBytes, received_bytes: this.size }
       );
     }
     this.seq = data.seq;
