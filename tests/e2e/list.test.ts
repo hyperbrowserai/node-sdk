@@ -86,8 +86,8 @@ describe.sequential("sandbox list e2e", () => {
     expect(listed.id).toBe(sandbox!.id);
     expect(listed.status).toBe("active");
     expect(listed.region).toBe(sandbox!.region);
-    expect(listed.runtime.transport).toBe("regional_proxy");
-    expect(listed.runtime.baseUrl).toBe(sandbox!.runtime.baseUrl);
+    expect(listed.runtime?.transport).toBe("regional_proxy");
+    expect(listed.runtime?.baseUrl).toBe(sandbox!.runtime?.baseUrl);
   });
 
   test("list forwards start, end, and search filters", async () => {

@@ -3,7 +3,29 @@ import type { ReadableStream } from "node:stream/web";
 import { SessionRegion } from "./constants";
 import { SessionLaunchState, SessionStatus } from "./session";
 
-export type SandboxStatus = SessionStatus;
+export type SandboxStatus = SessionStatus | "provisioning";
+
+export type SandboxGpuType =
+  | "L4"
+  | "A10G"
+  | "L40S"
+  | "L40"
+  | "H100"
+  | "H200"
+  | "B200"
+  | "B300"
+  | "A100-40GB"
+  | "A100-80GB"
+  | "RTX-PRO-6000";
+
+export interface SandboxWaitOptions {
+  /** Seconds to wait. Defaults to 20 minutes; null waits indefinitely. */
+  timeout?: number | null;
+  /** Initial polling interval in seconds; backs off to at most 15 seconds. */
+  pollInterval?: number;
+  /** Stops this caller's wait without stopping the sandbox. */
+  signal?: AbortSignal;
+}
 
 export interface SandboxNetworkPolicy {
   allowInternetAccess?: boolean | null;
@@ -29,6 +51,10 @@ export interface SandboxRuntimeTarget {
 
 export interface Sandbox {
   runtimeClass?: "firecracker" | "gvisor-cpu";
+  gpuType?: SandboxGpuType | null;
+  gpuCount?: number | null;
+  preempt?: boolean;
+  recordingEnabled?: boolean;
   capabilities?: {
     commands: boolean;
     files: boolean;
@@ -38,7 +64,9 @@ export interface Sandbox {
     volumes: boolean;
     exposedPorts: boolean;
     internetAccess: boolean;
-    writableStorage: "memory";
+    networkFiltering?: boolean;
+    liveNetworkUpdates?: boolean;
+    writableStorage: "memory" | "disk";
   };
   id: string;
   teamId: string;
@@ -63,7 +91,7 @@ export interface Sandbox {
   diskMiB?: number | null;
   timeoutMinutes?: number | null;
   network?: SandboxNetworkPolicy | null;
-  runtime: SandboxRuntimeTarget;
+  runtime: SandboxRuntimeTarget | null;
   exposedPorts: SandboxExposeResult[];
   /**
    * Secrets were delivered into the sandbox, or it was restored from a
@@ -180,6 +208,9 @@ interface SandboxCreateCommonParams {
 export type CreateSandboxParams =
   | (SandboxCreateCommonParams & {
       snapshotName: string;
+      gpu?: never;
+      gpuCount?: never;
+      preempt?: never;
       snapshotId?: string;
       imageName?: never;
       imageId?: never;
@@ -194,6 +225,10 @@ export type CreateSandboxParams =
       snapshotName?: never;
       snapshotId?: never;
       imageName: string;
+      gpu?: SandboxGpuType;
+      gpuCount?: number;
+      /** Omitted/true allows spot; false requests on-demand capacity. */
+      preempt?: boolean;
       imageId?: string;
       cpu?: number;
       memoryMiB?: number;
@@ -215,7 +250,7 @@ export type CreateSandboxParams =
     });
 
 export interface SandboxListParams {
-  status?: SandboxStatus;
+  status?: SessionStatus;
   start?: number;
   end?: number;
   search?: string;
@@ -342,6 +377,11 @@ export interface SandboxImageBuildUpload {
 }
 
 export interface SandboxImageBuild {
+  enableGPUBuilds?: boolean;
+  imageReady?: boolean;
+  uploaded?: boolean;
+  gpuUploaded?: boolean;
+  gpuImageReady?: boolean;
   id: string;
   teamId?: string | null;
   userId?: string | null;
@@ -401,6 +441,8 @@ export interface SandboxDockerImageManifest {
 }
 
 export interface CreateSandboxImageBuildParams {
+  /** Also publish an image for GPU sandboxes. Requires a remote Dockerfile context. */
+  enableGPUBuilds?: boolean;
   imageName: string;
   inputSha256: string;
   inputSizeBytes: number;
@@ -460,6 +502,8 @@ export interface SandboxImageBuildResolution {
 }
 
 export interface SandboxImageBuildWaitOptions {
+  /** Require GPU publication as well as build completion. */
+  enableGPUBuilds?: boolean;
   signal?: AbortSignal;
   /** Seconds between status polls. Defaults to 3. */
   pollInterval?: number;
@@ -468,6 +512,8 @@ export interface SandboxImageBuildWaitOptions {
 }
 
 interface SandboxImageBuildCommonOptions {
+  /** Publish a GPU image. Only remote Dockerfile builds support this. */
+  enableGPUBuilds?: boolean;
   /** Cancel this caller's polling; accepted builds and uploads continue independently. */
   signal?: AbortSignal;
   imageName: string;
@@ -504,6 +550,8 @@ export interface BuildSandboxImageFromDockerfileOptions extends SandboxImageBuil
 }
 
 export interface GetOrBuildSandboxImageOptions {
+  /** Resolve a GPU-ready remote Dockerfile image. */
+  enableGPUBuilds?: boolean;
   /** Cancel this caller's polling; accepted builds and uploads continue independently. */
   signal?: AbortSignal;
   contextPath?: string;

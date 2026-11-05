@@ -1096,3 +1096,90 @@ neither requires API credentials or a Docker daemon.
 Live tests are opt-in: set `HYPERBROWSER_API_KEY` and `HYPERBROWSER_BASE_URL`, then
 run `yarn test:e2e`. They create remote resources and require a receiver supporting
 streamed process starts.
+
+### GPU sandboxes
+
+Build a GPU-ready image from a remote Dockerfile context, then select a GPU when
+creating the sandbox. GPU publication happens after the ordinary build;
+`enableGPUBuilds: true` makes the build helpers wait for `gpuImageReady` and
+keeps CPU-only images out of GPU cache reuse. Local/prebuilt Docker image imports
+do not support GPU publication.
+
+```typescript
+import { Hyperbrowser } from "@hyperbrowser/sdk";
+
+const client = new Hyperbrowser({ apiKey: process.env.HYPERBROWSER_API_KEY! });
+const image = await client.sandboxes.getOrBuildImage({
+  contextPath: "./gpu-image", // Your CUDA-compatible Dockerfile and context
+  enableGPUBuilds: true,
+});
+const sandbox = await client.sandboxes.create({
+  imageName: image.imageName,
+  imageId: image.imageId,
+  gpu: "H100",
+  gpuCount: 2,
+  preempt: false, // Require on-demand capacity; account enablement required
+  region: "us",
+  cpu: 8,
+  memoryMiB: 32768,
+  diskMiB: 65536,
+  exposedPorts: [{ port: 8000, auth: true }],
+});
+try {
+  // create() can return status='provisioning', runtime=null, and token=null.
+  await sandbox.waitUntilReady({ timeout: 20 * 60 });
+  console.log((await sandbox.exec("nvidia-smi -L")).stdout);
+  await sandbox.updateNetwork({ allowOut: ["example.com"], denyOut: [] });
+} finally {
+  await sandbox.stop();
+}
+```
+
+`gpuCount` defaults to one and accepts 1–8; the API checks that the requested
+GPU, CPU, and memory combination is available. Omitted `preempt` (or `true`)
+allows spot capacity. `false` requires on-demand capacity. GPU launches require
+`region: "us"`; `runtimeClass: "gvisor-cpu"` is inferred by the API. The disk is
+quota-limited ephemeral storage, from 12 GiB (the default) up to 512 GiB, subject
+to your plan and host capacity. Snapshots, volume mounts, and startup secrets are
+not supported for GPU launches.
+
+`waitUntilReady()` returns the same handle, retries transient reads with backoff,
+and reports failures with the sandbox ID and close reason. Its timeout and poll
+interval are in seconds. The wait timeout is independent of `timeoutMinutes`,
+which controls the sandbox lifetime. Pass an `AbortSignal` to cancel the wait.
+Timeout or cancellation stops only the wait; use the saved ID to inspect or stop
+the sandbox. `get()` and `list()` can also return provisioning sandboxes; the
+list API's existing `status: "active"` filter includes provisioning requests.
+`Sandbox.runtime` is now nullable, so check it before directly accessing its URL.
+
+GPU handles expose `gpuType`, `gpuCount`, `preempt`, `runtimeClass`, `capabilities`,
+`recordingEnabled`, and `closeReason`. Existing files, commands, PTY, exposed-port
+authentication, and network-update methods work after readiness. `creditsUsed`
+and termination details remain available through `info()`.
+
+For a custom image that starts an X11 desktop and installs the receiver's input
+and screenshot tools, use the sandbox runtime computer-action endpoint:
+
+```typescript
+import { ComputerAction } from "@hyperbrowser/sdk/types";
+
+const screenshot = await sandbox.computerAction({ action: ComputerAction.SCREENSHOT });
+await sandbox.computerAction({ action: ComputerAction.CLICK, x: 300, y: 200 });
+await sandbox.computerAction({ action: ComputerAction.TYPE_TEXT, text: "Hello" });
+```
+
+These calls belong inside the sandbox's active lifetime (before `stop()`). They
+use the sandbox runtime token, including token refresh, and the existing typed
+computer-action payloads. The image owns display startup; runtime readiness does
+not imply desktop readiness. Set `enableRecording: true` at creation to record a
+supported image's display and retrieve the video through
+`client.sessions.getVideoRecordingURL(sandbox.id)`.
+
+GPU cache lookup verifies the API's latest 100 completed builds. An older image
+may be rebuilt when its GPU readiness cannot be verified from that window.
+For live validation, set `HYPERBROWSER_API_KEY` and
+`HYPERBROWSER_GPU_IMAGE_NAME` (an already published image containing `nvidia-smi`),
+then run `yarn test:e2e tests/e2e/gpu.test.ts`. Optional `HYPERBROWSER_GPU_TYPE`,
+`HYPERBROWSER_GPU_COUNT`, and `HYPERBROWSER_GPU_PREEMPT=false` select the GPU
+configuration; `HYPERBROWSER_GPU_DESKTOP=1` also checks screenshots. These tests
+create billable sandboxes and stop them in cleanup.

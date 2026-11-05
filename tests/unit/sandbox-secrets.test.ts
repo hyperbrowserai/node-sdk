@@ -111,7 +111,7 @@ describe("sandbox create with secrets", () => {
       service.create({ imageName: "node", secrets: { A: { name: "x", version: 2 ** 31 } } })
     ).rejects.toThrow(/integer from 1 to 2147483647/);
     await expect(
-      service.create({ imageName: "node", runtimeClass: "gvisor-cpu", secrets: { A: "x" } })
+      service.create({ imageName: "node", runtimeClass: "gvisor-cpu", gpu: "L4", secrets: { A: "x" } })
     ).rejects.toThrow(/not supported with runtimeClass gvisor-cpu/);
     expect(requestSpy).not.toHaveBeenCalled();
   });
@@ -493,7 +493,7 @@ describe("vaults in sandboxes", () => {
       /only supported for image launches/
     );
     await expect(
-      service.create({ imageName: "node", runtimeClass: "gvisor-cpu", vault: "app-env" })
+      service.create({ imageName: "node", runtimeClass: "gvisor-cpu", gpu: "L4", vault: "app-env" })
     ).rejects.toThrow(/not supported with runtimeClass gvisor-cpu/);
     expect(requestSpy).not.toHaveBeenCalled();
   });
@@ -578,7 +578,7 @@ describe("1Password in sandboxes", () => {
       /only supported for image launches/
     );
     await expect(
-      service.create({ imageName: "node", runtimeClass: "gvisor-cpu", onePassword })
+      service.create({ imageName: "node", runtimeClass: "gvisor-cpu", gpu: "L4", onePassword })
     ).rejects.toThrow(/not supported with runtimeClass gvisor-cpu/);
     expect(requestSpy).not.toHaveBeenCalled();
   });

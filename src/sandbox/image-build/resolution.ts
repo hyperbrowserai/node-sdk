@@ -14,6 +14,7 @@ export interface ImageBuildNameOptions {
   platform?: string;
   imageInit?: SandboxImageInit;
   imageConfigUser?: string;
+  enableGPUBuilds?: boolean;
 }
 
 const normalizeInitEnv = (env: Record<string, string> | undefined) =>
@@ -76,6 +77,7 @@ export const imageBuildName = (options: ImageBuildNameOptions): string => {
     throw new Error("source must be 'dockerfile' or 'prebuilt'");
   }
   const identityOptions: Record<string, unknown> = {};
+  if (options.enableGPUBuilds) identityOptions.enableGPUBuilds = true;
   const initialization = normalizeImageInit(options.imageInit);
   if (initialization !== undefined && Object.keys(initialization).length > 0) {
     identityOptions.imageInit = initialization;
@@ -109,7 +111,8 @@ const IMAGE_BUILD_STATUSES = new Set([
 export const matchingImageBuild = (
   error: HyperbrowserError,
   imageName: string,
-  inputFormat: string
+  inputFormat: string,
+  enableGPUBuilds: boolean = false
 ): SandboxImageBuild | null => {
   if (error.statusCode !== 409 || error.code !== "image_build_in_progress") {
     return null;
@@ -138,13 +141,18 @@ export const matchingImageBuild = (
     return null;
   }
   const build = data as unknown as SandboxImageBuild;
+  if (enableGPUBuilds && !build.enableGPUBuilds) return null;
   if (build.imageName !== imageName) {
     return null;
   }
   return build;
 };
 
-export const completedImageId = (build: SandboxImageBuild): string | undefined => {
+export const completedImageId = (
+  build: SandboxImageBuild,
+  enableGPUBuilds: boolean = false
+): string | undefined => {
+  if ((enableGPUBuilds || build.enableGPUBuilds) && !build.gpuImageReady) return undefined;
   if (build.status !== "completed") {
     return undefined;
   }

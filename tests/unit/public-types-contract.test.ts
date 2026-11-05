@@ -184,3 +184,23 @@ describe("public type compatibility", () => {
     expectTypeOf<"canceled">().toExtend<SandboxImageBuildStatus>();
   });
 });
+
+test("GPU launch, readiness, and runtime types match the sandbox API", () => {
+  type GPU = import("../../src/types").SandboxGpuType;
+  type Status = import("../../src/types").SandboxStatus;
+  type ListParams = import("../../src/types").SandboxListParams;
+  type Create = import("../../src/types").CreateSandboxParams;
+  type Target = import("../../src/types").SandboxRuntimeTarget;
+  type Wait = import("../../src/types").SandboxWaitOptions;
+  expectTypeOf<"H100" | "B300" | "A100-80GB">().toExtend<GPU>();
+  expectTypeOf<"A100">().not.toExtend<GPU>();
+  expectTypeOf<"provisioning">().toExtend<Status>();
+  expectTypeOf<"provisioning">().not.toExtend<ListParams["status"]>();
+  expectTypeOf<Sandbox["runtime"]>().toEqualTypeOf<Target | null>();
+  expectTypeOf<Wait["signal"]>().toEqualTypeOf<AbortSignal | undefined>();
+  const launch: Create = { imageName: "cuda", gpu: "H100", gpuCount: 2, preempt: false };
+  // @ts-expect-error GPUs cannot launch from memory snapshots.
+  const invalid: Create = { snapshotName: "saved", gpu: "H100" };
+  expect(launch.preempt).toBe(false);
+  expect(invalid.snapshotName).toBe("saved");
+});

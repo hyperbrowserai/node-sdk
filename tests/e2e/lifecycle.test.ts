@@ -149,7 +149,7 @@ describe.sequential("sandbox lifecycle e2e", () => {
   test("create response contains runtime auth", async () => {
     const detail = sandbox!.toJSON();
     expect(detail.token).toBeTruthy();
-    expect(detail.runtime.baseUrl).toBeTruthy();
+    expect(detail.runtime?.baseUrl).toBeTruthy();
     expect(detail.tokenExpiresAt).toBeTruthy();
   });
 
@@ -157,7 +157,7 @@ describe.sequential("sandbox lifecycle e2e", () => {
     expect(staleHandle).toBeTruthy();
     const detail = staleHandle!.toJSON();
     expect(detail.token).toBeTruthy();
-    expect(detail.runtime.baseUrl).toBe(sandbox!.runtime.baseUrl);
+    expect(detail.runtime?.baseUrl).toBe(sandbox!.runtime?.baseUrl);
   });
 
   test("info and refresh update the sandbox handle", async () => {
@@ -199,6 +199,7 @@ describe.sequential("sandbox lifecycle e2e", () => {
       };
     };
     const validDetail = await sandbox!.info();
+    if (!validDetail.runtime) throw new Error("Expected an active sandbox runtime");
     const invalidJwt =
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.invalid-signature";
     let refreshCount = 0;
