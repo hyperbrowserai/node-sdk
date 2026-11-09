@@ -2,6 +2,7 @@ import type { Blob } from "buffer";
 import type { ReadableStream } from "node:stream/web";
 import { SessionRegion } from "./constants";
 import { SessionLaunchState, SessionStatus } from "./session";
+import type { VaultReference } from "./vault";
 
 export type SandboxStatus = SessionStatus;
 
@@ -82,18 +83,33 @@ export interface SandboxDetail extends Sandbox {
 export type SandboxVolumeMountType = "rw" | "ro";
 
 /**
+ * A stored secret by name, optionally pinned to a version. A
+ * customer-protected secret also carries `unwrapped`, the envelope the
+ * customer unwrapped, and must pin the version it came from;
+ * `secrets.unwrap()` returns one ready to pass.
+ */
+export interface SandboxStoredSecretReference {
+  name: string;
+  version?: number | "latest";
+  /** Customer-protected secrets only: the version's unwrapped inner envelope. */
+  unwrapped?: string;
+}
+
+/**
  * A stored secret to deliver as an environment variable: its name, or
  * `{ name, version }` to pin a version. The latest version is used otherwise.
  */
-export type SandboxSecretReference =
-  | string
-  | {
-      name: string;
-      version?: number | "latest";
-    };
+export type SandboxSecretReference = string | SandboxStoredSecretReference;
 
 /** Environment variable name to secret, at most 32 per process or sandbox. */
 export type SandboxSecrets = Record<string, SandboxSecretReference>;
+
+/**
+ * A vault whose entries become environment variables: its name, or, when it
+ * has customer-protected entries, the `VaultReference` from
+ * `vaults.unwrap()` with their unwrapped envelopes.
+ */
+export type SandboxVaultSource = string | VaultReference;
 
 /**
  * Fields of one 1Password vault to deliver as environment variables, read
@@ -101,8 +117,12 @@ export type SandboxSecrets = Record<string, SandboxSecretReference>;
  * starts. Nothing about it is stored.
  */
 export interface SandboxOnePassword {
-  /** The name of the `op_token` secret; its latest version is used. */
-  token: string;
+  /**
+   * The `op_token` secret: its name (its latest version is used), or a
+   * reference pinning a version. A customer-protected token is passed as
+   * `secrets.unwrap()` returns it.
+   */
+  token: string | SandboxStoredSecretReference;
   /** The 1Password vault's name or ID. */
   vault: string;
   /**
@@ -205,11 +225,12 @@ export type CreateSandboxParams =
        */
       secrets?: SandboxSecrets;
       /**
-       * A vault, by name, whose entries become the startup command's
-       * environment variables; `secrets` is merged over it and wins on a
-       * clash. Same requirements as `secrets`.
+       * A vault whose entries become the startup command's environment
+       * variables; `secrets` is merged over it and wins on a clash. Same
+       * requirements as `secrets`. Pass a vault with customer-protected
+       * entries as `vaults.unwrap()` returns it.
        */
-      vault?: string;
+      vault?: SandboxVaultSource;
       /** 1Password fields for the startup command. Same requirements as `secrets`. */
       onePassword?: SandboxOnePassword;
     });
@@ -601,12 +622,13 @@ export interface SandboxExecParams {
    */
   secrets?: SandboxSecrets;
   /**
-   * A vault, by name, whose entries become environment variables of this
-   * process, delivered like `secrets`. `secrets` is merged over it and wins
-   * on a clash; `env` can't set a variable either of them sets. Together
-   * they hold at most 32 variables.
+   * A vault whose entries become environment variables of this process,
+   * delivered like `secrets`. `secrets` is merged over it and wins on a
+   * clash; `env` can't set a variable either of them sets. Together they hold
+   * at most 32 variables. Pass a vault with customer-protected entries as
+   * `vaults.unwrap()` returns it.
    */
-  vault?: string;
+  vault?: SandboxVaultSource;
   /**
    * Fields of a 1Password vault, read with an `op_token` secret when the
    * process starts and delivered like `secrets`. A variable set here can't

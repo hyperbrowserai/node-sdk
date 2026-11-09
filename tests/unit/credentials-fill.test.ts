@@ -94,6 +94,16 @@ describe("sessions", () => {
     >();
   });
 
+  test("the session lists the vaults attached on create", async () => {
+    const vaults = [{ id: "v1", name: "github-login" }];
+    fetchMock.mockResolvedValue(respond({ id: "session", vaults }));
+    const session = await client().sessions.create({ credentials: [{ vault: "github-login" }] });
+    expect(session.vaults).toEqual(vaults);
+    expectTypeOf<SessionDetail["vaults"]>().toEqualTypeOf<
+      { id: string; name: string }[] | undefined
+    >();
+  });
+
   test("a vault fill posts the entries with a timeout above the server's", async () => {
     fetchMock.mockResolvedValue(respond(filled));
     const result = await client(1000).sessions.credentials.fill(SESSION, {
@@ -269,6 +279,24 @@ describe("1Password fills", () => {
     );
     expectTypeOf(result.fields[0].reference).toEqualTypeOf<string | undefined>();
     expectTypeOf(result.version).toEqualTypeOf<number | undefined>();
+  });
+
+  test("a customer-protected op_token is sent as an unwrapped reference", async () => {
+    fetchMock.mockResolvedValue(respond(opResult));
+    const token = { name: "op-token", version: 2, unwrapped: "a.b.c.d.e" };
+    await client().sessions.credentials.fill(SESSION, {
+      onePassword: { ...onePassword, token },
+      fields: refFields,
+    });
+    expect(lastRequest().body.onePassword).toEqual({ ...onePassword, token });
+
+    await expect(
+      client().sessions.credentials.fill(SESSION, {
+        onePassword: { ...onePassword, token: { name: "op-token", unwrapped: "a.b.c.d.e" } },
+        fields: refFields,
+      })
+    ).rejects.toMatchObject({ code: "invalid_request" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   test("local and wildcard origins, and a 512-byte reference, are accepted", async () => {

@@ -65,7 +65,8 @@ const rsaThumbprint = (n: Buffer, e: Buffer): string =>
 /** Encrypts values to a verified secrets public key. */
 export class SecretsSealer {
   private constructor(
-    private readonly kid: string,
+    /** The platform key's ID, which every envelope it seals names. */
+    readonly kid: string,
     private readonly publicKey: crypto.KeyObject
   ) {}
 

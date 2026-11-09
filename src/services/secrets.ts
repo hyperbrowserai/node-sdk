@@ -1,9 +1,18 @@
+import {
+  assertCustomerKey,
+  CustomerKey,
+  secretEnvelopeDigest,
+  unwrapVersion,
+} from "../customer-key";
 import { HyperbrowserError, invalidRequest } from "../error";
 import { MAX_SECRET_VERSION, SECRET_NAME_PATTERN } from "../sandbox/secret-references";
 import { secretPlaintext } from "../secret-values";
 import { isPlainObject, secretValueBytes, SecretsSealer } from "../secrets-envelope";
 import {
+  AddSecretVersionOptions,
   CreateSecretParams,
+  ReplaceSecretVersionWrappingParams,
+  RewrapSecretParams,
   Secret,
   SecretDeleteResult,
   SecretDetail,
@@ -13,7 +22,10 @@ import {
   SecretValue,
   SecretVersion,
   SecretVersionDeleteResult,
+  UnwrappedSecretReference,
+  UnwrapSecretOptions,
   UpdateSecretParams,
+  WrappedSecretVersion,
 } from "../types/secret";
 import { BaseService } from "./base";
 
@@ -25,6 +37,22 @@ const NAME_LOOKUP_LIMIT = MAX_LIST_LIMIT;
 
 const secretPath = (id: string): string => `/secrets/${encodeURIComponent(id)}`;
 
+const isCustomerProtected = (secret: Secret): boolean => secret.protection === "customer";
+
+/** Throws unless `version` is a version number, or `"latest"` where allowed. */
+const assertVersion = (version: unknown, allowLatest: boolean): void => {
+  if (allowLatest && version === "latest") return;
+  if (
+    !Number.isSafeInteger(version) ||
+    (version as number) < 1 ||
+    (version as number) > MAX_SECRET_VERSION
+  ) {
+    throw new HyperbrowserError(
+      `version must be an integer from 1 to ${MAX_SECRET_VERSION}${allowLatest ? ' or "latest"' : ""}`
+    );
+  }
+};
+
 const rethrow = (error: unknown, message: string): never => {
   if (error instanceof HyperbrowserError) {
     throw error;
@@ -35,6 +63,11 @@ const rethrow = (error: unknown, message: string): never => {
 /**
  * Secrets are encrypted locally to the platform's public key; the API only
  * ever receives envelopes, and values are never returned.
+ *
+ * A customer-protected secret's versions are also wrapped locally with your
+ * own key (`createCustomerKey()`, or your own `CustomerKey`), so the platform
+ * stores nothing it can open alone. Each use passes the reference `unwrap()`
+ * returns.
  *
  * Methods that take `secret` accept its ID or its exact name. A UUID-shaped
  * argument is tried as an ID first and then as a name, since names may look
@@ -83,7 +116,8 @@ export class SecretsService extends BaseService {
    * empty secret behind.
    */
   async create(params: CreateSecretParams): Promise<Secret> {
-    const { name, description, type, allowedOrigins, value } = params ?? ({} as CreateSecretParams);
+    const { name, description, type, allowedOrigins, value, customerKey } =
+      params ?? ({} as CreateSecretParams);
     if (typeof name !== "string" || !SECRET_NAME_PATTERN.test(name)) {
       throw new HyperbrowserError(
         "Secret name must be 1-128 letters, digits, '_' or '-', starting with a letter or digit"
@@ -91,6 +125,21 @@ export class SecretsService extends BaseService {
     }
     if (type !== undefined && (typeof type !== "string" || !type)) {
       throw invalidRequest('type must be "secret", "totp" or "op_token"');
+    }
+    const protection = params.protection ?? (customerKey !== undefined ? "customer" : undefined);
+    if (protection !== undefined && protection !== "platform" && protection !== "customer") {
+      throw invalidRequest('protection must be "platform" or "customer"');
+    }
+    if (customerKey !== undefined) {
+      if (protection !== "customer") {
+        throw invalidRequest('customerKey is only for secrets with protection "customer"');
+      }
+      assertCustomerKey(customerKey);
+    }
+    if (protection === "customer" && value !== undefined && customerKey === undefined) {
+      throw invalidRequest(
+        "A customer-protected secret's value is wrapped with your own key: pass customerKey"
+      );
     }
     const plaintext = value === undefined ? undefined : secretPlaintext(type ?? "secret", value);
     const sealer =
@@ -101,7 +150,7 @@ export class SecretsService extends BaseService {
     try {
       secret = await this.request<Secret>("/secrets", {
         method: "POST",
-        body: JSON.stringify({ name, description, type, metadata }),
+        body: JSON.stringify({ name, description, type, metadata, protection }),
       });
     } catch (error) {
       return rethrow(error, `Failed to create secret ${name}`);
@@ -111,7 +160,7 @@ export class SecretsService extends BaseService {
     }
 
     try {
-      const version = await this.uploadVersion(secret, sealer, plaintext);
+      const version = await this.uploadVersion(secret, sealer, plaintext, customerKey);
       return { ...secret, latestVersion: version.version };
     } catch (error) {
       // Retrying create would fail with "name taken"; the value has to be
@@ -168,15 +217,159 @@ export class SecretsService extends BaseService {
    * value is checked against the rules of the secret's type, such as a TOTP
    * seed's format, before it is sealed.
    */
-  async addVersion(secret: string, value: SecretValue): Promise<SecretVersion> {
+  async addVersion(
+    secret: string,
+    value: SecretValue,
+    options: AddSecretVersionOptions = {}
+  ): Promise<SecretVersion> {
     secretValueBytes(value);
+    const { customerKey } = options ?? {};
+    if (customerKey !== undefined) assertCustomerKey(customerKey);
     const sealer = SecretsSealer.fromPublicKey(await this.getPublicKey());
     try {
       const resolved = await this.resolve(secret);
+      const customer = isCustomerProtected(resolved);
+      if (customer && customerKey === undefined) {
+        throw invalidRequest(
+          `Secret ${resolved.name} is customer-protected: pass customerKey to wrap the value with`
+        );
+      }
+      if (!customer && customerKey !== undefined) {
+        throw invalidRequest(
+          `Secret ${resolved.name} is not customer-protected, so its versions aren't wrapped: omit customerKey`
+        );
+      }
       const plaintext = secretPlaintext(resolved.type ?? "secret", value);
-      return await this.uploadVersion(resolved, sealer, plaintext);
+      return await this.uploadVersion(resolved, sealer, plaintext, customerKey);
     } catch (error) {
       return rethrow(error, `Failed to add a version to secret ${secret}`);
+    }
+  }
+
+  /**
+   * A customer-protected version's wrapped envelope, for unwrapping with
+   * your own key. Most callers want `unwrap()`, which also unwraps it.
+   */
+  async getWrappedVersion(
+    secret: string,
+    version: number | "latest" = "latest"
+  ): Promise<WrappedSecretVersion> {
+    assertVersion(version, true);
+    try {
+      const { id } = await this.resolve(secret);
+      return await this.fetchWrapped(id, version);
+    } catch (error) {
+      return rethrow(error, `Failed to get the wrapped version of secret ${secret}`);
+    }
+  }
+
+  /**
+   * Unwrap a customer-protected version locally with your own key, giving
+   * the reference each use passes: as a sandbox's or process's `secrets`
+   * entry, or as a 1Password `token`. It is pinned to the version unwrapped.
+   * The unwrapped envelope is checked against the digest stored with the
+   * version, and only the platform can open it.
+   *
+   * `customerKey` may be several keys, such as during a rotation; the one
+   * whose `kid` wrapped the version is used.
+   */
+  async unwrap(
+    secret: string,
+    customerKey: CustomerKey | readonly CustomerKey[],
+    options: UnwrapSecretOptions = {}
+  ): Promise<UnwrappedSecretReference> {
+    const version = options?.version ?? "latest";
+    assertVersion(version, true);
+    try {
+      const resolved = await this.resolve(secret);
+      const wrapped = await this.fetchWrapped(resolved.id, version);
+      const unwrapped = await unwrapVersion(
+        wrapped,
+        customerKey,
+        `Version ${wrapped.version} of secret ${resolved.name}`
+      );
+      return { name: resolved.name, version: wrapped.version, unwrapped };
+    } catch (error) {
+      return rethrow(error, `Failed to unwrap secret ${secret}`);
+    }
+  }
+
+  /**
+   * Rewrap a customer-protected secret's versions with a new key, for
+   * rotating your own key. Each version is unwrapped with `from` and wrapped
+   * with `to` locally; the value never changes and the platform never sees
+   * it. Returns the versions rewrapped.
+   */
+  async rewrap(secret: string, params: RewrapSecretParams): Promise<WrappedSecretVersion[]> {
+    const { from, to, versions } = params ?? ({} as RewrapSecretParams);
+    assertCustomerKey(to, "to");
+    if (versions !== undefined) {
+      if (!Array.isArray(versions))
+        throw invalidRequest("versions must be an array of version numbers");
+      versions.forEach((version) => assertVersion(version, false));
+    }
+    try {
+      const detail = await this.resolveDetail(secret);
+      if (!isCustomerProtected(detail)) {
+        throw invalidRequest(`Secret ${detail.name} is not customer-protected; it has no wrapping`);
+      }
+      const wanted =
+        versions ??
+        detail.versions.filter(({ outerKid }) => outerKid !== to.kid).map(({ version }) => version);
+      const rewrapped: WrappedSecretVersion[] = [];
+      for (const version of wanted) {
+        const wrapped = await this.fetchWrapped(detail.id, version);
+        const label = `Version ${version} of secret ${detail.name}`;
+        const inner = await unwrapVersion(wrapped, from, label);
+        const envelope = await to.wrap(inner, detail.encryptionContext);
+        rewrapped.push(
+          await this.request<WrappedSecretVersion>(
+            `${secretPath(detail.id)}/versions/${version}/wrapping`,
+            {
+              method: "PUT",
+              body: JSON.stringify({ envelope, innerDigest: wrapped.innerDigest }),
+            }
+          )
+        );
+      }
+      return rewrapped;
+    } catch (error) {
+      return rethrow(error, `Failed to rewrap secret ${secret}`);
+    }
+  }
+
+  /**
+   * Replace a customer-protected version's outer envelope with one you
+   * wrapped yourself. `innerDigest` must match the version's: only the
+   * wrapping changes, never the value. `rewrap()` does this for you.
+   */
+  async replaceVersionWrapping(
+    secret: string,
+    version: number,
+    params: ReplaceSecretVersionWrappingParams
+  ): Promise<WrappedSecretVersion> {
+    assertVersion(version, false);
+    const { envelope, innerDigest } = params ?? ({} as ReplaceSecretVersionWrappingParams);
+    if (typeof envelope !== "string" || !envelope) {
+      throw invalidRequest("envelope must be the wrapped envelope");
+    }
+    if (typeof innerDigest !== "string" || !innerDigest) {
+      throw invalidRequest("innerDigest must be the version's innerDigest");
+    }
+    try {
+      const { id } = await this.resolve(secret);
+      return await this.request<WrappedSecretVersion>(
+        `${secretPath(id)}/versions/${version}/wrapping`,
+        {
+          method: "PUT",
+          body: JSON.stringify({ envelope, innerDigest }),
+        }
+      );
+    } catch (error) {
+      return rethrow(
+        error,
+        `Failed to replace the wrapping of version ${version} of secret ${secret}`
+      );
     }
   }
 
@@ -206,9 +399,7 @@ export class SecretsService extends BaseService {
 
   /** Delete one stored version. The latest version cannot be deleted. */
   async deleteVersion(secret: string, version: number): Promise<SecretVersionDeleteResult> {
-    if (!Number.isSafeInteger(version) || version < 1 || version > MAX_SECRET_VERSION) {
-      throw new HyperbrowserError(`version must be an integer from 1 to ${MAX_SECRET_VERSION}`);
-    }
+    assertVersion(version, false);
     try {
       const { id } = await this.resolve(secret);
       return await this.request<SecretVersionDeleteResult>(
@@ -222,12 +413,34 @@ export class SecretsService extends BaseService {
     }
   }
 
-  /** Sealed to the context the API returned for the secret; never one built here. */
-  private uploadVersion(secret: Secret, sealer: SecretsSealer, plaintext: Buffer) {
+  /**
+   * Sealed to the context the API returned for the secret; never one built
+   * here. With a customer key, the sealed envelope is wrapped to the same
+   * context and the API keeps only the wrapped one and the inner digest.
+   */
+  private async uploadVersion(
+    secret: Secret,
+    sealer: SecretsSealer,
+    plaintext: Buffer,
+    customerKey?: CustomerKey
+  ) {
+    const inner = sealer.seal(secret.encryptionContext, plaintext);
+    const body =
+      customerKey === undefined
+        ? { envelope: inner }
+        : {
+            envelope: await customerKey.wrap(inner, secret.encryptionContext),
+            innerDigest: secretEnvelopeDigest(inner),
+            innerKid: sealer.kid,
+          };
     return this.request<SecretVersion>(`${secretPath(secret.id)}/versions`, {
       method: "POST",
-      body: JSON.stringify({ envelope: sealer.seal(secret.encryptionContext, plaintext) }),
+      body: JSON.stringify(body),
     });
+  }
+
+  private fetchWrapped(id: string, version: number | "latest") {
+    return this.request<WrappedSecretVersion>(`${secretPath(id)}/versions/${version}/wrapped`);
   }
 
   private async resolve(secret: string): Promise<Secret> {

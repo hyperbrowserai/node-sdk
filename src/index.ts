@@ -18,6 +18,14 @@ export type {
   ImageBuildSource,
 } from "./image-builds";
 import { HyperbrowserClient, HyperbrowserError } from "./client";
+import { createCustomerKey, secretEnvelopeDigest } from "./customer-key";
+export { createCustomerKey, secretEnvelopeDigest };
+export type {
+  CustomerKey,
+  CustomerKeyAlgorithm,
+  CustomerKeyInput,
+  CustomerKeyOptions,
+} from "./customer-key";
 
 // Export HyperbrowserClient as Hyperbrowser for named imports
 export const Hyperbrowser = HyperbrowserClient;
@@ -37,5 +45,7 @@ if (typeof module !== "undefined" && module.exports) {
   module.exports.imageBuildName = imageBuildName;
   module.exports.dockerImageDigest = dockerImageDigest;
   module.exports.DockerCommandError = DockerCommandError;
+  module.exports.createCustomerKey = createCustomerKey;
+  module.exports.secretEnvelopeDigest = secretEnvelopeDigest;
   module.exports.default = HyperbrowserClient;
 }

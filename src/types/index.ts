@@ -179,7 +179,9 @@ export {
   SandboxVolumeMountType,
   SandboxVolumeMount,
   SandboxSecretReference,
+  SandboxStoredSecretReference,
   SandboxSecrets,
+  SandboxVaultSource,
   SandboxResolvedSecret,
   SandboxStoredSecretBinding,
   SandboxOnePasswordBinding,
@@ -279,6 +281,7 @@ export {
 export {
   SecretValue,
   SecretType,
+  SecretProtection,
   SecretBrowserMetadata,
   SecretMetadata,
   UpdateSecretMetadata,
@@ -293,10 +296,21 @@ export {
   SecretListResponse,
   SecretDeleteResult,
   SecretVersionDeleteResult,
+  WrappedSecretVersion,
+  UnwrappedSecretReference,
+  UnwrapSecretOptions,
+  AddSecretVersionOptions,
+  ReplaceSecretVersionWrappingParams,
+  RewrapSecretParams,
 } from "./secret";
+export { SessionCredential, SessionCredentialSource, SessionVault } from "./credential";
+export type {
+  CustomerKey,
+  CustomerKeyAlgorithm,
+  CustomerKeyInput,
+  CustomerKeyOptions,
+} from "../customer-key";
 export {
-  SessionCredential,
-  SessionCredentialSource,
   CredentialFillField,
   CredentialFillRef,
   CredentialFillOnePassword,
@@ -315,6 +329,10 @@ export {
   VaultListParams,
   VaultListResponse,
   VaultDeleteResult,
+  WrappedVault,
+  WrappedVaultEntry,
+  VaultUnwrappedEntry,
+  VaultReference,
 } from "./vault";
 export {
   CreateProfileParams,

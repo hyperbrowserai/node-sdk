@@ -1,5 +1,19 @@
+import type { CustomerKey } from "../customer-key";
+
 /** A secret value: a UTF-8 string or its raw bytes, used byte-for-byte. */
 export type SecretValue = string | Uint8Array;
+
+/**
+ * Who can open a secret's values, fixed at creation:
+ * - `"platform"`: each version is encrypted to the platform's key.
+ * - `"customer"`: each version is also wrapped with the customer's own key
+ *   (see `CustomerKey`), so the platform stores nothing it can decrypt
+ *   alone. Each use passes the envelope the customer unwrapped, pinned to
+ *   its version; see `secrets.unwrap()` and `vaults.unwrap()`.
+ *   Customer-protected secrets can't be filled into browser pages
+ *   themselves, though an `op_token` one can sign 1Password fills.
+ */
+export type SecretProtection = "platform" | "customer";
 
 /**
  * What a secret's value is, fixed at creation:
@@ -51,6 +65,11 @@ export interface Secret {
    */
   type: string;
   metadata: SecretMetadata;
+  /**
+   * A `SecretProtection`, typed as a string for values added later. Absent
+   * from API versions before customer protection, which means `"platform"`.
+   */
+  protection?: string;
   /** Bound into every envelope for this secret; the SDK uses it when encrypting. */
   encryptionContext: string;
   /** Null until a value is stored. */
@@ -61,8 +80,72 @@ export interface Secret {
 
 export interface SecretVersion {
   version: number;
+  /** The platform key the (inner) envelope was encrypted to. */
   kid: string;
+  /** The customer key that wrapped this version; customer-protected secrets only. */
+  outerKid?: string;
+  /**
+   * When this version stops working because its platform key is retired.
+   * After then, uses fail with `SECRET_KEY_RETIRED`; add a new version and use
+   * that instead.
+   */
+  retiresAt?: string | null;
   createdAt: string;
+}
+
+/** A customer-protected version as the API stores it, for the customer to unwrap. */
+export interface WrappedSecretVersion {
+  version: number;
+  /** The platform key the inner envelope is encrypted to. */
+  kid: string;
+  retiresAt: string | null;
+  /** The customer key that wrapped it. */
+  outerKid: string;
+  /** Unpadded base64url SHA-256 of the inner envelope. */
+  innerDigest: string;
+  /** The outer envelope, which only the customer key can open. */
+  envelope: string;
+}
+
+/**
+ * A customer-protected secret ready to use: pass it as a sandbox or process
+ * `secrets` entry, or as a 1Password `token`. It is the version's inner
+ * envelope, which only the platform can open, but anyone holding it can use
+ * that version, so treat it like the secret itself.
+ */
+export interface UnwrappedSecretReference {
+  name: string;
+  version: number;
+  unwrapped: string;
+}
+
+export interface UnwrapSecretOptions {
+  /** Defaults to the latest version. */
+  version?: number | "latest";
+}
+
+export interface AddSecretVersionOptions {
+  /** Required for customer-protected secrets, which it wraps the value with; not allowed otherwise. */
+  customerKey?: CustomerKey;
+}
+
+/** A new outer envelope for a version, wrapping the same inner envelope. */
+export interface ReplaceSecretVersionWrappingParams {
+  envelope: string;
+  /** Must match the version's `innerDigest`: rewrapping can't change the value. */
+  innerDigest: string;
+}
+
+export interface RewrapSecretParams {
+  /** The key (or keys, picked by `kid`) the versions are wrapped with now. */
+  from: CustomerKey | readonly CustomerKey[];
+  /** The key to wrap them with instead. */
+  to: CustomerKey;
+  /**
+   * Versions to rewrap. Defaults to every version not already wrapped with
+   * `to`, so an interrupted rotation can be run again.
+   */
+  versions?: number[];
 }
 
 export interface SecretDetail extends Secret {
@@ -96,6 +179,16 @@ export interface CreateSecretParams {
    * `["https://github.com"]`; 1-20 entries. Not for `"op_token"` secrets.
    */
   allowedOrigins?: string[];
+  /**
+   * Defaults to `"customer"` when `customerKey` is given and `"platform"`
+   * otherwise. Fixed at creation.
+   */
+  protection?: SecretProtection;
+  /**
+   * The customer's own key, which wraps every version of a
+   * customer-protected secret. Required to store `value` in one.
+   */
+  customerKey?: CustomerKey;
 }
 
 /**
