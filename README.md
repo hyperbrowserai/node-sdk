@@ -154,10 +154,11 @@ try {
 ```
 
 - `credentials` takes up to 20 items: a secret's name (or `{ secret }`),
-  `{ vault }` for the secrets a stored vault names when the session is created,
-  or `{ onePassword }` for an `op_token` secret (see
-  [Fill from 1Password](#fill-from-1password)); the API validates names and limits.
-  `session.credentials` lists the attached secrets as `{ id, name }`. Fill a
+  `{ vault }` for a stored vault, or `{ onePassword }` for an `op_token` secret
+  (see [Fill from 1Password](#fill-from-1password)); the API validates names
+  and limits. A vault is attached by reference, so each fill uses the secrets
+  its entries name at that moment. `session.credentials` lists the attached
+  secrets as `{ id, name }`, and `session.vaults` the vaults. Fill a
   single secret with `{ credential: "github-password", fields: [{ selector }] }`;
   with `vault`, each field names its entry in `field`.
 - Each input reports an `outcome`: `filled`, `not_found` (no input matched),
@@ -423,7 +424,7 @@ own `details` holds the specifics (such as `error.details.details.origin`).
 
 | Code | Meaning |
 |---|---|
-| `CREDENTIAL_NOT_ATTACHED` | The secret, vault or 1Password token wasn't attached to the session, or a vault entry was repointed since. |
+| `CREDENTIAL_NOT_ATTACHED` | The secret, vault or 1Password token wasn't attached to the session, directly or as an entry of an attached vault. |
 | `CREDENTIAL_ORIGIN_NOT_ALLOWED` | The page isn't on the secret's allowed origins (for 1Password, the request's); nothing was typed. |
 | `CREDENTIAL_NOT_READY` | The secret has no allowed origins or no value. |
 | `CREDENTIAL_PAGE_NOT_FOUND`, `CREDENTIAL_FRAME_NOT_FOUND` | No tab or iframe matched. |
