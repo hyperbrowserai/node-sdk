@@ -1,7 +1,14 @@
 import crypto from "crypto";
+import { readFileSync } from "fs";
+import path from "path";
 import { describe, expect, expectTypeOf, test, vi } from "vitest";
 import { HyperbrowserError } from "../../src/client";
-import { createCustomerKey, CustomerKey, secretEnvelopeDigest } from "../../src/customer-key";
+import {
+  createCustomerKey,
+  CustomerKey,
+  CustomerKeyAlgorithm,
+  secretEnvelopeDigest,
+} from "../../src/customer-key";
 import { SecretsSealer } from "../../src/secrets-envelope";
 import { SecretsService } from "../../src/services/secrets";
 import { VaultsService } from "../../src/services/vaults";
@@ -499,5 +506,27 @@ describe("customer-protected vaults", () => {
       unwrapped: {},
     });
     expect(calls()).toEqual(["GET /vaults", `GET /vaults/${VAULT_ID}/wrapped`]);
+  });
+});
+
+describe("customer key interop fixture", () => {
+  const fixture: typeof import("../fixtures/customer_key_interop.json") = JSON.parse(
+    readFileSync(path.join(__dirname, "../fixtures/customer_key_interop.json"), "utf8")
+  );
+
+  test("the inner envelope digest matches", () => {
+    expect(secretEnvelopeDigest(fixture.inner)).toBe(fixture.innerDigest);
+  });
+
+  test.each(fixture.keys)("$label unwraps what both SDKs wrapped", async (item) => {
+    const key = createCustomerKey(item.jwk as crypto.JsonWebKey, {
+      algorithm: item.algorithm as CustomerKeyAlgorithm,
+    });
+    expect(key.kid).toBe(item.kid);
+    for (const wrapped of [item.wrappedByNode, item.wrappedByPython]) {
+      const header = JSON.parse(Buffer.from(wrapped.split(".")[0], "base64url").toString());
+      expect(header).toMatchObject({ alg: item.algorithm, kid: item.kid, ctx: fixture.context });
+      expect(await key.unwrap(wrapped)).toBe(fixture.inner);
+    }
   });
 });
