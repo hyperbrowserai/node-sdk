@@ -154,10 +154,11 @@ try {
 ```
 
 - `credentials` takes up to 20 items: a secret's name (or `{ secret }`),
-  `{ vault }` for the secrets a stored vault names when the session is created,
-  or `{ onePassword }` for an `op_token` secret (see
-  [Fill from 1Password](#fill-from-1password)); the API validates names and limits.
-  `session.credentials` lists the attached secrets as `{ id, name }`. Fill a
+  `{ vault }` for a stored vault, or `{ onePassword }` for an `op_token` secret
+  (see [Fill from 1Password](#fill-from-1password)); the API validates names
+  and limits. A vault is attached by reference, so each fill uses the secrets
+  its entries name at that moment. `session.credentials` lists the attached
+  secrets as `{ id, name }`, and `session.vaults` the vaults. Fill a
   single secret with `{ credential: "github-password", fields: [{ selector }] }`;
   with `vault`, each field names its entry in `field`.
 - Each input reports an `outcome`: `filled`, `not_found` (no input matched),
@@ -339,6 +340,82 @@ console.log(result.fields);
 - `CredentialFillTool` can't fill from 1Password; call
   `sessions.credentials.fill` directly (see [Use with LLM SDKs](#use-with-llm-sdks)).
 
+### Customer-protected secrets
+
+A secret created with `protection: "customer"` is also wrapped with your own
+key, so the platform stores nothing it can open alone. Each version is sealed
+to the platform key as usual, then wrapped locally with your key. To use one,
+unwrap it locally and pass the result. Only the platform can open the
+unwrapped envelope, and it checks that the envelope belongs to the version
+you pinned.
+
+```typescript
+import { createCustomerKey } from "@hyperbrowser/sdk";
+
+// RSA (2048 bits or more), EC P-256/P-384/P-521, X25519 or X448: a KeyObject,
+// PEM/DER or a JWK. A public key can wrap; unwrapping needs the private key.
+const customerKey = createCustomerKey(process.env.HB_CUSTOMER_KEY_PEM!);
+
+await client.secrets.create({ name: "db-pass", value: "hunter2", customerKey });
+await client.secrets.addVersion("db-pass", "hunter3", { customerKey });
+
+// A reference pinned to the version unwrapped: { name, version, unwrapped }.
+const dbPass = await client.secrets.unwrap("db-pass", customerKey);
+const sandbox = await client.sandboxes.create({
+  imageName: "my-image",
+  secrets: { DB_PASS: dbPass },
+});
+await sandbox.exec("node migrate.js", { secrets: { DB_PASS: dbPass } });
+
+// A vault's customer-protected entries, unwrapped together. Its other entries
+// are delivered as usual.
+const appEnv = await client.vaults.unwrap("app-env", customerKey);
+await sandbox.processes.start("node worker.js", { vault: appEnv });
+
+// A customer-protected op_token, for sandboxes and 1Password fills.
+const token = await client.secrets.unwrap("op-token", customerKey);
+await sandbox.exec("node app.js", {
+  onePassword: { token, vault: "Engineering", fields: { DB_PASS: { item: "Postgres", field: "password" } } },
+});
+```
+
+- `protection` is `"platform"` (the default) or `"customer"`, and is fixed when
+  the secret is created. Passing `customerKey` to `create` implies
+  `"customer"`. Creating one without a value gives an empty secret; add its
+  first version with `addVersion(secret, value, { customerKey })`.
+- The key's `kid` is its RFC 7638 thumbprint unless the JWK has a `kid` or you
+  pass `createCustomerKey(key, { kid })`. RSA keys wrap with `RSA-OAEP-256`.
+  EC and OKP keys default to `ECDH-ES+A256KW`; pass `{ algorithm: "ECDH-ES" }`
+  for direct key agreement. To keep the private key in a KMS or HSM, implement
+  `CustomerKey` yourself: `kid`, `wrap(innerEnvelope, encryptionContext)` and
+  `unwrap(wrappedEnvelope)` produce and open a compact JWE with protected
+  header `{ alg, enc: "A256GCM", kid, ctx }`. `ctx` must be the secret's
+  `encryptionContext`. Either method may return a promise.
+- `unwrap(secret, keys, { version })` unwraps the latest version by default.
+  `vaults.unwrap(vault, keys)` unwraps the versions the vault's entries
+  resolve to now. Both take several keys, such as during a rotation, and use
+  the one whose `kid` wrapped each version (`customer_key_mismatch` if none
+  did). The unwrapped envelope is checked against the version's `innerDigest`
+  locally, and again by the API.
+- An unwrapped reference must pin a number, never `"latest"`. A vault reference
+  is refused with `SECRET_VAULT_CHANGED` when an entry was repointed or moved
+  to a newer version since it was unwrapped; unwrap it again.
+- Customer-protected secrets can't be typed into browser pages, including as
+  vault entries in a fill (`SECRET_REQUIRES_CUSTOMER_UNWRAP`). A
+  customer-protected `op_token` can still sign 1Password fills: pass the
+  unwrapped reference as `onePassword.token`.
+- Rotate your key with `rewrap(secret, { from, to })`. It unwraps each version
+  still wrapped with another key and rewraps it with `to`, all locally; the
+  value and the version numbers don't change. It skips versions already
+  wrapped with `to`, so an interrupted rotation resumes where it stopped.
+  `getWrappedVersion` and `replaceVersionWrapping` are the single-version
+  steps, for wrapping done elsewhere.
+- Version details include `outerKid`, the customer key that wrapped them, and
+  `retiresAt`. A version whose platform key is retired is refused with
+  `SECRET_KEY_RETIRED`: add a new version.
+- Fetching wrapped versions needs `secrets.use`, and rewrapping needs
+  `secrets.manage`. Signed-in users must be team owners or admins.
+
 ### Errors
 
 API errors are `HyperbrowserError`s with `statusCode`, `code` and `retryable`
@@ -347,7 +424,7 @@ own `details` holds the specifics (such as `error.details.details.origin`).
 
 | Code | Meaning |
 |---|---|
-| `CREDENTIAL_NOT_ATTACHED` | The secret, vault or 1Password token wasn't attached to the session, or a vault entry was repointed since. |
+| `CREDENTIAL_NOT_ATTACHED` | The secret, vault or 1Password token wasn't attached to the session, directly or as an entry of an attached vault. |
 | `CREDENTIAL_ORIGIN_NOT_ALLOWED` | The page isn't on the secret's allowed origins (for 1Password, the request's); nothing was typed. |
 | `CREDENTIAL_NOT_READY` | The secret has no allowed origins or no value. |
 | `CREDENTIAL_PAGE_NOT_FOUND`, `CREDENTIAL_FRAME_NOT_FOUND` | No tab or iframe matched. |
@@ -367,6 +444,12 @@ own `details` holds the specifics (such as `error.details.details.origin`).
 | `SECRET_ONEPASSWORD_AUTH_FAILED` | 1Password refused the token, or the token is malformed or signs in somewhere other than `1password.com`, `.ca` or `.eu` (or their subdomains). |
 | `SECRET_ONEPASSWORD_RATE_LIMITED`, `SECRET_ONEPASSWORD_FAILED` | Retryable. |
 | `SECRET_SOURCES_INVALID` | Bad `vault`/`onePassword`/`secrets`/`env` combination, such as a `onePassword` variable also set by the vault, more than 32 variables, or a vault with no entries. |
+| `SECRET_REQUIRES_CUSTOMER_UNWRAP` | A customer-protected secret was used without its unwrapped envelope, unwrapped with `"latest"` instead of a pinned version, or used where it can't be (a fill). |
+| `SECRET_PROTECTION_MISMATCH` | An unwrapped envelope for a secret that isn't customer-protected, or a version uploaded in the other protection's form. |
+| `SECRET_DIGEST_MISMATCH` | The unwrapped envelope (or a rewrap's `innerDigest`) doesn't match the version. |
+| `SECRET_VERSION_DUPLICATE` | Another version already holds this inner envelope; rewrap that version instead. |
+| `SECRET_VAULT_CHANGED` | A vault entry resolves to another secret or version than the one unwrapped; unwrap the vault again. |
+| `SECRET_KEY_RETIRED` | The version was sealed to a retired platform key; add a new version. |
 | `VAULT_NOT_FOUND`, `VAULT_ENTRY_NOT_FOUND` | |
 | `VAULT_NAME_TAKEN`, `VAULT_LIMIT_REACHED`, `VAULT_ENTRY_LIMIT_REACHED` | |
 | `SECRETS_FEATURE_DISABLED` | The team doesn't have secrets enabled. |

@@ -1,3 +1,5 @@
+import type { WrappedSecretVersion } from "./secret";
+
 /** An entry of a vault: a stored secret. */
 export interface VaultEntry {
   /** The secret's name. */
@@ -5,6 +7,43 @@ export interface VaultEntry {
   secretId: string;
   /** A pinned version, or null to follow the secret's latest version. */
   version: number | null;
+  /**
+   * The secret's `SecretProtection`. With `"customer"`, each use of the vault
+   * passes this entry's unwrapped envelope (see `vaults.unwrap()`). Absent
+   * from API versions before customer protection.
+   */
+  protection?: string;
+}
+
+/** A customer-protected entry's wrapped envelope, at the version the entry resolves to now. */
+export interface WrappedVaultEntry extends WrappedSecretVersion {
+  /** The secret's name. */
+  name: string;
+  secretId: string;
+}
+
+export interface WrappedVault {
+  id: string;
+  name: string;
+  /** Customer-protected entries only, by environment variable. */
+  entries: Record<string, WrappedVaultEntry>;
+}
+
+/** The envelope the customer unwrapped for one entry, and the version it is from. */
+export interface VaultUnwrappedEntry {
+  version: number;
+  unwrapped: string;
+}
+
+/**
+ * A vault with its customer-protected entries unwrapped, as `vaults.unwrap()`
+ * returns it, for a sandbox's or process's `vault`. Anyone holding it can use
+ * those versions.
+ */
+export interface VaultReference {
+  name: string;
+  /** Environment variable name to unwrapped envelope; at most 32. */
+  unwrapped: Record<string, VaultUnwrappedEntry>;
 }
 
 /** Named environment variables whose values come from stored secrets. A vault holds no values itself. */
@@ -18,7 +57,10 @@ export interface Vault {
   updatedAt: string;
 }
 
-/** A stored secret, following its latest version unless one is pinned. */
+/**
+ * A stored secret, following its latest version unless one is pinned. It may
+ * be customer-protected; entries never hold unwrapped envelopes.
+ */
 export interface VaultEntryParams {
   /** The secret's name. */
   name: string;

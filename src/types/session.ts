@@ -10,7 +10,7 @@ import {
   SessionRegion,
   State,
 } from "./constants";
-import { SessionCredential, SessionCredentialSource } from "./credential";
+import { SessionCredential, SessionCredentialSource, SessionVault } from "./credential";
 
 export type SessionStatus = "active" | "closed" | "close-error" | "error";
 export type BrowserMemorySize = "small" | "medium" | "large";
@@ -94,6 +94,8 @@ export interface SessionDetail extends Session {
   token: string;
   /** The secrets attached at creation, when any were requested. */
   credentials?: SessionCredential[];
+  /** The vaults attached at creation, by reference, when credentials were requested. */
+  vaults?: SessionVault[];
 }
 
 export interface SessionGetParams {
@@ -270,13 +272,13 @@ export interface CreateSessionParams {
   startFromSnapshot?: StartSessionFromSnapshotParams;
   /**
    * Secrets that `sessions.credentials.fill` may type into pages, at most 20:
-   * a secret's name (or `{ secret: name }`), `{ vault: name }` for the
-   * secrets a vault's entries name when the session is created, or
+   * a secret's name (or `{ secret: name }`), `{ vault: name }` for a vault
+   * by reference, whose entries each fill reads as they are then, or
    * `{ onePassword: name }` for an `op_token` secret whose 1Password fields
    * fills may read.
-   * Secrets need allowed origins to be filled. They can only be attached at
-   * creation; the session runs on Firecracker with Chrome's password manager
-   * off.
+   * Secrets need allowed origins to be filled, and customer-protected ones
+   * can't be filled. They can only be attached at creation; the session runs
+   * on Firecracker with Chrome's password manager off.
    */
   credentials?: SessionCredentialSource[];
 }

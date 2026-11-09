@@ -666,6 +666,111 @@ describe("1Password in sandboxes", () => {
   });
 });
 
+describe("customer-protected secrets in sandboxes", () => {
+  const unwrapped = "eyJhbGciOiJSU0EtT0FFUC0yNTYifQ.key.iv.ciphertext.tag";
+  const vault = {
+    name: "app-env",
+    unwrapped: { DB_PASSWORD: { version: 7, unwrapped } },
+  };
+  const tokenReference = { name: "op-token", version: 2, unwrapped };
+  const onePassword = {
+    token: tokenReference,
+    vault: "Engineering",
+    fields: { DB_PASS: { item: "Postgres", field: "password" } },
+  };
+
+  test("image launches send unwrapped references, vault references and 1Password tokens", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue(wireDetail);
+
+    await service.create({
+      imageName: "node",
+      secrets: { API_KEY: { name: "provider-key", version: 4, unwrapped } },
+      vault: { ...vault, extra: "dropped" } as typeof vault,
+      onePassword,
+    });
+
+    const body = JSON.parse((requestSpy.mock.calls[0][1] as any).body);
+    expect(body).toMatchObject({
+      secrets: { API_KEY: { name: "provider-key", version: 4, unwrapped } },
+      vault,
+      onePassword,
+    });
+    expect(body.vault).not.toHaveProperty("extra");
+  });
+
+  test("process start sends the same shapes through the control API", async () => {
+    const start = starter();
+    const api = new SandboxProcessesApi(runtime({}).transport, start);
+    await api.start("node app.js", {
+      secrets: { API_KEY: { name: "provider-key", version: 4, unwrapped } },
+      vault,
+      onePassword,
+    });
+    expect(start.start.mock.calls[0][0]).toEqual({
+      command: "node app.js",
+      secrets: { API_KEY: { name: "provider-key", version: 4, unwrapped } },
+      vault,
+      onePassword,
+    });
+  });
+
+  test.each([
+    [{ secrets: { A: { name: "x", unwrapped } } }, /Pin the version of A/],
+    [{ secrets: { A: { name: "x", version: "latest", unwrapped } } }, /Pin the version of A/],
+    [{ secrets: { A: { name: "x", version: 1, unwrapped: "" } } }, /unwrapped envelope for A/],
+    [{ secrets: { A: { name: "x", version: 1, unwrapped: "x".repeat(65537) } } }, /1 to 65536/],
+    [{ vault: { name: "app env", unwrapped: {} } }, /Invalid vault name/],
+    [{ vault: { name: "app-env" } }, /vault.unwrapped must map/],
+    [{ vault: ["app-env"] }, /vault must be a vault's name/],
+    [
+      { vault: { name: "app-env", unwrapped: { "1A": { version: 1, unwrapped } } } },
+      /Invalid environment variable name in vault/,
+    ],
+    [
+      { vault: { name: "app-env", unwrapped: { A: { version: "latest", unwrapped } } } },
+      /must be the integer/,
+    ],
+    [
+      { vault: { name: "app-env", unwrapped: { A: { version: 1 } } } },
+      /unwrapped envelope of vault app-env's A/,
+    ],
+    [
+      { onePassword: { ...onePassword, token: { name: "op-token", unwrapped } } },
+      /Pin the version of the 1Password token/,
+    ],
+    [
+      { onePassword: { ...onePassword, token: { name: "op token" } } },
+      /Invalid secret name for the 1Password token/,
+    ],
+  ])("bad customer references are rejected before any request: %j", async (params, message) => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    const requestSpy = vi.spyOn(service as any, "request").mockResolvedValue(wireDetail);
+    await expect(service.create({ imageName: "node", ...(params as any) })).rejects.toThrow(
+      message
+    );
+    const start = starter();
+    await expect(
+      new SandboxProcessesApi(runtime({}).transport, start).start("x", params as any)
+    ).rejects.toThrow(message);
+    expect(requestSpy).not.toHaveBeenCalled();
+    expect(start.start).not.toHaveBeenCalled();
+  });
+
+  test("at most 32 unwrapped vault entries are sent", async () => {
+    const service = new SandboxesService("test-key", "https://api.example.com", 30_000);
+    vi.spyOn(service as any, "request").mockResolvedValue(wireDetail);
+    const entries = (count: number) =>
+      Object.fromEntries(
+        Array.from({ length: count }, (_, i) => [`E${i}`, { version: 1, unwrapped }])
+      );
+    await service.create({ imageName: "node", vault: { name: "app-env", unwrapped: entries(32) } });
+    await expect(
+      service.create({ imageName: "node", vault: { name: "app-env", unwrapped: entries(33) } })
+    ).rejects.toThrow(/At most 32 unwrapped vault entries/);
+  });
+});
+
 describe("control API error fields", () => {
   class TestService extends BaseService {
     post<T>(path: string) {

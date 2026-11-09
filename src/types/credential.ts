@@ -1,3 +1,5 @@
+import type { SandboxStoredSecretReference } from "./sandbox";
+
 /** A secret attached to a browser session, which fill may type into its pages. */
 export interface SessionCredential {
   id: string;
@@ -5,10 +7,19 @@ export interface SessionCredential {
 }
 
 /**
+ * A vault attached to a browser session by reference: each fill uses its
+ * entries as they are at that moment.
+ */
+export interface SessionVault {
+  id: string;
+  name: string;
+}
+
+/**
  * What to attach to a browser session at creation: a secret by name (or
- * `{ secret }`), `{ vault }` for the secrets a vault's entries name, or
- * `{ onePassword }` for an `op_token` secret that fills may read 1Password
- * fields with.
+ * `{ secret }`), `{ vault }` for a vault by reference (each fill reads its
+ * entries as they are then), or `{ onePassword }` for an `op_token` secret
+ * that fills may read 1Password fields with.
  */
 export type SessionCredentialSource =
   | string
@@ -49,8 +60,8 @@ export interface CredentialFillField {
  * the request names the origins it may be typed on.
  */
 export interface CredentialFillOnePassword {
-  /** The `op_token` secret attached to the session, by name; its latest version is used. */
-  token: string;
+  /** The `op_token` secret attached to the session: its name (its latest version is used), or a reference. */
+  token: string | SandboxStoredSecretReference;
   /** The 1Password vault's name or ID. */
   vault: string;
   /**

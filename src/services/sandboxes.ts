@@ -9,7 +9,11 @@ import {
   SecretProcessStartPayload,
   SecretProcessStartResponse,
 } from "../sandbox/process";
-import { serializeSecretReferences } from "../sandbox/secret-references";
+import {
+  serializeOnePassword,
+  serializeSecretReferences,
+  serializeVaultSource,
+} from "../sandbox/secret-references";
 import { SandboxTerminalApi } from "../sandbox/terminal";
 import {
   buildDockerImageFromDockerfile,
@@ -155,8 +159,8 @@ const serializeCreateSandboxParams = (params: CreateSandboxParams): Record<strin
     throw new HyperbrowserError("Unsupported sandbox runtimeClass");
   if (typeof params.imageName === "string") {
     const secrets = serializeSecretReferences(params.secrets);
-    const vault = params.vault;
-    const onePassword = params.onePassword;
+    const vault = serializeVaultSource(params.vault);
+    const onePassword = serializeOnePassword(params.onePassword);
     // The startup command with secrets runs only in Firecracker sandboxes.
     if (
       (secrets !== undefined || vault !== undefined || onePassword !== undefined) &&
