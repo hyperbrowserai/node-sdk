@@ -1,4 +1,5 @@
 import { HyperbrowserError } from "../error";
+import { isPlainObject } from "../secrets-envelope";
 import { SandboxOnePassword, SandboxSecrets, SandboxVaultSource } from "../types/sandbox";
 
 const ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
@@ -163,18 +164,17 @@ export const serializeVaultSource = (
  * Check a 1Password source's token, the one member that can be a secret
  * reference; the API checks the rest.
  */
-export const serializeOnePasswordToken = (
-  token: SandboxOnePassword["token"]
-): WireOnePassword["token"] =>
-  typeof token === "string" ? token : serializeSecretReference(token, "the 1Password token");
-
-/** Serialize a 1Password source, checking its token. */
-export const serializeOnePassword = (
-  onePassword: SandboxOnePassword | undefined
-): WireOnePassword | undefined =>
-  onePassword === undefined || onePassword === null || typeof onePassword !== "object"
-    ? onePassword
-    : { ...onePassword, token: serializeOnePasswordToken(onePassword.token) };
+export const serializeOnePassword = <T extends Pick<SandboxOnePassword, "token">>(
+  onePassword: T | undefined
+): (Omit<T, "token"> & Pick<WireOnePassword, "token">) | undefined => {
+  if (!isPlainObject(onePassword)) return onePassword;
+  const { token } = onePassword;
+  return {
+    ...onePassword,
+    token:
+      typeof token === "string" ? token : serializeSecretReference(token, "the 1Password token"),
+  };
+};
 
 /** An environment variable must come from either `env` or `secrets`, not both. */
 export const assertNoEnvSecretOverlap = (

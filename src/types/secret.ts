@@ -4,14 +4,9 @@ import type { CustomerKey } from "../customer-key";
 export type SecretValue = string | Uint8Array;
 
 /**
- * Who can open a secret's values, fixed at creation:
- * - `"platform"`: each version is encrypted to the platform's key.
- * - `"customer"`: each version is also wrapped with the customer's own key
- *   (see `CustomerKey`), so the platform stores nothing it can decrypt
- *   alone. Each use passes the envelope the customer unwrapped, pinned to
- *   its version; see `secrets.unwrap()` and `vaults.unwrap()`.
- *   Customer-protected secrets can't be filled into browser pages
- *   themselves, though an `op_token` one can sign 1Password fills.
+ * Fixed at creation. `"customer"` secrets are also wrapped with your own
+ * `CustomerKey`, and each use passes what `secrets.unwrap()` or
+ * `vaults.unwrap()` returns; they can't be filled into browser pages.
  */
 export type SecretProtection = "platform" | "customer";
 

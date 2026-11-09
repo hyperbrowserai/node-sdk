@@ -323,13 +323,7 @@ export class SecretsService extends BaseService {
         const inner = await unwrapVersion(wrapped, from, label);
         const envelope = await to.wrap(inner, detail.encryptionContext);
         rewrapped.push(
-          await this.request<WrappedSecretVersion>(
-            `${secretPath(detail.id)}/versions/${version}/wrapping`,
-            {
-              method: "PUT",
-              body: JSON.stringify({ envelope, innerDigest: wrapped.innerDigest }),
-            }
-          )
+          await this.putWrapping(detail.id, version, { envelope, innerDigest: wrapped.innerDigest })
         );
       }
       return rewrapped;
@@ -358,13 +352,7 @@ export class SecretsService extends BaseService {
     }
     try {
       const { id } = await this.resolve(secret);
-      return await this.request<WrappedSecretVersion>(
-        `${secretPath(id)}/versions/${version}/wrapping`,
-        {
-          method: "PUT",
-          body: JSON.stringify({ envelope, innerDigest }),
-        }
-      );
+      return await this.putWrapping(id, version, { envelope, innerDigest });
     } catch (error) {
       return rethrow(
         error,
@@ -441,6 +429,13 @@ export class SecretsService extends BaseService {
 
   private fetchWrapped(id: string, version: number | "latest") {
     return this.request<WrappedSecretVersion>(`${secretPath(id)}/versions/${version}/wrapped`);
+  }
+
+  private putWrapping(id: string, version: number, body: ReplaceSecretVersionWrappingParams) {
+    return this.request<WrappedSecretVersion>(`${secretPath(id)}/versions/${version}/wrapping`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    });
   }
 
   private async resolve(secret: string): Promise<Secret> {

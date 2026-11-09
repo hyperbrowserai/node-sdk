@@ -60,11 +60,7 @@ export interface CredentialFillField {
  * the request names the origins it may be typed on.
  */
 export interface CredentialFillOnePassword {
-  /**
-   * The `op_token` secret attached to the session: its name (its latest
-   * version is used), or a reference pinning a version. A
-   * customer-protected token is passed as `secrets.unwrap()` returns it.
-   */
+  /** The `op_token` secret attached to the session: its name (its latest version is used), or a reference. */
   token: string | SandboxStoredSecretReference;
   /** The 1Password vault's name or ID. */
   vault: string;

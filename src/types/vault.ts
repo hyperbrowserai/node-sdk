@@ -36,11 +36,9 @@ export interface VaultUnwrappedEntry {
 }
 
 /**
- * A vault with the envelopes of its customer-protected entries, as
- * `vaults.unwrap()` returns it: pass it as a sandbox's or process's `vault`.
- * The envelopes match the entries as they were unwrapped; if an entry changes
- * since, uses fail with `SECRET_VAULT_CHANGED` and the vault must be
- * unwrapped again. Anyone holding it can use those versions.
+ * A vault with its customer-protected entries unwrapped, as `vaults.unwrap()`
+ * returns it, for a sandbox's or process's `vault`. Anyone holding it can use
+ * those versions.
  */
 export interface VaultReference {
   name: string;

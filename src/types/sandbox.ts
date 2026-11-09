@@ -117,11 +117,7 @@ export type SandboxVaultSource = string | VaultReference;
  * starts. Nothing about it is stored.
  */
 export interface SandboxOnePassword {
-  /**
-   * The `op_token` secret: its name (its latest version is used), or a
-   * reference pinning a version. A customer-protected token is passed as
-   * `secrets.unwrap()` returns it.
-   */
+  /** The `op_token` secret: its name (its latest version is used), or a reference. */
   token: string | SandboxStoredSecretReference;
   /** The 1Password vault's name or ID. */
   vault: string;
@@ -227,8 +223,7 @@ export type CreateSandboxParams =
       /**
        * A vault whose entries become the startup command's environment
        * variables; `secrets` is merged over it and wins on a clash. Same
-       * requirements as `secrets`. Pass a vault with customer-protected
-       * entries as `vaults.unwrap()` returns it.
+       * requirements as `secrets`.
        */
       vault?: SandboxVaultSource;
       /** 1Password fields for the startup command. Same requirements as `secrets`. */
@@ -625,8 +620,7 @@ export interface SandboxExecParams {
    * A vault whose entries become environment variables of this process,
    * delivered like `secrets`. `secrets` is merged over it and wins on a
    * clash; `env` can't set a variable either of them sets. Together they hold
-   * at most 32 variables. Pass a vault with customer-protected entries as
-   * `vaults.unwrap()` returns it.
+   * at most 32 variables.
    */
   vault?: SandboxVaultSource;
   /**

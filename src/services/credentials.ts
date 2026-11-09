@@ -1,5 +1,5 @@
 import { invalidRequest } from "../error";
-import { serializeOnePasswordToken } from "../sandbox/secret-references";
+import { serializeOnePassword } from "../sandbox/secret-references";
 import { isPlainObject } from "../secrets-envelope";
 import { CredentialFillResult, FillCredentialParams } from "../types/credential";
 import { BaseService } from "./base";
@@ -43,9 +43,7 @@ export class CredentialsService extends BaseService {
     }
     // Preserve request members so the API can reject unknown or conflicting options.
     const { frameUrl, ...body } = params;
-    const onePassword = isPlainObject(body.onePassword)
-      ? { ...body.onePassword, token: serializeOnePasswordToken(body.onePassword.token) }
-      : body.onePassword;
+    const onePassword = serializeOnePassword(body.onePassword);
     return this.request<CredentialFillResult>(
       `/session/${encodeURIComponent(sessionId)}/credentials/fill`,
       {
