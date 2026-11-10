@@ -64,6 +64,7 @@ export interface SessionLaunchState {
   enableAlwaysOpenPdfExternally?: boolean;
   appendTimestampToDownloads?: boolean;
   disablePostQuantumKeyAgreement?: boolean;
+  enableWebglFingerprinting?: boolean;
 }
 
 export interface SessionCreditBreakdown {
