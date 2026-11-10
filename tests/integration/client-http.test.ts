@@ -407,7 +407,7 @@ describe("client HTTP integration", () => {
     ]);
   });
 
-  test("Gemini Computer Use forwards Gemini 4 Argon and reasoning effort on start", async () => {
+  test("Gemini Computer Use forwards Gemini 4 Carbon, Gemini 4 Argon, and reasoning effort on start", async () => {
     const server = await startServer();
     servers.push(server);
     const client = new HyperbrowserClient({
@@ -421,6 +421,11 @@ describe("client HTTP integration", () => {
       reasoningEffort: "high",
       useCustomApiKeys: true,
       apiKeys: { google: "google-key" },
+    });
+    await client.agents.geminiComputerUse.start({
+      task: "Complete the task",
+      llm: "gemini-4-carbon",
+      reasoningEffort: "low",
     });
     await client.agents.geminiComputerUse.start({
       task: "Complete the task",
@@ -445,6 +450,17 @@ describe("client HTTP integration", () => {
           reasoningEffort: "high",
           useCustomApiKeys: true,
           apiKeys: { google: "google-key" },
+        },
+      },
+      {
+        method: "POST",
+        url: "/api/task/gemini-computer-use",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: {
+          task: "Complete the task",
+          llm: "gemini-4-carbon",
+          reasoningEffort: "low",
         },
       },
       {
