@@ -1,5 +1,6 @@
 import { describe, expect, expectTypeOf, test } from "vitest";
 import type {
+  BatchScrapeJobResponse,
   ClickActionParams,
   DragActionParams,
   ScrollActionParams,
@@ -11,6 +12,9 @@ import type {
   ComputerActionResponseDataCursorPosition,
   CompleteSandboxImageBuildParams,
   CreateSandboxImageBuildParams,
+  CreateSessionProfile,
+  GetBatchScrapeJobParams,
+  GetWebCrawlJobParams,
   Sandbox,
   SandboxExecParams,
   SandboxImageBuildInputFormat,
@@ -21,9 +25,22 @@ import type {
   SandboxNetworkPolicy,
   SandboxSnapshotListResponse,
   SandboxSnapshotSummary,
+  ScrapedPage,
+  ScreenshotOptions,
+  Session,
+  SessionProfile,
+  SessionRecording,
   SessionRegion,
   SessionStatus,
+  StartBatchScrapeJobParams,
+  StartBatchScrapeJobResponse,
+  StartWebCrawlJobParams,
+  StartWebCrawlJobResponse,
   VolumeListResponse,
+  WebCrawlJobResponse,
+  WebCrawlJobStatus,
+  WebCrawlJobStatusResponse,
+  WebCrawlOptions,
 } from "../../src/types";
 import { ComputerAction } from "../../src/types";
 import { ComputerActionService } from "../../src/services/computer-action";
@@ -182,5 +199,32 @@ describe("public type compatibility", () => {
     expectTypeOf<"cancelled">().not.toExtend<SandboxImageBuildStatus>();
     expectTypeOf<"BUILDING">().not.toExtend<SandboxImageBuildStatus>();
     expectTypeOf<"canceled">().toExtend<SandboxImageBuildStatus>();
+  });
+
+  test("exports web crawl, batch scrape, and session types from root types barrel", () => {
+    expectTypeOf<WebCrawlJobStatus>().toEqualTypeOf<
+      "pending" | "running" | "completed" | "failed"
+    >();
+    expectTypeOf<StartWebCrawlJobParams["crawlOptions"]>().toEqualTypeOf<
+      WebCrawlOptions | undefined
+    >();
+    expectTypeOf<GetWebCrawlJobParams["batchSize"]>().toEqualTypeOf<number | undefined>();
+    expectTypeOf<StartWebCrawlJobResponse["jobId"]>().toEqualTypeOf<string>();
+    expectTypeOf<WebCrawlJobStatusResponse["status"]>().toEqualTypeOf<WebCrawlJobStatus>();
+    expectTypeOf<WebCrawlJobResponse["status"]>().toEqualTypeOf<WebCrawlJobStatus>();
+
+    expectTypeOf<StartBatchScrapeJobParams["urls"]>().toEqualTypeOf<string[]>();
+    expectTypeOf<StartBatchScrapeJobResponse["jobId"]>().toEqualTypeOf<string>();
+    expectTypeOf<BatchScrapeJobResponse["data"]>().toEqualTypeOf<ScrapedPage[] | undefined>();
+    expectTypeOf<GetBatchScrapeJobParams["page"]>().toEqualTypeOf<number | undefined>();
+    expectTypeOf<ScreenshotOptions["fullPage"]>().toEqualTypeOf<boolean | undefined>();
+
+    expectTypeOf<SessionRecording["timestamp"]>().toEqualTypeOf<number>();
+    expectTypeOf<CreateSessionProfile["persistNetworkCache"]>().toEqualTypeOf<
+      boolean | undefined
+    >();
+    expectTypeOf<SessionProfile["persistNetworkCache"]>().toEqualTypeOf<boolean | undefined>();
+    expectTypeOf<Session["duration"]>().toEqualTypeOf<number | undefined>();
+    expectTypeOf<Session["proxyDataConsumed"]>().toEqualTypeOf<string | undefined>();
   });
 });

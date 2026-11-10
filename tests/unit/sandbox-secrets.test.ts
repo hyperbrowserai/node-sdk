@@ -473,6 +473,7 @@ describe("vaults in sandboxes", () => {
       vault: "app-env",
       secrets: { API_KEY: { name: "provider-key" } },
     });
+    expect(sandbox.startupSecrets).toEqual(vaultBindings);
     expect(sandbox.toJSON().startupSecrets).toEqual(vaultBindings);
   });
 
@@ -483,6 +484,7 @@ describe("vaults in sandboxes", () => {
       .mockResolvedValueOnce({ ...wireDetail, status: "active" });
     const sandbox = await service.create({ imageName: "node", vault: "app-env" });
     await sandbox.info();
+    expect(sandbox.startupSecrets).toEqual(vaultBindings);
     expect(sandbox.toJSON().startupSecrets).toEqual(vaultBindings);
   });
 
@@ -811,12 +813,19 @@ describe("control API error fields", () => {
     expect(error.details).toMatchObject({ requiredScopes: ["secrets.use"] });
   });
 
-  test("SECRETS_NOT_CONFIGURED is not retried despite its 503", async () => {
-    respond(503, { code: "SECRETS_NOT_CONFIGURED", message: "not configured" });
+  test.each([
+    "SECRETS_ADMIN_REQUIRED",
+    "SECRETS_NOT_CONFIGURED",
+    "SECRET_KEY_UNAVAILABLE",
+    "SECRET_DECRYPT_FAILED",
+    "SECRET_ENVELOPE_INVALID",
+    "SECRET_VALUE_INVALID",
+  ])("%s is not retried despite its 503", async (code) => {
+    respond(503, { code, message: "not retryable" });
     const service = new TestService("key", "https://api.example.com", 1_000);
     await expect(service.post("/x")).rejects.toMatchObject({
       statusCode: 503,
-      code: "SECRETS_NOT_CONFIGURED",
+      code,
       retryable: false,
     });
 
@@ -825,7 +834,7 @@ describe("control API error fields", () => {
         return this.request<T>(path);
       }
     }
-    respond(503, { code: "SECRETS_NOT_CONFIGURED", message: "not configured" });
+    respond(503, { code, message: "not retryable" });
     await expect(
       new GetService("key", "https://api.example.com", 1_000).get("/secrets/public-key")
     ).rejects.toMatchObject({ retryable: false });

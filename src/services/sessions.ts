@@ -1,4 +1,4 @@
-import { promises as fs, Stats, createReadStream, ReadStream } from "fs";
+import { promises as fs, constants as fsConstants, Stats, createReadStream, ReadStream } from "fs";
 import * as path from "path";
 import FormData from "form-data";
 import { RequestInit } from "node-fetch";
@@ -261,6 +261,54 @@ export class SessionsService extends BaseService {
   async uploadFile(id: string, fileOptions: UploadFileOptions): Promise<UploadFileResponse> {
     const { fileInput, fileName } = fileOptions;
 
+    // Our own file stream, destroyed when the upload settles. A stream the
+    // caller passes in stays theirs and is never destroyed here.
+    let ownedStream: ReadStream | undefined;
+    let sourceStream: NodeJS.ReadableStream | undefined;
+    let streamError: HyperbrowserError | undefined;
+    let rejectStreamError: ((error: HyperbrowserError) => void) | undefined;
+    const streamFailure = new Promise<never>((_, reject) => {
+      rejectStreamError = reject;
+    });
+    streamFailure.catch(() => {});
+    // Aborts the in-flight request when the body fails, so the socket is not
+    // held open until the request timeout.
+    const controller = new AbortController();
+    let readLabel = "";
+
+    // form-data re-emits a source stream's "error" on the FormData, and
+    // node-fetch pipes the body without an error listener, so an unlistened
+    // FormData error is thrown as an uncaught exception. Every FormData body
+    // therefore gets a listener, whatever the input type.
+    const onStreamError = (error: Error) => {
+      if (!streamError) {
+        streamError = new HyperbrowserError(
+          `Failed to read file ${readLabel}: ${error.message}`,
+          undefined
+        );
+      }
+      controller.abort();
+      rejectStreamError?.(streamError);
+    };
+    const buildBody = (
+      file: NodeJS.ReadableStream | Buffer,
+      filename: string
+    ): RequestInit => {
+      const formData = new FormData();
+      formData.on("error", onStreamError);
+      if (!Buffer.isBuffer(file)) {
+        sourceStream = file;
+        file.on("error", onStreamError);
+      }
+      formData.append("file", file, { filename });
+      return {
+        method: "POST",
+        body: formData,
+        headers: formData.getHeaders(),
+        signal: controller.signal,
+      };
+    };
+
     try {
       let fetchOptions: RequestInit;
 
@@ -268,6 +316,7 @@ export class SessionsService extends BaseService {
         let stats: Stats;
         try {
           stats = await fs.stat(fileInput);
+          await fs.access(fileInput, fsConstants.R_OK);
         } catch (error: any) {
           if (error.code === "ENOENT") {
             throw new HyperbrowserError(`File not found: ${fileInput}`, undefined);
@@ -288,58 +337,24 @@ export class SessionsService extends BaseService {
           throw new HyperbrowserError(`Path is not a file: ${fileInput}`, undefined);
         }
 
-        const formData = new FormData();
-        const fileStream = createReadStream(fileInput);
-        const fileBaseName = fileName || path.basename(fileInput);
-
-        fileStream.on("error", (error) => {
-          throw new HyperbrowserError(
-            `Failed to read file ${fileInput}: ${error.message}`,
-            undefined
-          );
-        });
-
-        formData.append("file", fileStream, {
-          filename: fileBaseName,
-        });
-
-        fetchOptions = {
-          method: "POST",
-          body: formData,
-          headers: formData.getHeaders(),
-        };
+        readLabel = `at ${fileInput}`;
+        ownedStream = createReadStream(fileInput);
+        fetchOptions = buildBody(ownedStream, fileName || path.basename(fileInput));
       } else if (this.isReadableStream(fileInput)) {
-        const formData = new FormData();
-
         let tmpFileName = fileName || `file-${Date.now()}`;
         if (fileInput.path && typeof fileInput.path === "string" && !fileName) {
           tmpFileName = path.basename(fileInput.path);
         }
 
-        formData.append("file", fileInput, {
-          filename: tmpFileName,
-        });
-
-        fetchOptions = {
-          method: "POST",
-          body: formData,
-          headers: formData.getHeaders(),
-        };
+        readLabel = `stream ${tmpFileName}`;
+        fetchOptions = buildBody(fileInput, tmpFileName);
       } else if (Buffer.isBuffer(fileInput)) {
         if (!fileName) {
           throw new HyperbrowserError("fileName is required when uploading Buffer data", undefined);
         }
 
-        const formData = new FormData();
-        formData.append("file", fileInput, {
-          filename: fileName,
-        });
-
-        fetchOptions = {
-          method: "POST",
-          body: formData,
-          headers: formData.getHeaders(),
-        };
+        readLabel = `buffer ${fileName}`;
+        fetchOptions = buildBody(fileInput, fileName);
       } else {
         throw new HyperbrowserError(
           "Unsupported file input type. Please provide a file path string, ReadStream, or Buffer.",
@@ -347,13 +362,26 @@ export class SessionsService extends BaseService {
         );
       }
 
-      return await this.request<UploadFileResponse>(`/session/${id}/uploads`, fetchOptions);
+      const requestPromise = this.request<UploadFileResponse>(
+        `/session/${id}/uploads`,
+        fetchOptions
+      );
+      requestPromise.catch(() => {});
+      return await Promise.race([requestPromise, streamFailure]);
     } catch (error) {
+      if (streamError) {
+        throw streamError;
+      }
       if (error instanceof HyperbrowserError) {
         throw error;
       }
 
       throw new HyperbrowserError(`Failed to upload file for session ${id}: ${error}`, undefined);
+    } finally {
+      if (sourceStream && sourceStream !== ownedStream) {
+        sourceStream.removeListener("error", onStreamError);
+      }
+      ownedStream?.destroy();
     }
   }
 

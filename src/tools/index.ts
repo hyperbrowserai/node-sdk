@@ -90,10 +90,11 @@ export class WebsiteExtractTool {
   static anthropicToolDefinition = EXTRACT_TOOL_ANTHROPIC;
 
   static async runnable(hb: HyperbrowserClient, params: StartExtractJobParams): Promise<string> {
-    if (params.schema && typeof params.schema === "string") {
-      params.schema = JSON.parse(params.schema);
-    }
-    const resp = await hb.extract.startAndWait(params);
+    const requestParams: StartExtractJobParams =
+      params.schema && typeof params.schema === "string"
+        ? { ...params, schema: JSON.parse(params.schema) }
+        : { ...params };
+    const resp = await hb.extract.startAndWait(requestParams);
     return resp.data ? JSON.stringify(resp.data) : "";
   }
 }

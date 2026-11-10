@@ -464,6 +464,46 @@ export const assertCustomerKey = (key: unknown, what = "customerKey"): CustomerK
 };
 
 /**
+ * @internal Checks that `keys` is a CustomerKey or a list of them before
+ * anything is sent. An empty list passes only with `allowEmpty`: an up-front
+ * check must not reject a call that never needs a key (an empty vault, or a
+ * rewrap with nothing to rewrap); `customerKeyFor` still rejects it when a
+ * key is actually needed.
+ */
+export const assertCustomerKeys = (
+  keys: unknown,
+  what = "customerKey",
+  { allowEmpty = false }: { allowEmpty?: boolean } = {}
+): readonly CustomerKey[] => {
+  if (!Array.isArray(keys)) {
+    return [assertCustomerKey(keys, what)];
+  }
+  if (keys.length === 0 && !allowEmpty) {
+    throw new HyperbrowserError(`Pass at least one customer key as ${what}`, {
+      code: "invalid_request",
+      retryable: false,
+    });
+  }
+  return keys.map((key, index) => assertCustomerKey(key, `${what}[${index}]`));
+};
+
+/** @internal Wraps `innerEnvelope` and checks that `wrap()` returned a non-empty string. */
+export const wrapEnvelope = async (
+  customerKey: CustomerKey,
+  innerEnvelope: string,
+  encryptionContext: string
+): Promise<string> => {
+  const envelope = await customerKey.wrap(innerEnvelope, encryptionContext);
+  if (typeof envelope !== "string" || !envelope) {
+    throw new HyperbrowserError("The customer key's wrap() must return the envelope as a string", {
+      code: "invalid_request",
+      retryable: false,
+    });
+  }
+  return envelope;
+};
+
+/**
  * @internal Unwrap a wrapped version with the key among `keys` that wrapped
  * it, and check the result is the inner envelope the version holds.
  */
@@ -489,14 +529,7 @@ export const customerKeyFor = (
   kid: string,
   label: string
 ): CustomerKey => {
-  const list = (Array.isArray(keys) ? keys : [keys]) as readonly CustomerKey[];
-  if (list.length === 0) {
-    throw new HyperbrowserError("Pass at least one customer key", {
-      code: "invalid_request",
-      retryable: false,
-    });
-  }
-  list.forEach((key, index) => assertCustomerKey(key, `customerKey[${index}]`));
+  const list = assertCustomerKeys(keys);
   const key = list.find((candidate) => candidate.kid === kid);
   if (!key) {
     throw new HyperbrowserError(

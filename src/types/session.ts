@@ -22,6 +22,7 @@ export interface BasicResponse {
 export interface SessionProfile {
   id: string;
   persistChanges?: boolean;
+  persistNetworkCache?: boolean;
 }
 
 /** How a session signs its requests with Web Bot Auth. */
@@ -63,6 +64,8 @@ export interface SessionLaunchState {
   enableAlwaysOpenPdfExternally?: boolean;
   appendTimestampToDownloads?: boolean;
   disablePostQuantumKeyAgreement?: boolean;
+  /** @deprecated Discontinued: WebGL fingerprinting was removed from the browser, and the server ignores this option. Kept so existing code still type-checks. */
+  enableWebglFingerprinting?: boolean;
 }
 
 export interface SessionCreditBreakdown {
@@ -83,6 +86,8 @@ export interface Session {
   launchState?: SessionLaunchState | null;
   creditsUsed: number | null;
   creditBreakdown: SessionCreditBreakdown;
+  duration?: number;
+  proxyDataConsumed?: string;
 }
 
 export interface SessionDetail extends Session {
@@ -255,6 +260,7 @@ export interface CreateSessionParams {
   saveDownloads?: boolean;
   imageCaptchaParams?: Array<ImageCaptchaParam>;
   timeoutMinutes?: number;
+  /** @deprecated Discontinued: WebGL fingerprinting was removed from the browser, and the server ignores this option. Kept so existing code still type-checks. */
   enableWebglFingerprinting?: boolean;
   enableWindowManager?: boolean;
   enableWindowManagerTaskbar?: boolean;

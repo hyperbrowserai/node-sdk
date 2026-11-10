@@ -1,8 +1,10 @@
 import {
   assertCustomerKey,
+  assertCustomerKeys,
   CustomerKey,
   secretEnvelopeDigest,
   unwrapVersion,
+  wrapEnvelope,
 } from "../customer-key";
 import { HyperbrowserError, invalidRequest } from "../error";
 import { MAX_SECRET_VERSION, SECRET_NAME_PATTERN } from "../sandbox/secret-references";
@@ -280,6 +282,7 @@ export class SecretsService extends BaseService {
   ): Promise<UnwrappedSecretReference> {
     const version = options?.version ?? "latest";
     assertVersion(version, true);
+    assertCustomerKeys(customerKey);
     try {
       const resolved = await this.resolve(secret);
       const wrapped = await this.fetchWrapped(resolved.id, version);
@@ -302,6 +305,7 @@ export class SecretsService extends BaseService {
    */
   async rewrap(secret: string, params: RewrapSecretParams): Promise<WrappedSecretVersion[]> {
     const { from, to, versions } = params ?? ({} as RewrapSecretParams);
+    assertCustomerKeys(from, "from", { allowEmpty: true });
     assertCustomerKey(to, "to");
     if (versions !== undefined) {
       if (!Array.isArray(versions))
@@ -321,7 +325,7 @@ export class SecretsService extends BaseService {
         const wrapped = await this.fetchWrapped(detail.id, version);
         const label = `Version ${version} of secret ${detail.name}`;
         const inner = await unwrapVersion(wrapped, from, label);
-        const envelope = await to.wrap(inner, detail.encryptionContext);
+        const envelope = await wrapEnvelope(to, inner, detail.encryptionContext);
         rewrapped.push(
           await this.putWrapping(detail.id, version, { envelope, innerDigest: wrapped.innerDigest })
         );
@@ -417,7 +421,7 @@ export class SecretsService extends BaseService {
       customerKey === undefined
         ? { envelope: inner }
         : {
-            envelope: await customerKey.wrap(inner, secret.encryptionContext),
+            envelope: await wrapEnvelope(customerKey, inner, secret.encryptionContext),
             innerDigest: secretEnvelopeDigest(inner),
             innerKid: sealer.kid,
           };
