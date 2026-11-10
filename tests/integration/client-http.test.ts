@@ -381,6 +381,11 @@ describe("client HTTP integration", () => {
       llm: "claude-sonnet-5-5",
       reasoningEffort: "max",
     });
+    await client.agents.claudeComputerUse.start({
+      task: "Complete the task",
+      llm: "claude-fable-5-2",
+      reasoningEffort: "max",
+    });
 
     expect(started).toEqual({ jobId: "claude_job_123", liveUrl: null });
     expect(server.requests.map((request) => request.body)).toEqual([
@@ -392,6 +397,11 @@ describe("client HTTP integration", () => {
       {
         task: "Complete the task",
         llm: "claude-sonnet-5-5",
+        reasoningEffort: "max",
+      },
+      {
+        task: "Complete the task",
+        llm: "claude-fable-5-2",
         reasoningEffort: "max",
       },
     ]);
