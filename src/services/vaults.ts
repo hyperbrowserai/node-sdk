@@ -1,4 +1,4 @@
-import { CustomerKey, unwrapVersion } from "../customer-key";
+import { assertCustomerKeys, CustomerKey, unwrapVersion } from "../customer-key";
 import { HyperbrowserError, invalidRequest } from "../error";
 import {
   CreateVaultParams,
@@ -94,6 +94,7 @@ export class VaultsService extends BaseService {
     vault: string,
     customerKey: CustomerKey | readonly CustomerKey[]
   ): Promise<VaultReference> {
+    assertCustomerKeys(customerKey);
     const wrapped = await this.getWrapped(vault);
     const unwrapped: VaultReference["unwrapped"] = {};
     for (const [env, entry] of Object.entries(wrapped.entries ?? {})) {

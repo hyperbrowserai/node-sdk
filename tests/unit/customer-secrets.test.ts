@@ -337,7 +337,7 @@ describe("customer-protected secrets", () => {
 
   test("unwrap refuses a key that didn't wrap the version, and a digest mismatch", async () => {
     let stored: WrappedSecretVersion = storedVersion("hunter2", rsaKey);
-    const { service } = mockService(secrets(), (_method, path) =>
+    const { service, calls } = mockService(secrets(), (_method, path) =>
       path.endsWith("/wrapped") ? stored : { ...secret(), versions: [] }
     );
     await expect(service.unwrap(ID, ecKey)).rejects.toMatchObject({
@@ -345,7 +345,12 @@ describe("customer-protected secrets", () => {
     });
     stored = { ...stored, innerDigest: secretEnvelopeDigest("something else") };
     await expect(service.unwrap(ID, rsaKey)).rejects.toThrow(/doesn't match its innerDigest/);
+    const callsBeforeInvalidKey = calls().length;
     await expect(service.unwrap(ID, [])).rejects.toThrow(/at least one customer key/);
+    await expect(service.unwrap(ID, {} as CustomerKey)).rejects.toMatchObject({
+      code: "invalid_request",
+    });
+    expect(calls()).toHaveLength(callsBeforeInvalidKey);
   });
 
   test("getWrappedVersion fetches a version's outer envelope", async () => {
@@ -400,12 +405,20 @@ describe("customer-protected secrets", () => {
     expect(ecKey.unwrap(puts[1].envelope)).toBe(v1.inner);
   });
 
-  test("rewrap refuses platform secrets, and replaceVersionWrapping sends the envelope as given", async () => {
+  test("rewrap refuses platform secrets, validates keys upfront, and checks wrap() output", async () => {
     const { service, calls, bodies } = mockService(secrets(), (method, path) => {
       if (path === `/secrets/${ID}`) return { ...secret({ protection: "platform" }), versions: [] };
       if (method === "PUT") return storedVersion("x", ecKey, 5);
       throw new Error(`unexpected ${path}`);
     });
+    await expect(service.rewrap(ID, { from: [] as any, to: ecKey })).rejects.toMatchObject({
+      code: "invalid_request",
+    });
+    await expect(service.rewrap(ID, { from: {} as CustomerKey, to: ecKey })).rejects.toMatchObject({
+      code: "invalid_request",
+    });
+    expect(calls()).toEqual([]);
+
     await expect(service.rewrap(ID, { from: rsaKey, to: ecKey })).rejects.toThrow(
       /not customer-protected/
     );
@@ -419,6 +432,28 @@ describe("customer-protected secrets", () => {
     await expect(
       service.replaceVersionWrapping(ID, 5, { envelope: "", innerDigest: "digest" })
     ).rejects.toMatchObject({ code: "invalid_request" });
+
+    const brokenWrapKey: CustomerKey = {
+      kid: "broken",
+      wrap: () => "",
+      unwrap: (env) => env,
+    };
+    const v1 = storedVersion("one", rsaKey, 1);
+    const { service: rewrapService } = mockService(secrets(), (_method, path) => {
+      if (path === `/secrets/${ID}`) {
+        return {
+          ...secret({ latestVersion: 1 }),
+          versions: [{ version: 1, kid: v1.kid, outerKid: v1.outerKid }],
+        };
+      }
+      if (path === `/secrets/${ID}/versions/1/wrapped`) return v1;
+      throw new Error(`unexpected ${path}`);
+    });
+    await expect(
+      rewrapService.rewrap(ID, { from: rsaKey, to: brokenWrapKey })
+    ).rejects.toMatchObject({
+      code: "invalid_request",
+    });
   });
 
   test("version details keep outerKid and retiresAt", async () => {
@@ -477,9 +512,9 @@ describe("customer-protected vaults", () => {
     expect(calls()).toEqual([`GET /vaults/${VAULT_ID}`, `GET /vaults/${VAULT_ID}/wrapped`]);
   });
 
-  test("unwrap names the entry whose key is missing", async () => {
+  test("unwrap names the entry whose key is missing and validates keys before fetching", async () => {
     const stored = storedVersion("hunter2", ecKey, 7);
-    const { service } = mockService(vaults(), (_method, path) =>
+    const { service, calls } = mockService(vaults(), (_method, path) =>
       path.endsWith("/wrapped")
         ? {
             id: VAULT_ID,
@@ -488,6 +523,12 @@ describe("customer-protected vaults", () => {
           }
         : vault
     );
+    await expect(service.unwrap(VAULT_ID, [])).rejects.toMatchObject({ code: "invalid_request" });
+    await expect(service.unwrap(VAULT_ID, {} as CustomerKey)).rejects.toMatchObject({
+      code: "invalid_request",
+    });
+    expect(calls()).toEqual([]);
+
     const error = await service.unwrap(VAULT_ID, rsaKey).catch((e) => e);
     expect(error).toBeInstanceOf(HyperbrowserError);
     expect(error).toMatchObject({ code: "customer_key_mismatch" });

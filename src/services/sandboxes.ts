@@ -427,6 +427,10 @@ export class SandboxHandle {
     return (this.detail.exposedPorts ?? []).map((entry) => ({ ...entry }));
   }
 
+  get startupSecrets(): SandboxDetail["startupSecrets"] {
+    return this.detail.startupSecrets;
+  }
+
   toJSON(): SandboxDetail {
     return { ...this.detail };
   }
@@ -590,18 +594,6 @@ export class SandboxHandle {
     }
 
     return { ...this.runtimeSession };
-  }
-
-  private applyRuntimeSession(session: SandboxRuntimeState) {
-    this.runtimeSession = { ...session };
-    this.detail = {
-      ...this.detail,
-      status: session.status,
-      region: session.region,
-      runtime: session.runtime,
-      token: session.token,
-      tokenExpiresAt: session.tokenExpiresAt,
-    };
   }
 
   private clearRuntimeSession(status: SandboxDetail["status"] = this.detail.status) {

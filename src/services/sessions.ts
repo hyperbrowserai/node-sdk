@@ -1,4 +1,4 @@
-import { promises as fs, Stats, createReadStream, ReadStream } from "fs";
+import { promises as fs, constants as fsConstants, Stats, createReadStream, ReadStream } from "fs";
 import * as path from "path";
 import FormData from "form-data";
 import { RequestInit } from "node-fetch";
@@ -261,13 +261,18 @@ export class SessionsService extends BaseService {
   async uploadFile(id: string, fileOptions: UploadFileOptions): Promise<UploadFileResponse> {
     const { fileInput, fileName } = fileOptions;
 
+    let fileStream: ReadStream | undefined;
+    let streamError: HyperbrowserError | undefined;
+
     try {
       let fetchOptions: RequestInit;
+      let streamFailure: Promise<never> | undefined;
 
       if (typeof fileInput === "string") {
         let stats: Stats;
         try {
           stats = await fs.stat(fileInput);
+          await fs.access(fileInput, fsConstants.R_OK);
         } catch (error: any) {
           if (error.code === "ENOENT") {
             throw new HyperbrowserError(`File not found: ${fileInput}`, undefined);
@@ -289,15 +294,27 @@ export class SessionsService extends BaseService {
         }
 
         const formData = new FormData();
-        const fileStream = createReadStream(fileInput);
+        fileStream = createReadStream(fileInput);
         const fileBaseName = fileName || path.basename(fileInput);
 
-        fileStream.on("error", (error) => {
-          throw new HyperbrowserError(
-            `Failed to read file ${fileInput}: ${error.message}`,
-            undefined
-          );
+        let rejectStreamError: ((error: HyperbrowserError) => void) | undefined;
+        streamFailure = new Promise<never>((_, reject) => {
+          rejectStreamError = reject;
         });
+        streamFailure.catch(() => {});
+
+        const onStreamError = (error: Error) => {
+          if (!streamError) {
+            streamError = new HyperbrowserError(
+              `Failed to read file at ${fileInput}: ${error.message}`,
+              undefined
+            );
+          }
+          rejectStreamError?.(streamError);
+        };
+
+        fileStream.on("error", onStreamError);
+        formData.on("error", onStreamError);
 
         formData.append("file", fileStream, {
           filename: fileBaseName,
@@ -347,13 +364,22 @@ export class SessionsService extends BaseService {
         );
       }
 
-      return await this.request<UploadFileResponse>(`/session/${id}/uploads`, fetchOptions);
+      const requestPromise = this.request<UploadFileResponse>(
+        `/session/${id}/uploads`,
+        fetchOptions
+      );
+      return await (streamFailure ? Promise.race([requestPromise, streamFailure]) : requestPromise);
     } catch (error) {
+      if (streamError) {
+        throw streamError;
+      }
       if (error instanceof HyperbrowserError) {
         throw error;
       }
 
       throw new HyperbrowserError(`Failed to upload file for session ${id}: ${error}`, undefined);
+    } finally {
+      fileStream?.destroy();
     }
   }
 

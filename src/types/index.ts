@@ -15,7 +15,13 @@ export {
   ScrapeJobResponse,
   ScrapeOptions,
   ScrapeJobStatusResponse,
+  StartBatchScrapeJobParams,
+  StartBatchScrapeJobResponse,
   BatchScrapeJobStatusResponse,
+  BatchScrapeJobResponse,
+  GetBatchScrapeJobParams,
+  ScrapedPage,
+  ScreenshotOptions,
   StorageStateOptions,
 } from "./scrape";
 export {
@@ -136,6 +142,7 @@ export {
   SessionListParams,
   SessionListResponse,
   ScreenConfig,
+  CreateSessionProfile,
   CaptchaEvaluationPageResult,
   CaptchaEvaluationParams,
   CaptchaEvaluationResponse,
@@ -144,6 +151,7 @@ export {
   CaptchaSolverType,
   CreateSessionParams,
   CreateSessionSnapshotResponse,
+  SessionRecording,
   GetSessionDownloadsUrlResponse,
   GetSessionVideoRecordingUrlResponse,
   GetSessionRecordingUrlResponse,
@@ -427,6 +435,15 @@ export {
   BatchFetchJobResponse,
   BatchFetchJobStatus,
 } from "./web/batch-fetch";
+export {
+  WebCrawlJobStatus,
+  WebCrawlOptions,
+  StartWebCrawlJobParams,
+  GetWebCrawlJobParams,
+  StartWebCrawlJobResponse,
+  WebCrawlJobStatusResponse,
+  WebCrawlJobResponse,
+} from "./web/crawl";
 export {
   WebSearchParams,
   WebSearchResponse,

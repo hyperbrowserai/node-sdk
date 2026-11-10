@@ -22,6 +22,7 @@ export interface BasicResponse {
 export interface SessionProfile {
   id: string;
   persistChanges?: boolean;
+  persistNetworkCache?: boolean;
 }
 
 /** How a session signs its requests with Web Bot Auth. */
@@ -83,6 +84,8 @@ export interface Session {
   launchState?: SessionLaunchState | null;
   creditsUsed: number | null;
   creditBreakdown: SessionCreditBreakdown;
+  duration?: number;
+  proxyDataConsumed?: string;
 }
 
 export interface SessionDetail extends Session {

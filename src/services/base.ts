@@ -21,7 +21,14 @@ const getRequestId = (response: Response): string | undefined => {
 const SERVER_ERROR_CODE_PATTERN = /^[A-Z][A-Z0-9]*(_[A-Z0-9]+)+$/;
 
 /** Codes whose retryable status default (such as 503) would be wrong. */
-const NON_RETRYABLE_ERROR_CODES = new Set(["SECRETS_NOT_CONFIGURED"]);
+const NON_RETRYABLE_ERROR_CODES = new Set([
+  "SECRETS_ADMIN_REQUIRED",
+  "SECRETS_NOT_CONFIGURED",
+  "SECRET_KEY_UNAVAILABLE",
+  "SECRET_DECRYPT_FAILED",
+  "SECRET_ENVELOPE_INVALID",
+  "SECRET_VALUE_INVALID",
+]);
 
 /** The sandbox and secret an error is about, when the API names them. */
 const errorMessageContext = (errorData: {
