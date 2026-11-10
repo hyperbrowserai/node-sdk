@@ -463,12 +463,22 @@ export const assertCustomerKey = (key: unknown, what = "customerKey"): CustomerK
   return candidate;
 };
 
-/** @internal Checks that `keys` is a CustomerKey or a non-empty list of them before anything is sent. */
-export const assertCustomerKeys = (keys: unknown, what = "customerKey"): readonly CustomerKey[] => {
+/**
+ * @internal Checks that `keys` is a CustomerKey or a list of them before
+ * anything is sent. An empty list passes only with `allowEmpty`: an up-front
+ * check must not reject a call that never needs a key (an empty vault, or a
+ * rewrap with nothing to rewrap); `customerKeyFor` still rejects it when a
+ * key is actually needed.
+ */
+export const assertCustomerKeys = (
+  keys: unknown,
+  what = "customerKey",
+  { allowEmpty = false }: { allowEmpty?: boolean } = {}
+): readonly CustomerKey[] => {
   if (!Array.isArray(keys)) {
     return [assertCustomerKey(keys, what)];
   }
-  if (keys.length === 0) {
+  if (keys.length === 0 && !allowEmpty) {
     throw new HyperbrowserError(`Pass at least one customer key as ${what}`, {
       code: "invalid_request",
       retryable: false,

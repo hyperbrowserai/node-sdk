@@ -411,14 +411,18 @@ describe("customer-protected secrets", () => {
       if (method === "PUT") return storedVersion("x", ecKey, 5);
       throw new Error(`unexpected ${path}`);
     });
-    await expect(service.rewrap(ID, { from: [] as any, to: ecKey })).rejects.toMatchObject({
-      code: "invalid_request",
-    });
     await expect(service.rewrap(ID, { from: {} as CustomerKey, to: ecKey })).rejects.toMatchObject({
       code: "invalid_request",
     });
+    await expect(
+      service.rewrap(ID, { from: [rsaKey, {} as CustomerKey], to: ecKey })
+    ).rejects.toMatchObject({ code: "invalid_request" });
     expect(calls()).toEqual([]);
 
+    // An empty `from` list is not rejected up front: a rewrap may need no key.
+    await expect(service.rewrap(ID, { from: [], to: ecKey })).rejects.toThrow(
+      /not customer-protected/
+    );
     await expect(service.rewrap(ID, { from: rsaKey, to: ecKey })).rejects.toThrow(
       /not customer-protected/
     );
@@ -426,9 +430,10 @@ describe("customer-protected secrets", () => {
     expect(calls()).toEqual([
       `GET /secrets/${ID}`,
       `GET /secrets/${ID}`,
+      `GET /secrets/${ID}`,
       `PUT /secrets/${ID}/versions/5/wrapping`,
     ]);
-    expect(bodies()[2]).toEqual({ envelope: "outer", innerDigest: "digest" });
+    expect(bodies()[3]).toEqual({ envelope: "outer", innerDigest: "digest" });
     await expect(
       service.replaceVersionWrapping(ID, 5, { envelope: "", innerDigest: "digest" })
     ).rejects.toMatchObject({ code: "invalid_request" });
@@ -523,11 +528,16 @@ describe("customer-protected vaults", () => {
           }
         : vault
     );
-    await expect(service.unwrap(VAULT_ID, [])).rejects.toMatchObject({ code: "invalid_request" });
     await expect(service.unwrap(VAULT_ID, {} as CustomerKey)).rejects.toMatchObject({
       code: "invalid_request",
     });
+    await expect(service.unwrap(VAULT_ID, [rsaKey, {} as CustomerKey])).rejects.toMatchObject({
+      code: "invalid_request",
+    });
     expect(calls()).toEqual([]);
+
+    // An empty list is checked once an entry actually needs a key.
+    await expect(service.unwrap(VAULT_ID, [])).rejects.toThrow(/at least one customer key/);
 
     const error = await service.unwrap(VAULT_ID, rsaKey).catch((e) => e);
     expect(error).toBeInstanceOf(HyperbrowserError);
@@ -546,7 +556,17 @@ describe("customer-protected vaults", () => {
       name: "app-env",
       unwrapped: {},
     });
-    expect(calls()).toEqual(["GET /vaults", `GET /vaults/${VAULT_ID}/wrapped`]);
+    // No entry needs a key, so an empty key list is fine too.
+    await expect(service.unwrap("app-env", [])).resolves.toEqual({
+      name: "app-env",
+      unwrapped: {},
+    });
+    expect(calls()).toEqual([
+      "GET /vaults",
+      `GET /vaults/${VAULT_ID}/wrapped`,
+      "GET /vaults",
+      `GET /vaults/${VAULT_ID}/wrapped`,
+    ]);
   });
 });
 

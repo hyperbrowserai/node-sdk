@@ -428,7 +428,7 @@ export class SandboxHandle {
   }
 
   get startupSecrets(): SandboxDetail["startupSecrets"] {
-    return this.detail.startupSecrets;
+    return this.detail.startupSecrets?.map((entry) => ({ ...entry }));
   }
 
   toJSON(): SandboxDetail {

@@ -305,7 +305,7 @@ export class SecretsService extends BaseService {
    */
   async rewrap(secret: string, params: RewrapSecretParams): Promise<WrappedSecretVersion[]> {
     const { from, to, versions } = params ?? ({} as RewrapSecretParams);
-    assertCustomerKeys(from, "from");
+    assertCustomerKeys(from, "from", { allowEmpty: true });
     assertCustomerKey(to, "to");
     if (versions !== undefined) {
       if (!Array.isArray(versions))

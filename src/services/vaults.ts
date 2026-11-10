@@ -94,7 +94,7 @@ export class VaultsService extends BaseService {
     vault: string,
     customerKey: CustomerKey | readonly CustomerKey[]
   ): Promise<VaultReference> {
-    assertCustomerKeys(customerKey);
+    assertCustomerKeys(customerKey, "customerKey", { allowEmpty: true });
     const wrapped = await this.getWrapped(vault);
     const unwrapped: VaultReference["unwrapped"] = {};
     for (const [env, entry] of Object.entries(wrapped.entries ?? {})) {
