@@ -63,6 +63,11 @@ const startServer = async (
       return;
     }
 
+    if (request.method === "POST" && request.url === "/api/task/hyper-agent") {
+      sendJson(response, 200, { jobId: "hyper_agent_job_123", liveUrl: null });
+      return;
+    }
+
     if (request.method === "POST" && request.url === "/api/task/claude-computer-use") {
       sendJson(response, 200, { jobId: "claude_job_123", liveUrl: null });
       return;
@@ -677,6 +682,25 @@ describe("client HTTP integration", () => {
         llm: "gpt-6-luna",
         reasoningEffort: "none",
       },
+    ]);
+  });
+
+  test("HyperAgent accepts GPT-6.1 Terra", async () => {
+    const server = await startServer();
+    servers.push(server);
+    const client = new HyperbrowserClient({
+      apiKey: "test-api-key",
+      baseUrl: server.baseUrl,
+    });
+
+    await client.agents.hyperAgent.start({
+      task: "Complete the task",
+      llm: "gpt-6.1-terra",
+      version: "1.1.0",
+    });
+
+    expect(server.requests.map((request) => request.body)).toEqual([
+      { task: "Complete the task", llm: "gpt-6.1-terra", version: "1.1.0" },
     ]);
   });
 
