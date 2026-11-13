@@ -60,6 +60,7 @@ export type BrowserUseLlm =
   | "claude-3-5-haiku-20241022"
   | "gemini-2.0-flash"
   | "gemini-2.5-flash"
+  | "gemini-4-hydrogen"
   | "gemini-3.8-flash";
 
 export type ClaudeComputerUseLlm =
@@ -127,11 +128,13 @@ export type HyperAgentLlm =
   /** @deprecated Retires November 30, 2026; use "claude-sonnet-5". */
   | "claude-sonnet-4-5"
   | "gemini-2.5-flash"
+  | "gemini-4-hydrogen"
   | "gemini-3.8-flash"
   | "gemini-3.7-flash"
   | "gemini-3-flash-preview";
 
 export type GeminiComputerUseLlm =
+  | "gemini-4-hydrogen"
   | "gemini-4-carbon"
   | "gemini-4-argon"
   | "gemini-3.8-flash"
@@ -142,8 +145,9 @@ export type GeminiComputerUseLlm =
   | "gemini-3-flash-preview"
   | "gemini-2.5-computer-use-preview-10-2025";
 
-// Gemini 4 Carbon, Gemini 4 Argon, 3.8 Flash, and 3.7 Flash do not support "minimal".
-export type GeminiComputerUseReasoningEffort = "minimal" | "low" | "medium" | "high";
+// Gemini 4 Hydrogen, Gemini 4 Carbon, Gemini 4 Argon, 3.8 Flash, and 3.7 Flash do not support "minimal".
+// Only Gemini 4 Hydrogen supports "xhigh".
+export type GeminiComputerUseReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh";
 
 export type GrokComputerUseLlm = "grok-4.7" | "grok-4.6" | "grok-4.5";
 
