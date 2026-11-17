@@ -92,6 +92,8 @@ export type ClaudeComputerUseReasoningEffort = "low" | "medium" | "high" | "xhig
 
 export type CuaLlm =
   | "computer-use-preview"
+  | "gpt-6.2-astra"
+  | "gpt-6.2-sol"
   | "gpt-6-astra"
   | "gpt-6.1-sol"
   | "gpt-6.1-terra"
@@ -109,6 +111,7 @@ export type CuaReasoningEffort = "none" | "low" | "medium" | "high" | "xhigh" | 
 export type HyperAgentVersion = "0.8.0" | "1.1.0";
 
 export type HyperAgentLlm =
+  | "gpt-6.2-sol"
   | "gpt-6.1-terra"
   | "gpt-6-luna"
   | "gpt-5.6-luna"
