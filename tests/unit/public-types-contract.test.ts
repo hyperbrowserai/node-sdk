@@ -167,7 +167,7 @@ describe("public type compatibility", () => {
   });
 
   test("exposes the HTTP status and final URL of fetched pages as optional fields", () => {
-    const cachedBeforeTheFieldsExisted: FetchResponseData = { markdown: "# Title" };
+    const withoutStatusFields: FetchResponseData = { markdown: "# Title" };
     const blockedPage: PageData = {
       url: "https://example.com/old",
       status: "completed",
@@ -175,7 +175,7 @@ describe("public type compatibility", () => {
       finalUrl: "https://example.com/blocked",
     };
 
-    expect(cachedBeforeTheFieldsExisted.statusCode).toBeUndefined();
+    expect(withoutStatusFields.statusCode).toBeUndefined();
     expect(blockedPage.statusCode).toBe(403);
     expectTypeOf<FetchResponseData["statusCode"]>().toEqualTypeOf<number | undefined>();
     expectTypeOf<FetchResponseData["finalUrl"]>().toEqualTypeOf<string | undefined>();

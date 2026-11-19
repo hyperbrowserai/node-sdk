@@ -22,7 +22,7 @@ export interface FetchResponseData {
   metadata?: Record<string, unknown>;
   /**
    * HTTP status of the page the content came from. Absent when the browser
-   * received no response, and on results cached before this field existed.
+   * received no response.
    */
   statusCode?: number;
   /**
