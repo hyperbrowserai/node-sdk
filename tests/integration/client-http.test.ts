@@ -439,6 +439,11 @@ describe("client HTTP integration", () => {
     });
     await client.agents.geminiComputerUse.start({
       task: "Complete the task",
+      llm: "gemini-4-neon",
+      reasoningEffort: "xhigh",
+    });
+    await client.agents.geminiComputerUse.start({
+      task: "Complete the task",
       llm: "gemini-3.6-flash",
       reasoningEffort: "minimal",
     });
@@ -481,6 +486,17 @@ describe("client HTTP integration", () => {
         body: {
           task: "Complete the task",
           llm: "gemini-4-hydrogen",
+          reasoningEffort: "xhigh",
+        },
+      },
+      {
+        method: "POST",
+        url: "/api/task/gemini-computer-use",
+        apiKey: "test-api-key",
+        contentType: "application/json",
+        body: {
+          task: "Complete the task",
+          llm: "gemini-4-neon",
           reasoningEffort: "xhigh",
         },
       },
