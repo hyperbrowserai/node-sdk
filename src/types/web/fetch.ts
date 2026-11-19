@@ -20,6 +20,16 @@ export interface FetchParams {
 
 export interface FetchResponseData {
   metadata?: Record<string, unknown>;
+  /**
+   * HTTP status of the page the content came from. Absent when the browser
+   * received no response.
+   */
+  statusCode?: number;
+  /**
+   * URL the page ended on after redirects. For a document such as a PDF, the
+   * URL of the downloaded file.
+   */
+  finalUrl?: string;
   html?: string;
   markdown?: string;
   links?: string[];

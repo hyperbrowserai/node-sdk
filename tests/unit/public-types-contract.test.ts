@@ -3,6 +3,7 @@ import type {
   BatchScrapeJobResponse,
   ClickActionParams,
   DragActionParams,
+  FetchResponseData,
   ScrollActionParams,
   ScrollAtCursorActionParams,
   ComputerActionParams,
@@ -15,6 +16,7 @@ import type {
   CreateSessionProfile,
   GetBatchScrapeJobParams,
   GetWebCrawlJobParams,
+  PageData,
   Sandbox,
   SandboxExecParams,
   SandboxImageBuildInputFormat,
@@ -162,6 +164,23 @@ describe("public type compatibility", () => {
     expect(snapshotResponse.page).toBeUndefined();
     expect(volumeResponse.perPage).toBeUndefined();
     expectTypeOf<Sandbox["network"]>().toEqualTypeOf<SandboxNetworkPolicy | null | undefined>();
+  });
+
+  test("exposes the HTTP status and final URL of fetched pages as optional fields", () => {
+    const withoutStatusFields: FetchResponseData = { markdown: "# Title" };
+    const blockedPage: PageData = {
+      url: "https://example.com/old",
+      status: "completed",
+      statusCode: 403,
+      finalUrl: "https://example.com/blocked",
+    };
+
+    expect(withoutStatusFields.statusCode).toBeUndefined();
+    expect(blockedPage.statusCode).toBe(403);
+    expectTypeOf<FetchResponseData["statusCode"]>().toEqualTypeOf<number | undefined>();
+    expectTypeOf<FetchResponseData["finalUrl"]>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<PageData["statusCode"]>().toEqualTypeOf<number | undefined>();
+    expectTypeOf<PageData["finalUrl"]>().toEqualTypeOf<string | undefined>();
   });
 
   test("includes public server region and status values", () => {

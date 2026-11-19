@@ -32,6 +32,16 @@ export interface PageData {
   status: PageStatus;
   error?: string;
   metadata?: Record<string, unknown>;
+  /**
+   * HTTP status of the page the content came from. Absent when the browser
+   * received no response.
+   */
+  statusCode?: number;
+  /**
+   * URL the page ended on after redirects. For a document such as a PDF, the
+   * URL of the downloaded file.
+   */
+  finalUrl?: string;
   markdown?: string;
   html?: string;
   links?: string[];
