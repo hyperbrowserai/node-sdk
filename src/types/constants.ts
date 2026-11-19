@@ -60,7 +60,6 @@ export type BrowserUseLlm =
   | "claude-3-5-haiku-20241022"
   | "gemini-2.0-flash"
   | "gemini-2.5-flash"
-  | "gemini-4-neon"
   | "gemini-4-hydrogen"
   | "gemini-3.8-flash";
 
@@ -132,7 +131,6 @@ export type HyperAgentLlm =
   /** @deprecated Retires November 30, 2026; use "claude-sonnet-5". */
   | "claude-sonnet-4-5"
   | "gemini-2.5-flash"
-  | "gemini-4-neon"
   | "gemini-4-hydrogen"
   | "gemini-3.8-flash"
   | "gemini-3.7-flash"
