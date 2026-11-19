@@ -137,6 +137,7 @@ export type HyperAgentLlm =
   | "gemini-3-flash-preview";
 
 export type GeminiComputerUseLlm =
+  | "gemini-4-neon"
   | "gemini-4-hydrogen"
   | "gemini-4-carbon"
   | "gemini-4-argon"
@@ -148,8 +149,8 @@ export type GeminiComputerUseLlm =
   | "gemini-3-flash-preview"
   | "gemini-2.5-computer-use-preview-10-2025";
 
-// Gemini 4 Hydrogen, Gemini 4 Carbon, Gemini 4 Argon, 3.8 Flash, and 3.7 Flash do not support "minimal".
-// Only Gemini 4 Hydrogen supports "xhigh".
+// Gemini 4 Neon, Gemini 4 Hydrogen, Gemini 4 Carbon, Gemini 4 Argon, 3.8 Flash, and 3.7 Flash do not support "minimal".
+// Only Gemini 4 Neon and Gemini 4 Hydrogen support "xhigh".
 export type GeminiComputerUseReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh";
 
 export type GrokComputerUseLlm = "grok-4.7" | "grok-4.6" | "grok-4.5";
