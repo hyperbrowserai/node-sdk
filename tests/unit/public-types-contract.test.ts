@@ -13,10 +13,14 @@ import type {
   ComputerActionResponseDataCursorPosition,
   CompleteSandboxImageBuildParams,
   CreateSandboxImageBuildParams,
+  CreateSessionParams,
   CreateSessionProfile,
+  FetchBrowserOptions,
+  OperatingSystem,
   GetBatchScrapeJobParams,
   GetWebCrawlJobParams,
   PageData,
+  SessionLaunchState,
   Sandbox,
   SandboxExecParams,
   SandboxImageBuildInputFormat,
@@ -80,7 +84,9 @@ function actionConsumer(params: ComputerActionParams): string {
 describe("public type compatibility", () => {
   test("accepts sandbox and snapshot objects created before secrets metadata existed", () => {
     expectTypeOf<Omit<Sandbox, "containsSecrets">>().toExtend<Sandbox>();
-    expectTypeOf<Omit<SandboxSnapshotSummary, "containsSecrets">>().toExtend<SandboxSnapshotSummary>();
+    expectTypeOf<
+      Omit<SandboxSnapshotSummary, "containsSecrets">
+    >().toExtend<SandboxSnapshotSummary>();
   });
 
   test("exports cursor-position requests and typed coordinates with optional pointer modifiers", () => {
@@ -181,6 +187,26 @@ describe("public type compatibility", () => {
     expectTypeOf<FetchResponseData["finalUrl"]>().toEqualTypeOf<string | undefined>();
     expectTypeOf<PageData["statusCode"]>().toEqualTypeOf<number | undefined>();
     expectTypeOf<PageData["finalUrl"]>().toEqualTypeOf<string | undefined>();
+  });
+
+  test("exposes operatingSystem and disableSoftwareWebGL on fetch browser options, session creation and launch state", () => {
+    const browser: FetchBrowserOptions = { operatingSystem: "macos", disableSoftwareWebGL: true };
+    const session: CreateSessionParams = { disableSoftwareWebGL: true };
+    const launchState: SessionLaunchState = { disableSoftwareWebGL: true };
+
+    expect(browser.operatingSystem).toBe("macos");
+    expect(session.disableSoftwareWebGL).toBe(true);
+    expect(launchState.disableSoftwareWebGL).toBe(true);
+    expectTypeOf<FetchBrowserOptions["operatingSystem"]>().toEqualTypeOf<
+      OperatingSystem | undefined
+    >();
+    expectTypeOf<FetchBrowserOptions["disableSoftwareWebGL"]>().toEqualTypeOf<
+      boolean | undefined
+    >();
+    expectTypeOf<CreateSessionParams["disableSoftwareWebGL"]>().toEqualTypeOf<
+      boolean | undefined
+    >();
+    expectTypeOf<SessionLaunchState["disableSoftwareWebGL"]>().toEqualTypeOf<boolean | undefined>();
   });
 
   test("includes public server region and status values", () => {

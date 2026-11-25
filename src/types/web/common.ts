@@ -1,4 +1,4 @@
-import { Country, State } from "../constants";
+import { Country, OperatingSystem, State } from "../constants";
 import { ScreenConfig } from "../session";
 import { BrandingProfile } from "./branding";
 
@@ -104,6 +104,8 @@ export interface FetchBrowserOptions {
   screen?: ScreenConfig;
   profileId?: string;
   solveCaptchas?: boolean;
+  operatingSystem?: OperatingSystem;
+  disableSoftwareWebGL?: boolean;
   location?: FetchBrowserLocationOptions;
 }
 
