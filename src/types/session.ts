@@ -274,6 +274,8 @@ export interface CreateSessionParams {
   liveViewTtlSeconds?: number;
   replaceNativeElements?: boolean;
   disablePostQuantumKeyAgreement?: boolean;
+  /** When true, Ultra sessions drop software (SwiftShader) WebGL. Defaults to false. */
+  disableSoftwareWebGL?: boolean;
   browserMemorySize?: BrowserMemorySize;
   startFromSnapshot?: StartSessionFromSnapshotParams;
   /**

@@ -13,7 +13,10 @@ import type {
   ComputerActionResponseDataCursorPosition,
   CompleteSandboxImageBuildParams,
   CreateSandboxImageBuildParams,
+  CreateSessionParams,
   CreateSessionProfile,
+  FetchBrowserOptions,
+  OperatingSystem,
   GetBatchScrapeJobParams,
   GetWebCrawlJobParams,
   PageData,
@@ -181,6 +184,23 @@ describe("public type compatibility", () => {
     expectTypeOf<FetchResponseData["finalUrl"]>().toEqualTypeOf<string | undefined>();
     expectTypeOf<PageData["statusCode"]>().toEqualTypeOf<number | undefined>();
     expectTypeOf<PageData["finalUrl"]>().toEqualTypeOf<string | undefined>();
+  });
+
+  test("exposes operatingSystem and disableSoftwareWebGL on fetch browser options and session creation", () => {
+    const browser: FetchBrowserOptions = { operatingSystem: "macos", disableSoftwareWebGL: true };
+    const session: CreateSessionParams = { disableSoftwareWebGL: true };
+
+    expect(browser.operatingSystem).toBe("macos");
+    expect(session.disableSoftwareWebGL).toBe(true);
+    expectTypeOf<FetchBrowserOptions["operatingSystem"]>().toEqualTypeOf<
+      OperatingSystem | undefined
+    >();
+    expectTypeOf<FetchBrowserOptions["disableSoftwareWebGL"]>().toEqualTypeOf<
+      boolean | undefined
+    >();
+    expectTypeOf<CreateSessionParams["disableSoftwareWebGL"]>().toEqualTypeOf<
+      boolean | undefined
+    >();
   });
 
   test("includes public server region and status values", () => {

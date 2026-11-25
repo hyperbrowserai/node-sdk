@@ -1,4 +1,4 @@
-import { Country, State } from "../constants";
+import { Country, OperatingSystem, State } from "../constants";
 import { ScreenConfig } from "../session";
 import { BrandingProfile } from "./branding";
 
@@ -104,6 +104,14 @@ export interface FetchBrowserOptions {
   screen?: ScreenConfig;
   profileId?: string;
   solveCaptchas?: boolean;
+  /** Operating system the browser fingerprint claims. Defaults to the platform default. */
+  operatingSystem?: OperatingSystem;
+  /**
+   * Skip forced SwiftShader (software) WebGL rendering. Defaults to false. On
+   * machines without a GPU, WebGL content may be unavailable, including in
+   * screenshots.
+   */
+  disableSoftwareWebGL?: boolean;
   location?: FetchBrowserLocationOptions;
 }
 
