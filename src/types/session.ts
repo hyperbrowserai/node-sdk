@@ -64,6 +64,7 @@ export interface SessionLaunchState {
   enableAlwaysOpenPdfExternally?: boolean;
   appendTimestampToDownloads?: boolean;
   disablePostQuantumKeyAgreement?: boolean;
+  disableSoftwareWebGL?: boolean;
   /** @deprecated Discontinued: WebGL fingerprinting was removed from the browser, and the server ignores this option. Kept so existing code still type-checks. */
   enableWebglFingerprinting?: boolean;
 }
